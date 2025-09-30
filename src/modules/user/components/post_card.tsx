@@ -30,17 +30,19 @@ const PostCard: React.FC<CourseCardProps> = ({
       alt={title}
       className="h-44 w-full object-cover transition duration-300 group-hover:scale-105"
     />
-    <div className="space-y-3 p-6">
+    <div className="space-y-4 p-6">
       <div>
-        <h3 className="text-base font-semibold text-gray-900">{title}</h3>
+        <h3 className="text-base font-semibold text-gray-900 line-clamp-2">{title}</h3>
         <p className="text-sm text-gray-500">{instructor}</p>
       </div>
-      <div className="flex items-center gap-1 text-sm text-gray-600">
-        <StarIcon className="h-5 w-5 text-amber-400" />
-        <span className="font-semibold text-gray-900">{rating.toFixed(1)}</span>
-        <span>({students})</span>
+      <div className="flex items-center justify-between text-sm">
+        <span className="flex items-center gap-1 text-gray-600">
+          <StarIcon className="h-5 w-5 text-amber-400" />
+          <span className="font-semibold text-gray-900">{rating.toFixed(1)}</span>
+          <span className="text-xs text-gray-400">{students}</span>
+        </span>
+        <span className="text-base font-semibold text-[#5a2dff]">{price}</span>
       </div>
-      <div className="text-base font-semibold text-[#5a2dff]">{price}</div>
     </div>
   </Link>
 );
