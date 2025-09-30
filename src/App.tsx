@@ -7,6 +7,10 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import UserHome from './modules/user/home';
 import ViewAllCourse from './modules/user/viewallcourse';
 import MyCourse from './modules/user/mycourse';
+import MyCart from './modules/header/mycart';
+import NotificationPage from './modules/header/notification'; 
+import MyInfo from './modules/avatar_info/myinfo'; 
+
 
 function App() {
   return (
@@ -20,7 +24,10 @@ function App() {
         <Route path="/homepage" element={<Homepage />} />
         <Route path="/user/home" element={<UserHome />} />
         <Route path="/user/mycourses" element={<MyCourse />} />
+        <Route path="/user/cart" element={<MyCart />} />
+        <Route path="/user/notifications" element={<NotificationPage />} />
         <Route path="/courses" element={<ViewAllCourse />} />
+        <Route path="/user/profile" element={<MyInfo />} />
       </Routes>
     </Router>
   );

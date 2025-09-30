@@ -124,7 +124,7 @@ const UserHome: React.FC = () => {
               </div>
               <div>
                 <h1 className="text-2xl font-semibold text-gray-900">
-                  Chào mừng trở lại, trieuphung3922!
+                  Chào mừng trở lại, username!
                 </h1>
                 <p className="text-sm text-gray-500">
                   Tiếp tục hành trình học tập của bạn

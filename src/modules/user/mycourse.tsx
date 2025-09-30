@@ -1,5 +1,6 @@
 import React from "react";
 import {
+  ArrowLeftIcon,
   BookOpenIcon,
   CheckCircleIcon,
   ClockIcon,
@@ -7,6 +8,7 @@ import {
   MagnifyingGlassIcon,
   SparklesIcon,
 } from "@heroicons/react/24/outline";
+import { Link } from "react-router-dom";
 import UserLayout from "./layout/layout";
 
 type CourseStatus = "completed" | "inProgress" | "notStarted";
@@ -138,6 +140,13 @@ const MyCourse: React.FC = () => {
   return (
     <UserLayout>
       <div className="space-y-8">
+        <Link
+          to="/user/home"
+          className="inline-flex items-center gap-2 text-sm font-semibold text-[#5a2dff] transition hover:text-[#3c1cd6]"
+        >
+          <ArrowLeftIcon className="h-4 w-4" />
+          Quay lại trang chủ
+        </Link>
         <section className="space-y-6">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div>
