@@ -10,6 +10,7 @@ import MyCourse from './modules/user/mycourse';
 import MyCart from './modules/header/mycart';
 import NotificationPage from './modules/header/notification'; 
 import MyInfo from './modules/avatar_info/myinfo'; 
+import ChangePasswordPage from './modules/avatar_info/changepw';
 
 
 function App() {
@@ -28,6 +29,7 @@ function App() {
         <Route path="/user/notifications" element={<NotificationPage />} />
         <Route path="/courses" element={<ViewAllCourse />} />
         <Route path="/user/profile" element={<MyInfo />} />
+        <Route path="/user/security" element={<ChangePasswordPage />} />
       </Routes>
     </Router>
   );
