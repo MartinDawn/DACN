@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { FcGoogle } from "react-icons/fc";
 import { FaFacebookF } from "react-icons/fa";
 import {
@@ -8,32 +8,77 @@ import {
   HiOutlineLockClosed,
   HiOutlineEye,
   HiOutlineEyeSlash,
+  HiOutlinePhone,
+  HiOutlineIdentification,
 } from "react-icons/hi2";
+import { useAuth } from "./hooks/useAuth";
+import type { RegisterRequest } from "./models/auth";
+import { AuthNotification } from "./components/AuthNotification";
 
 const RegisterPage: React.FC = () => {
-  const [fullName, setFullName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const navigate = useNavigate();
+  const { register, loading, error } = useAuth();
+  const [formData, setFormData] = useState<RegisterRequest>({
+    userName: "",
+    email: "",
+    password: "",
+    fullName: "",
+    phoneNumber: "",
+    role: "Student" as const,
+  });
   const [showPassword, setShowPassword] = useState(false);
   const [acceptTerms, setAcceptTerms] = useState(false);
-  const [subscribeUpdates, setSubscribeUpdates] = useState(false);
+  const [notification, setNotification] = useState<{
+    show: boolean;
+    type: 'success' | 'error';
+    message: string;
+  }>({
+    show: false,
+    type: 'success',
+    message: '',
+  });
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!acceptTerms) {
-      alert("Vui lòng đồng ý với điều khoản trước khi tiếp tục.");
+      setNotification({
+        show: true,
+        type: 'error',
+        message: 'Vui lòng đồng ý với điều khoản trước khi tiếp tục.'
+      });
       return;
     }
-    console.log({
-      fullName,
-      email,
-      password,
-      subscribeUpdates,
-    });
+    try {
+      const response = await register(formData);
+      if (response?.success) {
+        setNotification({
+          show: true,
+          type: 'success',
+          message: response.message
+        });
+        // Chờ một chút để người dùng có thể đọc thông báo thành công
+        setTimeout(() => {
+          navigate("/login");
+        }, 1500);
+      }
+    } catch (err) {
+      console.error("Registration failed:", err);
+      setNotification({
+        show: true,
+        type: 'error',
+        message: error || 'Đăng ký thất bại. Vui lòng thử lại.'
+      });
+    }
   };
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-100 px-4">
+      <AuthNotification
+        show={notification.show}
+        type={notification.type}
+        message={notification.message}
+        onClose={() => setNotification(prev => ({ ...prev, show: false }))}
+      />
       <div className="w-full max-w-md rounded-3xl border border-gray-200 bg-white p-8 shadow-[0_24px_80px_rgba(15,23,42,0.08)]">
         <div className="space-y-2 text-center">
           <h1 className="text-3xl font-semibold text-gray-900">
@@ -71,6 +116,25 @@ const RegisterPage: React.FC = () => {
 
         <form className="mt-6 space-y-6" onSubmit={handleSubmit}>
           <div className="space-y-2">
+            <label htmlFor="userName" className="text-sm font-medium text-gray-700">
+              Tên đăng nhập
+            </label>
+            <div className="flex items-center gap-3 rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 transition focus-within:border-indigo-400 focus-within:bg-white focus-within:shadow-[0_0_0_4px_rgba(99,102,241,0.08)]">
+              <HiOutlineIdentification className="text-lg text-gray-400" />
+              <input
+                id="userName"
+                name="userName"
+                type="text"
+                placeholder="Nhập tên đăng nhập"
+                className="w-full bg-transparent text-sm text-gray-900 placeholder-gray-400 outline-none"
+                value={formData.userName}
+                onChange={(e) => setFormData({...formData, userName: e.target.value})}
+                required
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
             <label htmlFor="fullName" className="text-sm font-medium text-gray-700">
               Họ và tên
             </label>
@@ -78,11 +142,32 @@ const RegisterPage: React.FC = () => {
               <HiOutlineUser className="text-lg text-gray-400" />
               <input
                 id="fullName"
+                name="fullName"
                 type="text"
                 placeholder="Nhập họ và tên đầy đủ"
                 className="w-full bg-transparent text-sm text-gray-900 placeholder-gray-400 outline-none"
-                value={fullName}
-                onChange={(event) => setFullName(event.target.value)}
+                value={formData.fullName}
+                onChange={(e) => setFormData({...formData, fullName: e.target.value})}
+                required
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <label htmlFor="phoneNumber" className="text-sm font-medium text-gray-700">
+              Số điện thoại
+            </label>
+            <div className="flex items-center gap-3 rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 transition focus-within:border-indigo-400 focus-within:bg-white focus-within:shadow-[0_0_0_4px_rgba(99,102,241,0.08)]">
+              <HiOutlinePhone className="text-lg text-gray-400" />
+              <input
+                id="phoneNumber"
+                name="phoneNumber"
+                type="tel"
+                placeholder="Nhập số điện thoại"
+                className="w-full bg-transparent text-sm text-gray-900 placeholder-gray-400 outline-none"
+                value={formData.phoneNumber}
+                onChange={(e) => setFormData({...formData, phoneNumber: e.target.value})}
+                required
               />
             </div>
           </div>
@@ -95,11 +180,13 @@ const RegisterPage: React.FC = () => {
               <HiOutlineEnvelope className="text-lg text-gray-400" />
               <input
                 id="email"
+                name="email"
                 type="email"
                 placeholder="Nhập địa chỉ email"
                 className="w-full bg-transparent text-sm text-gray-900 placeholder-gray-400 outline-none"
-                value={email}
-                onChange={(event) => setEmail(event.target.value)}
+                value={formData.email}
+                onChange={(e) => setFormData({...formData, email: e.target.value})}
+                required
               />
             </div>
           </div>
@@ -112,11 +199,13 @@ const RegisterPage: React.FC = () => {
               <HiOutlineLockClosed className="text-lg text-gray-400" />
               <input
                 id="password"
+                name="password"
                 type={showPassword ? "text" : "password"}
                 placeholder="Tạo mật khẩu mạnh"
                 className="w-full bg-transparent text-sm text-gray-900 placeholder-gray-400 outline-none"
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
+                value={formData.password}
+                onChange={(e) => setFormData({...formData, password: e.target.value})}
+                required
               />
               <button
                 type="button"
@@ -138,7 +227,7 @@ const RegisterPage: React.FC = () => {
                 type="checkbox"
                 className="mt-1 h-4 w-4 rounded border-gray-300 text-indigo-500 focus:ring-indigo-400"
                 checked={acceptTerms}
-                onChange={(event) => setAcceptTerms(event.target.checked)}
+                onChange={(e) => setAcceptTerms(e.target.checked)}
               />
               <span>
                 Tôi đồng ý với{" "}
@@ -151,24 +240,20 @@ const RegisterPage: React.FC = () => {
                 </a>
               </span>
             </label>
-
-            <label className="flex items-start gap-3">
-              <input
-                type="checkbox"
-                className="mt-1 h-4 w-4 rounded border-gray-300 text-indigo-500 focus:ring-indigo-400"
-                checked={subscribeUpdates}
-                onChange={(event) => setSubscribeUpdates(event.target.checked)}
-              />
-              <span>Gửi cho tôi thông tin về khóa học và ưu đãi đặc biệt</span>
-            </label>
           </div>
+
+          {error && (
+            <div className="text-red-500 text-sm text-center">
+              {error}
+            </div>
+          )}
 
           <button
             type="submit"
             className="h-12 w-full rounded-2xl bg-[#8b3dff] text-sm font-semibold text-white shadow-[0_10px_30px_rgba(139,61,255,0.35)] transition hover:bg-[#7a2df0] disabled:opacity-60"
-            disabled={!fullName || !email || !password || password.length < 8}
+            disabled={loading || !formData.userName || !formData.email || !formData.password || !formData.fullName || !formData.phoneNumber || !acceptTerms}
           >
-            Tạo tài khoản
+            {loading ? "Đang xử lý..." : "Tạo tài khoản"}
           </button>
         </form>
 
