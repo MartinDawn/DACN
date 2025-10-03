@@ -5,7 +5,10 @@ import type {
     ForgetPasswordRequest, 
     ApiResponse,
     RegisterResponse,
-    LoginResponse
+    LoginResponse,
+    SendOTPRequest,
+    VerifyOTPRequest,
+    ResetPasswordRequest
 } from '../models/auth';
 
 const API_URL = 'http://dacn.runasp.net/api';
@@ -44,5 +47,28 @@ export const authService = {
         } else {
             delete axios.defaults.headers.common['Authorization'];
         }
+    },
+
+    async sendOTP(data: SendOTPRequest): Promise<ApiResponse<null>> {
+        const response = await axiosInstance.post<ApiResponse<null>>(
+            `${API_URL}/Account/send-otp`, 
+            null, 
+            {
+                params: {
+                    email: data.email
+                }
+            }
+        );
+        return response.data;
+    },
+
+    async verifyOTP(data: VerifyOTPRequest): Promise<ApiResponse<null>> {
+        const response = await axiosInstance.post<ApiResponse<null>>(`${API_URL}/Account/verify-otp`, data);
+        return response.data;
+    },
+
+    async resetPassword(data: ResetPasswordRequest): Promise<ApiResponse<null>> {
+        const response = await axiosInstance.post<ApiResponse<null>>(`${API_URL}/Account/reset-password`, data);
+        return response.data;
     }
 };

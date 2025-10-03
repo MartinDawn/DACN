@@ -1,5 +1,16 @@
 import { useState, useEffect } from 'react';
-import type { LoginRequest, RegisterRequest, ForgetPasswordRequest, User, ApiResponse, RegisterResponse, LoginResponse } from '../models/auth';
+import type { 
+    LoginRequest, 
+    RegisterRequest, 
+    ForgetPasswordRequest, 
+    User, 
+    ApiResponse, 
+    RegisterResponse, 
+    LoginResponse,
+    SendOTPRequest,
+    VerifyOTPRequest,
+    ResetPasswordRequest
+} from '../models/auth';
 import { authService } from '../services/auth.service';
 import axios from 'axios';
 
@@ -107,6 +118,82 @@ export const useAuth = () => {
         }
     };
 
+    const sendOTP = async (data: SendOTPRequest) => {
+        try {
+            setLoading(true);
+            setError(null);
+            // console.log(data.email);
+            const response = await authService.sendOTP(data);
+            
+            if (!response.success) {
+                setError(response.message);
+                return null;
+            }
+
+            return response;
+        } catch (err) {
+            if (axios.isAxiosError(err) && err.response?.data) {
+                const apiError = err.response.data as ApiResponse<null>;
+                setError(apiError.message || 'Đã xảy ra lỗi khi gửi mã OTP');
+            } else {
+                setError('Đã xảy ra lỗi khi gửi mã OTP');
+            }
+            throw err;
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const verifyOTP = async (data: VerifyOTPRequest) => {
+        try {
+            setLoading(true);
+            setError(null);
+            const response = await authService.verifyOTP(data);
+            
+            if (!response.success) {
+                setError(response.message);
+                return null;
+            }
+
+            return response;
+        } catch (err) {
+            if (axios.isAxiosError(err) && err.response?.data) {
+                const apiError = err.response.data as ApiResponse<null>;
+                setError(apiError.message || 'Đã xảy ra lỗi khi xác thực mã OTP');
+            } else {
+                setError('Đã xảy ra lỗi khi xác thực mã OTP');
+            }
+            throw err;
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const resetPassword = async (data: ResetPasswordRequest) => {
+        try {
+            setLoading(true);
+            setError(null);
+            const response = await authService.resetPassword(data);
+            
+            if (!response.success) {
+                setError(response.message);
+                return null;
+            }
+
+            return response;
+        } catch (err) {
+            if (axios.isAxiosError(err) && err.response?.data) {
+                const apiError = err.response.data as ApiResponse<null>;
+                setError(apiError.message || 'Đã xảy ra lỗi khi đặt lại mật khẩu');
+            } else {
+                setError('Đã xảy ra lỗi khi đặt lại mật khẩu');
+            }
+            throw err;
+        } finally {
+            setLoading(false);
+        }
+    };
+
     return {
         user,
         loading,
@@ -115,6 +202,9 @@ export const useAuth = () => {
         register,
         forgotPassword,
         logout,
-        isAuthenticated: !!user
+        isAuthenticated: !!user,
+        sendOTP,
+        verifyOTP,
+        resetPassword
     };
 };

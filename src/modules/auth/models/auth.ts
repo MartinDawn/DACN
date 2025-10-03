@@ -37,3 +37,19 @@ export interface RegisterResponse {
 export interface User {
     role: string;
 }
+
+export interface SendOTPRequest {
+    email: string;
+}
+
+export interface VerifyOTPRequest {
+    email: string;
+    otp: string;
+    type: 'Register' | 'ForgotPassword';
+}
+
+export interface ResetPasswordRequest {
+    email: string;
+    newPassword: string;
+    otp: string;
+}
