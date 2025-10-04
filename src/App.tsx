@@ -11,6 +11,7 @@ import MyCart from './modules/header/mycart';
 import NotificationPage from './modules/header/notification'; 
 import MyInfo from './modules/avatar_info/myinfo'; 
 import ChangePasswordPage from './modules/avatar_info/changepw';
+import CourseDetail from './modules/user/detailcourse';
 
 
 function App() {
@@ -28,6 +29,7 @@ function App() {
         <Route path="/user/cart" element={<MyCart />} />
         <Route path="/user/notifications" element={<NotificationPage />} />
         <Route path="/courses" element={<ViewAllCourse />} />
+        <Route path="/courses/:courseId" element={<CourseDetail />} />
         <Route path="/user/profile" element={<MyInfo />} />
         <Route path="/user/security" element={<ChangePasswordPage />} />
       </Routes>

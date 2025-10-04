@@ -65,7 +65,7 @@ const recommendedCourses = [
     rating: 4.8,
     students: "2.1k học viên",
     price: "599,000đ",
-    href: "#",
+    href: "/courses/complete-react-developer-2024",
   },
   {
     image:
@@ -75,7 +75,7 @@ const recommendedCourses = [
     rating: 4.9,
     students: "3.4k học viên",
     price: "449,000đ",
-    href: "#",
+    href: "/courses/python-cho-nguoi-moi-bat-dau",
   },
   {
     image:
@@ -85,7 +85,7 @@ const recommendedCourses = [
     rating: 4.7,
     students: "1.9k học viên",
     price: "699,000đ",
-    href: "#",
+    href: "/courses/digital-marketing-mastery-2024",
   },
 ];
 
