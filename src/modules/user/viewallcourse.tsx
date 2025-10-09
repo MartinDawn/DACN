@@ -38,6 +38,7 @@ const courses: Course[] = [
     image:
       "https://images.unsplash.com/photo-1521737604893-d14cc237f11d?auto=format&fit=crop&w=1200&q=80",
     createdAt: "2024-08-01",
+    href: "/courses/complete-react-developer-2024",
   },
   {
     title: "Python cho Người Mới Bắt Đầu",
@@ -54,6 +55,7 @@ const courses: Course[] = [
     image:
       "https://images.unsplash.com/photo-1517430816045-df4b7de11d1d?auto=format&fit=crop&w=1200&q=80",
     createdAt: "2024-09-10",
+    href: "/courses/python-cho-nguoi-moi-bat-dau",
   },
   {
     title: "Digital Marketing Mastery 2024",
@@ -70,6 +72,7 @@ const courses: Course[] = [
     image:
       "https://images.unsplash.com/photo-1556740749-887f6717d7e4?auto=format&fit=crop&w=1200&q=80",
     createdAt: "2024-06-05",
+    href: "/courses/digital-marketing-mastery-2024",
   },
   {
     title: "Node.js Backend Development",
@@ -86,6 +89,7 @@ const courses: Course[] = [
     image:
       "https://images.unsplash.com/photo-1517433456452-f9633a875f6f?auto=format&fit=crop&w=1200&q=80",
     createdAt: "2024-05-20",
+    href: "/courses/nodejs-backend-development",
   },
   {
     title: "UI/UX Design với Figma",
@@ -102,6 +106,7 @@ const courses: Course[] = [
     image:
       "https://images.unsplash.com/photo-1522542550221-31fd19575a2d?auto=format&fit=crop&w=1200&q=80",
     createdAt: "2024-07-25",
+    href: "/courses/ui-ux-design-voi-figma",
   },
   {
     title: "Data Science với Python",
@@ -118,6 +123,7 @@ const courses: Course[] = [
     image:
       "https://images.unsplash.com/photo-1517148815978-75f6acaaf32c?auto=format&fit=crop&w=1200&q=80",
     createdAt: "2024-03-18",
+    href: "/courses/data-science-voi-python",
   },
 ];
 
