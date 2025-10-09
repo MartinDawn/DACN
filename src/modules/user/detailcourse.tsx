@@ -83,7 +83,7 @@ const CourseDetail: React.FC = () => {
 		<UserLayout>
 			<div className="space-y-8">
 				<Link
-					to="/user/home"
+					to="/courses"
 					className="inline-flex items-center gap-2 text-sm font-semibold text-[#5a2dff] transition hover:text-[#3c1cd6]"
 				>
 					<ArrowLeftIcon className="h-4 w-4" />
