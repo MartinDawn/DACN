@@ -48,7 +48,7 @@ const LoginPage: React.FC = () => {
         });
         // Redirect after a short delay to show the success message
         setTimeout(() => {
-          navigate("/");
+          navigate("/user/home");
         }, 1500);
       }
     } catch (err) {

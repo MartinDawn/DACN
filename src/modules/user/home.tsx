@@ -9,6 +9,7 @@ import {
 } from "@heroicons/react/24/outline";
 import UserLayout from "./layout/layout";
 import PostCard from "./components/post_card";
+import { useCourses } from './hooks/useCourses';
 
 const stats = [
   { label: "Khóa học", value: "0", accent: "text-[#5a2dff]" },
@@ -112,6 +113,7 @@ const SummaryTabSwitcher: React.FC<{
 
 const UserHome: React.FC = () => {
   const [activeTab, setActiveTab] = React.useState<SummaryTab>(summaryTabs[0]);
+  const { recommendedCourses, loading, error } = useCourses();
 
   return (
     <UserLayout>
@@ -209,9 +211,26 @@ const UserHome: React.FC = () => {
                 <p className="text-sm text-gray-500">Dựa trên sở thích của bạn</p>
               </div>
               <div className="mt-6 grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
-                {recommendedCourses.map((course) => (
-                  <PostCard key={course.title} {...course} />
-                ))}
+                {loading ? (
+                  <div className="col-span-full text-center py-8">Đang tải khóa học...</div>
+                ) : error ? (
+                  <div className="col-span-full text-center text-red-500 py-8">{error}</div>
+                ) : recommendedCourses.length === 0 ? (
+                  <div className="col-span-full text-center py-8">Không có khóa học đề xuất</div>
+                ) : (
+                  recommendedCourses.map((course) => (
+                    <PostCard
+                      key={course.id}
+                      image={course.imageUrl || 'https://via.placeholder.com/400x300'}
+                      title={course.name}
+                      instructor={course.instructorName}
+                      rating={course.rating}
+                      students="N/A"
+                      price={`${course.price.toLocaleString()}đ`}
+                      href={`/courses/${course.id}`}
+                    />
+                  ))
+                )}
               </div>
             </section>
           </>
