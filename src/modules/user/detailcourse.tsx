@@ -1,5 +1,5 @@
 import React from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
 	ArrowLeftIcon,
 	BookmarkIcon,
@@ -76,8 +76,95 @@ const tabs = [
 	{ id: "reviews", label: "Đánh giá" },
 ] as const;
 
+const CART_STORAGE_KEY = "eduviet_cart";
+const CART_SELECTED_KEY = "eduviet_cart_selected";
+const courseId = "complete-react-developer-2024";
+type StoredCartItem = {
+	id: string;
+	title: string;
+	instructor: string;
+	image: string;
+	duration: string;
+	students: string;
+	rating: number;
+	ratingCount: string;
+	price: number;
+	originalPrice?: number;
+	discountPercent?: number;
+	tag?: string;
+	selected?: boolean;
+};
+
+const parseCurrencyToNumber = (value: string) => Number(value.replace(/[^\d]/g, "")) || 0;
+
+const loadCartFromStorage = (): StoredCartItem[] => {
+	if (typeof window === "undefined") return [];
+	try {
+		const raw = window.localStorage.getItem(CART_STORAGE_KEY);
+		const parsed = raw ? JSON.parse(raw) : [];
+		return Array.isArray(parsed) ? parsed : [];
+	} catch {
+		return [];
+	}
+};
+
+const saveCartToStorage = (items: StoredCartItem[]) => {
+	if (typeof window === "undefined") return;
+	window.localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(items));
+};
+
 const CourseDetail: React.FC = () => {
 	const [activeTab, setActiveTab] = React.useState<(typeof tabs)[number]["id"]>("overview");
+	const [isPaymentOpen, setPaymentOpen] = React.useState(false);
+	const navigate = useNavigate();
+
+	const ensureCourseInCart = React.useCallback(() => {
+		const priceValue = parseCurrencyToNumber(course.price);
+		const originalPriceValue = course.originalPrice ? parseCurrencyToNumber(course.originalPrice) : undefined;
+		const current = loadCartFromStorage();
+		if (current.some((item) => item.id === courseId)) return;
+		current.push({
+			id: courseId,
+			title: course.title,
+			instructor: course.instructor.name,
+			image: course.image,
+			duration: course.duration,
+			students: course.students,
+			rating: course.rating,
+			ratingCount: course.ratingCount,
+			price: priceValue,
+			originalPrice: originalPriceValue,
+			discountPercent:
+				originalPriceValue && originalPriceValue > 0
+					? Math.round(((originalPriceValue - priceValue) / originalPriceValue) * 100)
+					: undefined,
+			tag: course.categories.find((tag) => tag === "Bán chạy") ?? course.categories[0],
+			selected: false,
+		});
+		saveCartToStorage(current);
+	}, []);
+	const persistSelectedCourse = React.useCallback(() => {
+		if (typeof window === "undefined") return;
+		const updated = loadCartFromStorage().map((item) => ({
+			...item,
+			selected: item.id === courseId,
+		}));
+		saveCartToStorage(updated);
+		window.localStorage.setItem(CART_SELECTED_KEY, JSON.stringify([courseId]));
+	}, []);
+
+	const handleAddToCart = React.useCallback(() => {
+		ensureCourseInCart();
+		navigate("/user/cart");
+	}, [ensureCourseInCart, navigate]);
+
+	const handleOpenPayment = React.useCallback(() => setPaymentOpen(true), []);
+	const handleProceedPayment = React.useCallback(() => {
+		ensureCourseInCart();
+		persistSelectedCourse();
+		setPaymentOpen(false);
+		navigate("/user/cart");
+	}, [ensureCourseInCart, navigate, persistSelectedCourse]);
 
 	return (
 		<UserLayout>
@@ -228,10 +315,18 @@ const CourseDetail: React.FC = () => {
 							<span className="inline-flex items-center rounded-full bg-[#ffecef] px-3 py-1 text-xs font-semibold uppercase text-[#ff3d71]">
 								{course.discountLabel}
 							</span>
-							<button className="w-full rounded-full bg-[#5a2dff] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#3c1cd6]">
+							<button
+								type="button"
+								onClick={handleOpenPayment}
+								className="w-full rounded-full bg-[#5a2dff] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#3c1cd6]"
+							>
 								Đăng ký khóa học
 							</button>
-							<button className="w-full rounded-full border border-[#e4e6f1] px-5 py-3 text-sm font-semibold text-gray-700 transition hover:border-[#d6d7e4] hover:bg-[#f7f7fb]">
+							<button
+								type="button"
+								onClick={handleAddToCart}
+								className="w-full rounded-full border border-[#e4e6f1] px-5 py-3 text-sm font-semibold text-gray-700 transition hover:border-[#d6d7e4] hover:bg-[#f7f7fb]"
+							>
 								Thêm vào giỏ hàng
 							</button>
 							<div className="flex items-center justify-between text-sm text-gray-500">
@@ -269,6 +364,55 @@ const CourseDetail: React.FC = () => {
 					</aside>
 				</div>
 			</div>
+
+			{isPaymentOpen && (
+				<div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/40 px-4">
+					<div className="w-full max-w-lg space-y-6 rounded-3xl bg-white p-8 shadow-2xl">
+						<div className="flex items-start justify-between gap-4">
+							<div>
+								<h3 className="text-xl font-semibold text-gray-900">Thanh toán khóa học</h3>
+								<p className="text-sm text-gray-500">{course.title}</p>
+							</div>
+							<button
+								type="button"
+								onClick={() => setPaymentOpen(false)}
+								className="rounded-full border border-gray-200 px-3 py-1 text-sm font-semibold text-gray-500 transition hover:bg-gray-100"
+							>
+								Đóng
+							</button>
+						</div>
+						<div className="space-y-3 rounded-2xl bg-[#f7f7fb] p-5 text-sm">
+							<p className="flex items-center justify-between font-semibold text-gray-900">
+								<span>Giá khóa học</span>
+								<span>{course.price}</span>
+							</p>
+							{course.originalPrice && (
+								<p className="flex items-center justify-between text-gray-500">
+									<span>Giá gốc</span>
+									<span className="line-through">{course.originalPrice}</span>
+								</p>
+							)}
+							<p className="text-xs text-gray-500">Thanh toán an toàn, hỗ trợ hoàn tiền trong 30 ngày.</p>
+						</div>
+						<div className="flex flex-col gap-3 text-sm font-semibold sm:flex-row">
+							<button
+								type="button"
+								onClick={handleProceedPayment}
+								className="flex-1 rounded-full bg-[#5a2dff] px-5 py-3 text-white transition hover:bg-[#3c1cd6]"
+							>
+								Tiến hành thanh toán
+							</button>
+							<button
+								type="button"
+								onClick={() => setPaymentOpen(false)}
+								className="flex-1 rounded-full border border-gray-200 px-5 py-3 text-gray-600 transition hover:bg-gray-100"
+							>
+								Hủy
+							</button>
+						</div>
+					</div>
+				</div>
+			)}
 		</UserLayout>
 	);
 };
