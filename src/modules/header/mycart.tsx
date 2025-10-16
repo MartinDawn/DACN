@@ -1,5 +1,5 @@
 import React from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   ArrowLeftIcon,
   ClockIcon,
@@ -152,6 +152,7 @@ const MyCart: React.FC = () => {
   const [selectedPayment, setSelectedPayment] = React.useState<string>(paymentMethods[0]?.value ?? "card");
   const [promoCode, setPromoCode] = React.useState("");
   const [selectedIds, setSelectedIds] = React.useState<string[]>(() => loadCartItems().map((item) => item.id));
+  const navigate = useNavigate();
 
   React.useEffect(() => {
     persistCartItems(cartItems);
@@ -211,6 +212,10 @@ const MyCart: React.FC = () => {
     return sum + (item.originalPrice - item.price);
   }, 0);
   const total = subtotal;
+
+  const handleCheckout = () => {
+    navigate("/user/checkout");
+  };
 
   return (
     <UserLayout>
@@ -402,6 +407,7 @@ const MyCart: React.FC = () => {
               </div>
               <button
                 type="button"
+                onClick={handleCheckout}
                 disabled={selectedCartItems.length === 0}
                 className={`mt-6 w-full rounded-full px-4 py-3 text-sm font-semibold text-white shadow-[0_14px_34px_rgba(90,45,255,0.35)] transition ${
                   selectedCartItems.length === 0

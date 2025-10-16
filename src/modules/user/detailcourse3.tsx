@@ -14,6 +14,7 @@ import {
 } from "@heroicons/react/24/outline";
 import { CheckCircleIcon, StarIcon } from "@heroicons/react/20/solid";
 import UserLayout from "./layout/layout";
+import CheckoutModal from "./components/checkout_modal";
 
 const course = {
   title: "Digital Marketing Mastery 2024",
@@ -360,52 +361,11 @@ const CourseDetail3: React.FC = () => {
       </div>
 
       {isPaymentOpen && (
-        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/40 px-4">
-          <div className="w-full max-w-lg space-y-6 rounded-3xl bg-white p-8 shadow-2xl">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <h3 className="text-xl font-semibold text-gray-900">Thanh toán khóa học</h3>
-                <p className="text-sm text-gray-500">{course.title}</p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setPaymentOpen(false)}
-                className="rounded-full border border-gray-200 px-3 py-1 text-sm font-semibold text-gray-500 transition hover:bg-gray-100"
-              >
-                Đóng
-              </button>
-            </div>
-            <div className="space-y-3 rounded-2xl bg-[#f7f7fb] p-5 text-sm">
-              <p className="flex items-center justify-between font-semibold text-gray-900">
-                <span>Giá khóa học</span>
-                <span>{course.price}</span>
-              </p>
-              {course.originalPrice && (
-                <p className="flex items-center justify-between text-gray-500">
-                  <span>Giá gốc</span>
-                  <span className="line-through">{course.originalPrice}</span>
-                </p>
-              )}
-              <p className="text-xs text-gray-500">Thanh toán an toàn, hỗ trợ hoàn tiền trong 30 ngày.</p>
-            </div>
-            <div className="flex flex-col gap-3 text-sm font-semibold sm:flex-row">
-              <button
-                type="button"
-                onClick={handleProceedPayment}
-                className="flex-1 rounded-full bg-[#5a2dff] px-5 py-3 text-white transition hover:bg-[#3c1cd6]"
-              >
-                Tiến hành thanh toán
-              </button>
-              <button
-                type="button"
-                onClick={() => setPaymentOpen(false)}
-                className="flex-1 rounded-full border border-gray-200 px-5 py-3 text-gray-600 transition hover:bg-gray-100"
-              >
-                Hủy
-              </button>
-            </div>
-          </div>
-        </div>
+        <CheckoutModal
+          course={course}
+          onClose={() => setPaymentOpen(false)}
+          onProceed={handleProceedPayment}
+        />
       )}
     </UserLayout>
   );

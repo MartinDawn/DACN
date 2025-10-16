@@ -17,6 +17,7 @@ import CourseDetail3 from './modules/user/detailcourse3';
 import CourseDetail4 from './modules/user/detailcourse4';
 import CourseDetail5 from './modules/user/detailcourse5';
 import CourseDetail6 from './modules/user/detailcourse6';
+import CheckoutPage from './modules/user/checkout';
 
 function App() {
   return (
@@ -31,6 +32,7 @@ function App() {
         <Route path="/user/home" element={<UserHome />} />
         <Route path="/user/mycourses" element={<MyCourse />} />
         <Route path="/user/cart" element={<MyCart />} />
+        <Route path="/user/checkout" element={<CheckoutPage />} />
         <Route path="/user/notifications" element={<NotificationPage />} />
         <Route path="/courses" element={<ViewAllCourse />} />
         <Route path="/courses/complete-react-developer-2024" element={<CourseDetail />} />
