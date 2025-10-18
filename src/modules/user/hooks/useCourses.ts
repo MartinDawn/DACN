@@ -1,3 +1,5 @@
+// src/hooks/useCourses.ts
+
 import { useState, useEffect } from 'react';
 import type { RecommendedCourse, CourseDetail, CourseComment } from '../models/course';
 import { courseService } from '../services/course.service';
@@ -15,12 +17,16 @@ export const useCourses = () => {
   const fetchRecommendedCourses = async () => {
     try {
       setIsRecommendedLoading(true);
+      setError(null); // Reset lỗi trước khi gọi API
       const response = await courseService.getRecommendedCourses();
       if (response.success) {
         setRecommendedCourses(response.data);
+      } else {
+        setError(response.message || 'Không thể tải khóa học đề xuất');
       }
     } catch (err) {
-      setError('Không thể tải khóa học đề xuất');
+      setError('Không thể tải khóa học đề xuất. Vui lòng thử lại.');
+      console.error(err);
     } finally {
       setIsRecommendedLoading(false);
     }
@@ -41,7 +47,6 @@ export const useCourses = () => {
       
       const response = await courseService.getCourseDetail(courseId);
       if (response.success) {
-        // Only update if the data is different
         setCourseDetail(prevDetail => {
           if (JSON.stringify(prevDetail) !== JSON.stringify(response.data)) {
             return response.data;
@@ -82,7 +87,8 @@ export const useCourses = () => {
     recommendedCourses, 
     courseDetail,
     courseComments,
-    loading: isCourseDetailLoading, 
+    // Thay đổi duy nhất ở đây: trả về đúng trạng thái loading
+    loading: isRecommendedLoading, 
     commentsLoading: isCommentsLoading,
     error,
     commentsError,

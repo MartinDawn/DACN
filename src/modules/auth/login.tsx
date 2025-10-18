@@ -1,4 +1,6 @@
-import React, { useState } from "react";
+// src/pages/auth/login.tsx
+
+import React, { useState, useEffect } from "react"; // Thêm useEffect
 import { Link, useNavigate } from "react-router-dom";
 import { FcGoogle } from "react-icons/fc";
 import { FaFacebookF } from "react-icons/fa";
@@ -31,37 +33,64 @@ const LoginPage: React.FC = () => {
     message: '',
   });
 
+  // Lấy username đã lưu nếu có
+  useEffect(() => {
+    const rememberedUsername = localStorage.getItem('remember_username');
+    if (rememberedUsername) {
+      setFormData(prev => ({ ...prev, username: rememberedUsername }));
+      setRememberMe(true);
+    }
+  }, []);
+
+
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     try {
       const response = await login(formData);
-      if (response?.success) {
+      // Kiểm tra response có success và có data không
+      if (response?.success && response.data) {
         if (rememberMe) {
           localStorage.setItem('remember_username', formData.username);
         } else {
           localStorage.removeItem('remember_username');
         }
+
+        // *** LOGIC MỚI: Lưu thông tin người dùng vào localStorage ***
+        // response.data chứa accessToken, avatarUrl, fullName, email
+        localStorage.setItem('user_data', JSON.stringify(response.data));
+
         setNotification({
           show: true,
           type: 'success',
           message: response.message
         });
-        // Redirect after a short delay to show the success message
+        
+        // Chuyển hướng sau khi thông báo thành công
         setTimeout(() => {
           navigate("/user/home");
         }, 1500);
+      } else {
+        // Xử lý trường hợp response không thành công dù không có lỗi catch
+        setNotification({
+          show: true,
+          type: 'error',
+          message: response?.message || 'Thông tin đăng nhập không chính xác.'
+        });
       }
     } catch (err) {
       console.error("Login failed:", err);
+      // Sử dụng error state từ hook nếu có, nếu không thì dùng thông báo chung
+      const errorMessage = error || (err instanceof Error ? err.message : 'Đăng nhập thất bại. Vui lòng thử lại.');
       setNotification({
         show: true,
         type: 'error',
-        message: error || 'Đăng nhập thất bại. Vui lòng thử lại.'
+        message: errorMessage
       });
     }
   };
 
   return (
+    // ... PHẦN GIAO DIỆN GIỮ NGUYÊN ...
     <div className="flex min-h-screen items-center justify-center bg-gray-100 px-4">
       <AuthNotification
         show={notification.show}

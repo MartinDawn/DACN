@@ -10,7 +10,12 @@ import {
 import UserLayout from "./layout/layout";
 import PostCard from "./components/post_card";
 import { useCourses } from './hooks/useCourses';
-
+interface UserData {
+  accessToken: string;
+  avatarUrl: string;
+  fullName: string;
+  email: string;
+}
 const stats = [
   { label: "Khóa học", value: "0", accent: "text-[#5a2dff]" },
   { label: "Hoàn thành", value: "0", accent: "text-emerald-500" },
@@ -114,19 +119,37 @@ const SummaryTabSwitcher: React.FC<{
 const UserHome: React.FC = () => {
   const [activeTab, setActiveTab] = React.useState<SummaryTab>(summaryTabs[0]);
   const { recommendedCourses, loading, error } = useCourses();
+  const [user, setUser] = React.useState<UserData | null>(null);
 
+  React.useEffect(() => {
+    // Lấy chuỗi JSON từ localStorage
+    const storedUserData = localStorage.getItem('user_data');
+    if (storedUserData) {
+      // Chuyển chuỗi JSON thành object và cập nhật state
+      setUser(JSON.parse(storedUserData));
+    }
+  },[]);
   return (
     <UserLayout>
       <div className="space-y-8">
         <section className="rounded-4xl bg-white p-8 shadow-[0_28px_60px_rgba(90,90,140,0.08)]">
           <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex items-center gap-5">
-              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[#efe7ff] text-2xl font-semibold text-[#5a2dff]">
-                T
-              </div>
+              {user?.avatarUrl ? (
+                <img
+                  src={user.avatarUrl}
+                  alt="User Avatar"
+                  className="h-16 w-16 rounded-full object-cover"
+                />
+              ) : (
+                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[#efe7ff] text-2xl font-semibold text-[#5a2dff]">
+                  {/* Lấy chữ cái đầu của tên, nếu không có tên thì hiển thị 'U' */}
+                  {user?.fullName ? user.fullName.charAt(0).toUpperCase() : 'U'}
+                </div>
+              )}
               <div>
                 <h1 className="text-2xl font-semibold text-gray-900">
-                  Chào mừng trở lại, username!
+                  Chào mừng trở lại, {user?.fullName || 'bạn'}!
                 </h1>
                 <p className="text-sm text-gray-500">
                   Tiếp tục hành trình học tập của bạn
