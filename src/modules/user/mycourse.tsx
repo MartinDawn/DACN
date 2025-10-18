@@ -11,77 +11,20 @@ import {
 import { Link } from "react-router-dom";
 import UserLayout from "./layout/layout";
 
+import type { MyCourse } from './models/course';
+import { courseService } from './services/course.service';
+
 type CourseStatus = "completed" | "inProgress" | "notStarted";
 type FilterValue = "all" | CourseStatus;
 
-type CourseProgress = {
-  id: string;
-  title: string;
-  instructor: string;
-  image: string;
+type CourseProgress = MyCourse & {
   durationHours: number;
   lessonsCompleted: number;
   lessonsTotal: number;
-  rating: number;
   status: CourseStatus;
   progress: number;
   lastActivity: string;
 };
-
-const courses: CourseProgress[] = [
-  {
-    id: "react-dev",
-    title: "Complete React Development Course",
-    instructor: "John Smith",
-    image: "https://images.unsplash.com/photo-1521737604893-d14cc237f11d?auto=format&fit=crop&w=900&q=80",
-    durationHours: 25,
-    lessonsCompleted: 34,
-    lessonsTotal: 45,
-    rating: 4.8,
-    status: "inProgress",
-    progress: 75,
-    lastActivity: "2 ngày trước",
-  },
-  {
-    id: "js-master",
-    title: "JavaScript Mastery",
-    instructor: "Sarah Johnson",
-    image: "https://images.unsplash.com/photo-1517430816045-df4b7de11d1d?auto=format&fit=crop&w=900&q=80",
-    durationHours: 18,
-    lessonsCompleted: 32,
-    lessonsTotal: 32,
-    rating: 4.6,
-    status: "completed",
-    progress: 100,
-    lastActivity: "Hoàn thành 1 tuần trước",
-  },
-  {
-    id: "uiux-fund",
-    title: "UI/UX Design Fundamentals",
-    instructor: "Mike Chen",
-    image: "https://images.unsplash.com/photo-1522542550221-31fd19575a2d?auto=format&fit=crop&w=900&q=80",
-    durationHours: 15,
-    lessonsCompleted: 8,
-    lessonsTotal: 28,
-    rating: 4.7,
-    status: "inProgress",
-    progress: 30,
-    lastActivity: "5 ngày trước",
-  },
-  {
-    id: "marketing",
-    title: "Digital Marketing Strategy",
-    instructor: "Emma Davis",
-    image: "https://images.unsplash.com/photo-1556740749-887f6717d7e4?auto=format&fit=crop&w=900&q=80",
-    durationHours: 22,
-    lessonsCompleted: 0,
-    lessonsTotal: 35,
-    rating: 4.5,
-    status: "notStarted",
-    progress: 0,
-    lastActivity: "Chưa bắt đầu",
-  },
-];
 
 const filters: { label: string; value: FilterValue }[] = [
   { label: "All Courses", value: "all" },
@@ -106,27 +49,60 @@ const achievements = [
 const MyCourse: React.FC = () => {
   const [activeFilter, setActiveFilter] = React.useState<FilterValue>("all");
   const [searchTerm, setSearchTerm] = React.useState("");
+  const [myCourses, setMyCourses] = React.useState<CourseProgress[]>([]);
+  const [loading, setLoading] = React.useState(true);
+  const [error, setError] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    const fetchMyCourses = async () => {
+      try {
+        const response = await courseService.getMyCourses();
+        if (response.success) {
+          // Transform API response to include CourseProgress fields
+          const transformedCourses: CourseProgress[] = response.data.map(course => ({
+            ...course,
+            title: course.name,
+            instructor: course.instructorName,
+            image: course.imageUrl || "https://via.placeholder.com/900x600",
+            durationHours: 0, // Default values since API doesn't provide these
+            lessonsCompleted: 0,
+            lessonsTotal: 0,
+            status: "inProgress" as CourseStatus, // Default status
+            progress: 0,
+            lastActivity: "Đang học"
+          }));
+          setMyCourses(transformedCourses);
+        }
+      } catch (err) {
+        setError("Không thể tải danh sách khóa học");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchMyCourses();
+  }, []);
 
   const totalHours = React.useMemo(
-    () => courses.reduce((sum, course) => sum + course.durationHours, 0),
-    []
+    () => myCourses.reduce((sum: number, course) => sum + course.durationHours, 0),
+    [myCourses]
   );
   const completedCount = React.useMemo(
-    () => courses.filter((course) => course.status === "completed").length,
-    []
+    () => myCourses.filter((course) => course.status === "completed").length,
+    [myCourses]
   );
   const inProgressCount = React.useMemo(
-    () => courses.filter((course) => course.status === "inProgress").length,
-    []
+    () => myCourses.filter((course) => course.status === "inProgress").length,
+    [myCourses]
   );
-  const notStartedCount = courses.length - completedCount - inProgressCount;
+  const notStartedCount = myCourses.length - completedCount - inProgressCount;
   const averageProgress = Math.round(
-    courses.reduce((sum, course) => sum + course.progress, 0) / courses.length
+    myCourses.reduce((sum: number, course) => sum + course.progress, 0) / (myCourses.length || 1)
   );
 
   const visibleCourses = React.useMemo(() => {
     const normalizedSearch = searchTerm.trim().toLowerCase();
-    return courses.filter((course) => {
+    return myCourses.filter((course) => {
       const matchesFilter =
         activeFilter === "all" ? true : course.status === activeFilter;
       const matchesSearch = normalizedSearch
@@ -135,7 +111,7 @@ const MyCourse: React.FC = () => {
         : true;
       return matchesFilter && matchesSearch;
     });
-  }, [activeFilter, searchTerm]);
+  }, [activeFilter, searchTerm, myCourses]);
 
   return (
     <UserLayout>
@@ -183,7 +159,7 @@ const MyCourse: React.FC = () => {
                 </span>
               </div>
               <p className="mt-6 text-3xl font-semibold text-gray-900">
-                {courses.length}
+                {myCourses.length}
               </p>
               <p className="text-sm text-gray-500">Khóa học đã đăng ký</p>
             </div>
@@ -288,8 +264,8 @@ const MyCourse: React.FC = () => {
                   >
                     <div className="relative h-40 w-full overflow-hidden rounded-2xl sm:h-auto sm:w-48">
                       <img
-                        src={course.image}
-                        alt={course.title}
+                        src={course.imageUrl || "https://via.placeholder.com/900x600"}
+                        alt={course.name}
                         className="h-full w-full object-cover transition duration-300 sm:group-hover:scale-105"
                       />
                       <span
@@ -303,10 +279,10 @@ const MyCourse: React.FC = () => {
                         <div className="flex items-start justify-between gap-3">
                           <div>
                             <h2 className="text-lg font-semibold text-gray-900">
-                              {course.title}
+                              {course.name}
                             </h2>
                             <p className="text-sm text-gray-500">
-                              {course.instructor}
+                              {course.instructorName}
                             </p>
                           </div>
                           <span className="text-sm font-semibold text-amber-500">
