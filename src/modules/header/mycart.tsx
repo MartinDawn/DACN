@@ -1,5 +1,5 @@
 import React from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   ArrowLeftIcon,
   ClockIcon,
@@ -41,7 +41,9 @@ type PaymentMethod = {
   description?: string;
 };
 
-const cartItems: CartItem[] = [
+const CART_STORAGE_KEY = "eduviet_cart";
+
+const defaultCartItems: CartItem[] = [
   {
     id: "react-complete",
     title: "Khóa học React Chuyên sâu 2024",
@@ -129,16 +131,91 @@ const currencyFormatter = new Intl.NumberFormat("vi-VN", {
 
 const formatCurrency = (value: number) => currencyFormatter.format(value);
 
+const loadCartItems = (): CartItem[] => {
+  if (typeof window === "undefined") return defaultCartItems;
+  try {
+    const raw = window.localStorage.getItem(CART_STORAGE_KEY);
+    const parsed = raw ? JSON.parse(raw) : null;
+    return Array.isArray(parsed) && parsed.length ? parsed : defaultCartItems;
+  } catch {
+    return defaultCartItems;
+  }
+};
+
+const persistCartItems = (items: CartItem[]) => {
+  if (typeof window === "undefined") return;
+  window.localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(items));
+};
+
 const MyCart: React.FC = () => {
+  const [cartItems, setCartItems] = React.useState<CartItem[]>(() => loadCartItems());
   const [selectedPayment, setSelectedPayment] = React.useState<string>(paymentMethods[0]?.value ?? "card");
   const [promoCode, setPromoCode] = React.useState("");
+  const [selectedIds, setSelectedIds] = React.useState<string[]>(() => loadCartItems().map((item) => item.id));
+  const navigate = useNavigate();
 
-  const subtotal = cartItems.reduce((sum, item) => sum + item.price, 0);
-  const savings = cartItems.reduce((sum, item) => {
+  React.useEffect(() => {
+    persistCartItems(cartItems);
+  }, [cartItems]);
+
+  React.useEffect(() => {
+    setSelectedIds((prev) => {
+      const available = cartItems.map((item) => item.id);
+      const retained = prev.filter((id) => available.includes(id));
+      const newlyAdded = available.filter((id) => !retained.includes(id));
+      return [...retained, ...newlyAdded];
+    });
+  }, [cartItems]);
+
+  const selectedCartItems = React.useMemo(
+    () => cartItems.filter((item) => selectedIds.includes(item.id)),
+    [cartItems, selectedIds]
+  );
+
+  const handleRemove = React.useCallback((id: string) => {
+    setCartItems((prev) => prev.filter((item) => item.id !== id));
+  }, []);
+
+  const handleToggleSelect = React.useCallback((id: string) => {
+    setSelectedIds((prev) => (prev.includes(id) ? prev.filter((itemId) => itemId !== id) : [...prev, id]));
+  }, []);
+
+  const handleAddRecommended = React.useCallback((course: RecommendedCourse) => {
+    setCartItems((prev) => {
+      if (prev.some((item) => item.id === course.id)) return prev;
+      const discountPercent =
+        course.originalPrice && course.originalPrice > 0
+          ? Math.round(((course.originalPrice - course.price) / course.originalPrice) * 100)
+          : undefined;
+      return [
+        ...prev,
+        {
+          id: course.id,
+          title: course.title,
+          instructor: course.instructor,
+          image: course.image,
+          duration: "—",
+          students: "—",
+          rating: 0,
+          ratingCount: "0",
+          price: course.price,
+          originalPrice: course.originalPrice,
+          discountPercent,
+        },
+      ];
+    });
+  }, []);
+
+  const subtotal = selectedCartItems.reduce((sum, item) => sum + item.price, 0);
+  const savings = selectedCartItems.reduce((sum, item) => {
     if (!item.originalPrice) return sum;
     return sum + (item.originalPrice - item.price);
   }, 0);
   const total = subtotal;
+
+  const handleCheckout = () => {
+    navigate("/user/checkout");
+  };
 
   return (
     <UserLayout>
@@ -162,25 +239,43 @@ const MyCart: React.FC = () => {
               const discountLabel = item.discountPercent ? `${item.discountPercent}% giảm` : null;
               const savingsLabel =
                 item.originalPrice != null ? formatCurrency(item.originalPrice - item.price) : null;
+              const isSelected = selectedIds.includes(item.id);
+              const detailPath = `/courses/${item.id}`;
               return (
                 <article
                   key={item.id}
-                  className="rounded-3xl border border-gray-100 bg-white p-6 shadow-[0_20px_50px_rgba(15,23,42,0.08)]"
+                  className={`rounded-3xl border ${isSelected ? "border-[#5a2dff]" : "border-gray-100"} bg-white p-6 shadow-[0_20px_50px_rgba(15,23,42,0.08)]`}
                 >
                   <div className="flex flex-col gap-6 md:flex-row">
-                    <div className="relative h-40 w-full overflow-hidden rounded-2xl md:w-48">
-                      <img src={item.image} alt={item.title} className="h-full w-full object-cover" />
-                      {item.tag && (
-                        <span className="absolute left-3 top-3 inline-flex items-center rounded-full bg-[#efe7ff] px-3 py-1 text-xs font-semibold text-[#5a2dff]">
-                          {item.tag}
-                        </span>
-                      )}
+                    <div className="flex items-start gap-4">
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => handleToggleSelect(item.id)}
+                        aria-label={`Chọn ${item.title}`}
+                        className="mt-2 h-5 w-5 rounded border-gray-300 text-[#5a2dff] focus:ring-[#5a2dff]"
+                      />
+                      <Link
+                        to={detailPath}
+                        className="relative h-40 w-full overflow-hidden rounded-2xl md:w-48"
+                      >
+                        <img src={item.image} alt={item.title} className="h-full w-full object-cover" />
+                        {item.tag && (
+                          <span className="absolute left-3 top-3 inline-flex items-center rounded-full bg-[#efe7ff] px-3 py-1 text-xs font-semibold text-[#5a2dff]">
+                            {item.tag}
+                          </span>
+                        )}
+                      </Link>
                     </div>
 
                     <div className="flex flex-1 flex-col justify-between gap-4">
                       <div className="space-y-3">
                         <div className="space-y-1">
-                          <h2 className="text-lg font-semibold text-gray-900">{item.title}</h2>
+                          <h2 className="text-lg font-semibold text-gray-900">
+                            <Link to={detailPath} className="transition hover:text-[#5a2dff]">
+                              {item.title}
+                            </Link>
+                          </h2>
                           <p className="text-sm text-gray-500">bởi {item.instructor}</p>
                         </div>
 
@@ -232,6 +327,7 @@ const MyCart: React.FC = () => {
                           </button>
                           <button
                             type="button"
+                            onClick={() => handleRemove(item.id)}
                             className="inline-flex items-center gap-1 rounded-full border border-gray-200 px-4 py-2 transition hover:border-red-400 hover:text-red-500"
                           >
                             <TrashIcon className="h-4 w-4" />
@@ -278,6 +374,7 @@ const MyCart: React.FC = () => {
                     </div>
                     <button
                       type="button"
+                      onClick={() => handleAddRecommended(course)}
                       className="w-full rounded-full bg-[#05001a] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#1e0b63]"
                     >
                       Thêm vào giỏ
@@ -293,7 +390,7 @@ const MyCart: React.FC = () => {
               <h2 className="text-lg font-semibold text-gray-900">Tóm tắt đơn hàng</h2>
               <div className="mt-4 space-y-3 text-sm">
                 <div className="flex items-center justify-between text-gray-500">
-                  <span>Tổng phụ ({cartItems.length} khóa học)</span>
+                  <span>Tổng phụ ({selectedCartItems.length} khóa học đã chọn)</span>
                   <span className="font-semibold text-gray-900">{formatCurrency(subtotal)}</span>
                 </div>
                 {savings > 0 && (
@@ -310,7 +407,13 @@ const MyCart: React.FC = () => {
               </div>
               <button
                 type="button"
-                className="mt-6 w-full rounded-full bg-[#5a2dff] px-4 py-3 text-sm font-semibold text-white shadow-[0_14px_34px_rgba(90,45,255,0.35)] transition hover:bg-[#4a21eb]"
+                onClick={handleCheckout}
+                disabled={selectedCartItems.length === 0}
+                className={`mt-6 w-full rounded-full px-4 py-3 text-sm font-semibold text-white shadow-[0_14px_34px_rgba(90,45,255,0.35)] transition ${
+                  selectedCartItems.length === 0
+                    ? "cursor-not-allowed bg-[#5a2dff]/60"
+                    : "bg-[#5a2dff] hover:bg-[#4a21eb]"
+                }`}
               >
                 Thanh toán
               </button>

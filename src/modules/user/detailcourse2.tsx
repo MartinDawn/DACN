@@ -1,5 +1,5 @@
 import React from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   ArrowLeftIcon,
   BookmarkIcon,
@@ -14,6 +14,7 @@ import {
 } from "@heroicons/react/24/outline";
 import { CheckCircleIcon, StarIcon } from "@heroicons/react/20/solid";
 import UserLayout from "./layout/layout";
+import CheckoutModal from "./components/checkout_modal";
 
 const course = {
   title: "Python cho Người Mới Bắt Đầu",
@@ -82,8 +83,97 @@ const tabs = [
   { id: "reviews", label: "Đánh giá" },
 ] as const;
 
+const CART_STORAGE_KEY = "eduviet_cart";
+const CART_SELECTED_KEY = "eduviet_cart_selected";
+const courseId = "python-cho-nguoi-moi-bat-dau";
+
+type StoredCartItem = {
+  id: string;
+  title: string;
+  instructor: string;
+  image: string;
+  duration: string;
+  students: string;
+  rating: number;
+  ratingCount: string;
+  price: number;
+  originalPrice?: number;
+  discountPercent?: number;
+  tag?: string;
+  selected?: boolean;
+};
+
+const parseCurrencyToNumber = (value: string) => Number(value.replace(/[^\d]/g, "")) || 0;
+
+const loadCartFromStorage = (): StoredCartItem[] => {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = window.localStorage.getItem(CART_STORAGE_KEY);
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+};
+
+const saveCartToStorage = (items: StoredCartItem[]) => {
+  if (typeof window === "undefined") return;
+  window.localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(items));
+};
+
 const CourseDetail2: React.FC = () => {
   const [activeTab, setActiveTab] = React.useState<(typeof tabs)[number]["id"]>("overview");
+  const [isPaymentOpen, setPaymentOpen] = React.useState(false);
+  const navigate = useNavigate();
+
+  const ensureCourseInCart = React.useCallback(() => {
+    const priceValue = parseCurrencyToNumber(course.price);
+    const originalPriceValue = course.originalPrice ? parseCurrencyToNumber(course.originalPrice) : undefined;
+    const current = loadCartFromStorage();
+    if (current.some((item) => item.id === courseId)) return;
+    current.push({
+      id: courseId,
+      title: course.title,
+      instructor: course.instructor.name,
+      image: course.image,
+      duration: course.duration,
+      students: course.students,
+      rating: course.rating,
+      ratingCount: course.ratingCount,
+      price: priceValue,
+      originalPrice: originalPriceValue,
+      discountPercent:
+        originalPriceValue && originalPriceValue > 0
+          ? Math.round(((originalPriceValue - priceValue) / originalPriceValue) * 100)
+          : undefined,
+      tag: course.categories.find((tag) => tag === "Bán chạy") ?? course.categories[0],
+      selected: false,
+    });
+    saveCartToStorage(current);
+  }, []);
+
+  const persistSelectedCourse = React.useCallback(() => {
+    if (typeof window === "undefined") return;
+    const updated = loadCartFromStorage().map((item) => ({
+      ...item,
+      selected: item.id === courseId,
+    }));
+    saveCartToStorage(updated);
+    window.localStorage.setItem(CART_SELECTED_KEY, JSON.stringify([courseId]));
+  }, []);
+
+  const handleAddToCart = React.useCallback(() => {
+    ensureCourseInCart();
+    navigate("/user/cart");
+  }, [ensureCourseInCart, navigate]);
+
+  const handleOpenPayment = React.useCallback(() => setPaymentOpen(true), []);
+  const handleProceedPayment = React.useCallback(() => {
+    ensureCourseInCart();
+    persistSelectedCourse();
+    setPaymentOpen(false);
+    navigate("/user/cart");
+  }, [ensureCourseInCart, navigate, persistSelectedCourse]);
 
   return (
     <UserLayout>
@@ -224,10 +314,18 @@ const CourseDetail2: React.FC = () => {
               <span className="inline-flex items-center rounded-full bg-[#ffecef] px-3 py-1 text-xs font-semibold uppercase text-[#ff3d71]">
                 {course.discountLabel}
               </span>
-              <button className="w-full rounded-full bg-[#5a2dff] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#3c1cd6]">
+              <button
+                type="button"
+                onClick={handleOpenPayment}
+                className="w-full rounded-full bg-[#5a2dff] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#3c1cd6]"
+              >
                 Đăng ký khóa học
               </button>
-              <button className="w-full rounded-full border border-[#e4e6f1] px-5 py-3 text-sm font-semibold text-gray-700 transition hover:border-[#d6d7e4] hover:bg-[#f7f7fb]">
+              <button
+                type="button"
+                onClick={handleAddToCart}
+                className="w-full rounded-full border border-[#e4e6f1] px-5 py-3 text-sm font-semibold text-gray-700 transition hover:border-[#d6d7e4] hover:bg-[#f7f7fb]"
+              >
                 Thêm vào giỏ hàng
               </button>
               <div className="flex items-center justify-between text-sm text-gray-500">
@@ -263,6 +361,14 @@ const CourseDetail2: React.FC = () => {
           </aside>
         </div>
       </div>
+
+      {isPaymentOpen && (
+        <CheckoutModal
+          course={course}
+          onClose={() => setPaymentOpen(false)}
+          onProceed={handleProceedPayment}
+        />
+      )}
     </UserLayout>
   );
 };
