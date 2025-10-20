@@ -18,6 +18,8 @@ import CourseDetail4 from './modules/user/detailcourse4';
 import CourseDetail5 from './modules/user/detailcourse5';
 import CourseDetail6 from './modules/user/detailcourse6';
 import CheckoutPage from './modules/user/checkout';
+import CourseProgressPage from './modules/user/courseProgress';
+import LessonContentPage from './modules/user/lessonContent';
 
 function App() {
   return (
@@ -44,6 +46,9 @@ function App() {
         <Route path="/courses/:courseId" element={<CourseDetail />} />
         <Route path="/user/profile" element={<MyInfo />} />
         <Route path="/user/security" element={<ChangePasswordPage />} />
+        <Route path="/user/course-progress" element={<CourseProgressPage />} />
+        <Route path="/user/course-progress/:courseId" element={<CourseProgressPage />} />
+        <Route path="/user/course-progress/:courseId/lesson/:lessonId" element={<LessonContentPage />} />
       </Routes>
     </Router>
   );

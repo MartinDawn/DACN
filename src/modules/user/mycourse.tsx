@@ -395,12 +395,11 @@ const MyCourse: React.FC = () => {
                         </div>
                         <div className="flex flex-wrap items-center justify-between gap-3">
                           <div className="flex items-center gap-2">
-                            <button
-                              type="button"
-                              className="rounded-full bg-[#5a2dff] px-4 py-2 text-sm font-semibold text-white shadow-sm shadow-[#5a2dff]/30 transition hover:bg-[#4a21eb]"
-                            >
+                            <Link
+                              to={`/user/course-progress/${course.id}`}
+                              className="rounded-full bg-[#5a2dff] px-4 py-2 text-sm font-semibold text-white shadow-sm shadow-[#5a2dff]/30 transition hover:bg-[#4a21eb]">
                               {primaryLabel}
-                            </button>
+                            </Link>
                             {isCompleted ? (
                               <button
                                 type="button"
