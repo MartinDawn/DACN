@@ -1,5 +1,5 @@
 import React from "react";
-import Navbar from "../components/navbar";
+import Navbar from "../../header/navbar";
 
 interface AvatarLayoutProps {
   children: React.ReactNode;

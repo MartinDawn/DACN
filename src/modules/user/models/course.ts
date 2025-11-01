@@ -94,3 +94,35 @@ export interface ApiResponse<T> {
   message: string;
   data: T;
 }
+export interface CourseSearchItem {
+  id: string;
+  name: string;
+  imageUrl: string;
+  instructorName: string;
+  averageRating: number;
+  totalReviews: number;
+  totalStudents: number;
+  price: number;
+  originalPrice: number | null;
+  totalHours: number;
+  isBestseller: boolean;
+}
+
+/**
+ * Interface cho toàn bộ đối tượng 'data' trả về từ API search
+ */
+export interface CourseSearchResponse {
+  items: CourseSearchItem[];
+  page: number;
+  pageSize: number;
+  totalCount: number;
+  totalPages: number;
+  hasNextPage: boolean;
+  hasPreviousPage: boolean;
+}
+
+export interface SearchParams {
+  searchTerm: string;
+  page: number;
+  pageSize: number;
+}

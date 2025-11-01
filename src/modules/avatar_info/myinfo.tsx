@@ -1,9 +1,21 @@
+// src/components/MyInfo.tsx
+
 import React from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeftIcon, CameraIcon, PencilSquareIcon, CheckIcon } from "@heroicons/react/24/outline";
+import { ArrowLeftIcon, CameraIcon } from "@heroicons/react/24/outline";
 import { FaGithub, FaLinkedinIn, FaTwitter, FaInstagram, FaFacebookF } from "react-icons/fa";
 import AvatarLayout from "./layout/layout";
 import PostCard from "./components/post_card";
+// Thêm Toaster để hiển thị thông báo
+import { Toaster } from "react-hot-toast";
+
+// Import hooks và helpers từ các file bạn đã tạo
+import {
+  useUserProfileData,
+  useUpdateProfile,
+  formatBirthDateToInput,
+} from "./hooks/useUserProfile.ts"; // <-- Cập nhật đường dẫn này
+import { type UserProfile, type UserProfileStats } from "./models/userProfile.model"; // <-- Cập nhật đường dẫn này
 
 const defaultSkills = ["React", "Node.js", "Python", "JavaScript", "TypeScript", "MongoDB"];
 
@@ -27,11 +39,11 @@ type PersonalInfo = {
 };
 
 const socialLinkDefaults: SocialLink[] = [
-  { label: "GitHub", placeholder: "https://github.com/username", value: "https://github.com/username", Icon: FaGithub },
-  { label: "LinkedIn", placeholder: "https://linkedin.com/in/username", value: "https://linkedin.com/in/username", Icon: FaLinkedinIn },
-  { label: "Twitter", placeholder: "https://twitter.com/username", value: "https://twitter.com/username", Icon: FaTwitter },
-  { label: "Instagram", placeholder: "https://instagram.com/username", value: "https://instagram.com/username", Icon: FaInstagram },
-  { label: "Facebook", placeholder: "https://facebook.com/username", value: "https://facebook.com/username", Icon: FaFacebookF },
+  { label: "GitHub", placeholder: "https://github.com/username", value: "", Icon: FaGithub },
+  { label: "LinkedIn", placeholder: "https://linkedin.com/in/username", value: "", Icon: FaLinkedinIn },
+  { label: "Twitter", placeholder: "https://twitter.com/username", value: "", Icon: FaTwitter },
+  { label: "Instagram", placeholder: "https://instagram.com/username", value: "", Icon: FaInstagram },
+  { label: "Facebook", placeholder: "https://facebook.com/username", value: "", Icon: FaFacebookF },
 ];
 
 const personalInfoConfig: Record<"left" | "right", Array<{ key: keyof PersonalInfo; label: string }>> = {
@@ -50,21 +62,21 @@ const personalInfoConfig: Record<"left" | "right", Array<{ key: keyof PersonalIn
   ],
 };
 
+// Giá trị khởi tạo tạm thời khi chờ API
 const initialPersonalInfo: PersonalInfo = {
-  fullName: "username",
-  jobTitle: "Lập trình viên Full-stack",
-  phone: "+84 987 654 321",
-  address: "Hồ Chí Minh, Việt Nam",
-  email: "vnt@gmail.com",
-  company: "FPT Software",
-  birthday: "15/06/1995",
-  gender: "Nam",
-  experience: "",
+  fullName: "Đang tải...",
+  jobTitle: "Đang tải...",
+  phone: "Đang tải...",
+  address: "Đang tải...",
+  email: "Đang tải...",
+  company: "Đang tải...",
+  birthday: "Đang tải...",
+  gender: "Đang tải...",
+  experience: "Đang tải...",
 };
 
-const initialAbout =
-  "Tôi là một học viên đam mê công nghệ, luôn tìm kiếm các cơ hội để nâng cao kiến thức và kỹ năng của mình.";
-const initialWebsite = "https://myportfolio.com";
+const initialAbout = "Đang tải...";
+const initialWebsite = "Đang tải..."; // API của bạn không có trường này, sẽ giữ giá trị này
 
 type ProfileSnapshot = {
   personalInfo: PersonalInfo;
@@ -76,20 +88,67 @@ type ProfileSnapshot = {
 };
 
 const MyInfo: React.FC = () => {
+  // --- STATE TỪ COMPONENT ---
   const [isEditing, setIsEditing] = React.useState(false);
   const [personalInfo, setPersonalInfo] = React.useState<PersonalInfo>(initialPersonalInfo);
   const [about, setAbout] = React.useState(initialAbout);
-  const [website, setWebsite] = React.useState(initialWebsite);
-  const [socialLinks, setSocialLinks] = React.useState<SocialLink[]>(socialLinkDefaults);
-  const [userSkills, setUserSkills] = React.useState<string[]>(defaultSkills);
+  const [website, setWebsite] = React.useState(initialWebsite); // Giữ nguyên state này
+  const [socialLinks, setSocialLinks] = React.useState<SocialLink[]>(socialLinkDefaults); // Giữ nguyên state này
+  const [userSkills, setUserSkills] = React.useState<string[]>(defaultSkills); // Giữ nguyên state này
   const [newSkill, setNewSkill] = React.useState("");
   const [skillError, setSkillError] = React.useState<string | null>(null);
   const [avatarFile, setAvatarFile] = React.useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = React.useState<string | null>(null);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
-  const [isSaving, setIsSaving] = React.useState(false);
   const profileSnapshotRef = React.useRef<ProfileSnapshot | null>(null);
 
+  // --- STATE TỪ API (QUA HOOK) ---
+  const { profileData, isLoading, fetchProfile } = useUserProfileData();
+  const { saveProfile, isSaving } = useUpdateProfile();
+
+  // State riêng cho các thông tin hiển thị ở sidebar (không bị chỉnh sửa trực tiếp)
+  const [username, setUsername] = React.useState("...");
+  const [stats, setStats] = React.useState<UserProfileStats | null>(null);
+  const [memberSinceYear, setMemberSinceYear] = React.useState<number | null>(null);
+  const [location, setLocation] = React.useState("...");
+
+  // --- EFFECT ĐỂ LẤY DỮ LIỆU TỪ API KHI MOUNT ---
+  React.useEffect(() => {
+    fetchProfile();
+  }, [fetchProfile]);
+
+  // --- EFFECT ĐỂ CẬP NHẬT STATE KHI DỮ LIỆU API VỀ ---
+  React.useEffect(() => {
+    if (profileData) {
+      // Map dữ liệu API vào state của component
+      setPersonalInfo({
+        fullName: profileData.fullName || "Chưa cập nhật",
+        jobTitle: profileData.jobPosition || "Chưa cập nhật",
+        phone: profileData.phoneNumber || "Chưa cập nhật",
+        address: profileData.location || "Chưa cập nhật",
+        email: profileData.email || "Chưa cập nhật",
+        company: profileData.organization || "Chưa cập nhật",
+        birthday: formatBirthDateToInput(profileData.birthDate),
+        gender: profileData.gender || "Chưa cập nhật",
+        experience: profileData.experience || "Chưa cập nhật",
+      });
+      setAbout(profileData.description || "Chưa cập nhật");
+      setAvatarPreview(profileData.avatarUrl || null);
+
+      // Cập nhật state sidebar
+      setUsername(profileData.username);
+      setStats(profileData.stats);
+      setMemberSinceYear(profileData.memberSinceYear);
+      setLocation(profileData.location || "Chưa cập nhật");
+
+      // Các trường này không có trong API, giữ giá trị default
+      // setWebsite(profileData.website || initialWebsite);
+      // setUserSkills(profileData.skills || defaultSkills);
+      // setSocialLinks(profileData.socialLinks || socialLinkDefaults);
+    }
+  }, [profileData]);
+
+  // --- LOGIC CŨ (GIỮ NGUYÊN) ---
   const handlePersonalInfoChange = (key: keyof PersonalInfo, value: string) => {
     setPersonalInfo((prev) => ({ ...prev, [key]: value }));
   };
@@ -146,39 +205,13 @@ const MyInfo: React.FC = () => {
     });
   };
 
-  const uploadAvatar = React.useCallback(async (): Promise<boolean> => {
-    if (!avatarFile) return true;
-
-    const formData = new FormData();
-    formData.append("avatar", avatarFile);
-
-    try {
-      const response = await fetch("/api/profile/avatar", {
-        method: "POST",
-        body: formData,
-      });
-
-      if (!response.ok) throw new Error("Avatar upload failed");
-
-      const { avatarUrl } = await response.json();
-
-      setAvatarPreview((prev) => {
-        if (prev?.startsWith("blob:")) URL.revokeObjectURL(prev);
-        return avatarUrl;
-      });
-
-      return true;
-    } catch (error) {
-      console.error("Avatar upload failed", error);
-      return false;
-    } finally {
-      setAvatarFile(null);
-    }
-  }, [avatarFile]);
+  // --- LOGIC MỚI (ĐÃ THAY ĐỔI) ---
+  // Xóa hàm `uploadAvatar` (đã chuyển vào hook)
 
   const handleToggleEdit = async () => {
     if (isSaving) return;
     if (!isEditing) {
+      // Bật chế độ chỉnh sửa
       profileSnapshotRef.current = {
         personalInfo: { ...personalInfo },
         about,
@@ -190,28 +223,55 @@ const MyInfo: React.FC = () => {
       setIsEditing(true);
       return;
     }
-    try {
-      setIsSaving(true);
-      const avatarUploaded = await uploadAvatar();
-      if (!avatarUploaded) {
-        console.warn("Không thể tải ảnh đại diện lên máy chủ.");
+
+    // Tắt chế độ chỉnh sửa (LƯU)
+    // Gom lại state hiện tại để gửi đi
+    const currentState = {
+      personalInfo,
+      about,
+      website,
+      // socialLinks, // API của bạn chưa có, nên hook không xử lý
+      skills: userSkills, // API của bạn chưa có, nên hook không xử lý
+    };
+
+    // Gọi hook để lưu
+    const result = await saveProfile(currentState, avatarFile);
+
+    if (result.success) {
+      // Cập nhật state với dữ liệu mới từ server (nếu có)
+      if (result.newProfile) {
+        // Map dữ liệu API trả về (UserProfile) sang state (PersonalInfo)
+        setPersonalInfo({
+          ...personalInfo, // Giữ lại email (không đổi)
+          fullName: result.newProfile.fullName,
+          jobTitle: result.newProfile.jobPosition,
+          phone: result.newProfile.phoneNumber,
+          address: result.newProfile.location,
+          company: result.newProfile.organization,
+          birthday: formatBirthDateToInput(result.newProfile.birthDate),
+          gender: result.newProfile.gender,
+          experience: result.newProfile.experience,
+        });
+        setAbout(result.newProfile.description);
+        // Cập nhật luôn sidebar
+        setLocation(result.newProfile.location);
       }
-      console.log("Saved profile", {
-        personalInfo,
-        about,
-        website,
-        socialLinks,
-        skills: userSkills,
-      });
+      // Cập nhật avatar
+      if (result.newAvatarUrl) {
+        setAvatarPreview(result.newAvatarUrl);
+      } else if (avatarFile && avatarPreview?.startsWith("blob:")) {
+        // Nếu upload thất bại nhưng vẫn lưu, quay lại avatar cũ
+        setAvatarPreview(profileSnapshotRef.current?.avatarPreview || null);
+      }
+
+      // Reset
       profileSnapshotRef.current = null;
       setIsEditing(false);
+      setAvatarFile(null);
       setNewSkill("");
       setSkillError(null);
-    } catch (error) {
-      console.error("Failed to save profile", error);
-    } finally {
-      setIsSaving(false);
     }
+    // Lỗi đã được xử lý bằng toast trong hook
   };
 
   React.useEffect(
@@ -221,8 +281,22 @@ const MyInfo: React.FC = () => {
     [avatarPreview]
   );
 
+  // Hiển thị loading
+  if (isLoading) {
+    return (
+      <AvatarLayout>
+        <div className="flex h-96 items-center justify-center">
+          <p className="text-lg font-semibold text-[#5a2dff]">Đang tải thông tin...</p>
+        </div>
+      </AvatarLayout>
+    );
+  }
+
   return (
     <AvatarLayout>
+      {/* Thêm Toaster để nhận thông báo từ hook */}
+      <Toaster position="top-right" reverseOrder={false} />
+
       <div className="mb-6 flex items-center justify-between gap-4">
         <Link
           to="/user/home"
@@ -280,55 +354,70 @@ const MyInfo: React.FC = () => {
                 <CameraIcon className="h-4 w-4" />
               </button>
             </div>
-            <h2 className="text-lg font-bold text-gray-900">username</h2>
-            <p className="text-sm font-medium text-[#5a2dff]">Lập trình viên Full-stack</p>
-            <p className="mt-2 text-xs font-semibold uppercase tracking-wide text-gray-400">FPT Software</p>
+            {/* Dữ liệu từ API */}
+            <h2 className="text-lg font-bold text-gray-900">{username}</h2>
+            {/* Dữ liệu từ state (đã được API map) */}
+            <p className="text-sm font-medium text-[#5a2dff]">{personalInfo.jobTitle}</p>
+            <p className="mt-2 text-xs font-semibold uppercase tracking-wide text-gray-400">
+              {personalInfo.company}
+            </p>
             <div className="mt-4 space-y-2 text-sm text-gray-500">
               <div className="flex items-center justify-center gap-2">
-                <span>📍</span> Hồ Chí Minh, Việt Nam
+                {/* Dữ liệu từ API */}
+                <span>📍</span> {location}
               </div>
               <div className="flex items-center justify-center gap-2">
-                <span>🗓</span> Thành viên từ 2025
+                {/* Dữ liệu từ API */}
+                <span>🗓</span> Thành viên từ {memberSinceYear || "..."}
               </div>
             </div>
-            {/* <div className="mt-5 flex items-center justify-center gap-3 text-lg text-gray-500">
-              <span>💬</span>
-              <span>💼</span>
-              <span>🔗</span>
-            </div> */}
           </section>
 
           <section className="rounded-3xl bg-white p-6 shadow-md">
-            <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-500">Thống kê học tập</h3>
-            <div className="mt-4">
-              <div className="flex items-center justify-between text-sm font-medium text-gray-700">
-                <span>Tiến độ hoàn thành</span>
-                <span>67%</span>
-              </div>
-              <div className="mt-2 h-2 w-full rounded-full bg-gray-200">
-                <div className="h-full w-[67%] rounded-full bg-[#5a2dff]" />
-              </div>
-            </div>
-            <div className="mt-5 grid grid-cols-2 gap-3 text-center text-sm font-semibold text-gray-700">
-              <div className="rounded-2xl bg-[#5a2dff]/5 p-3">
-                <p className="text-2xl font-bold text-[#5a2dff]">156</p>
-                <p className="text-xs uppercase text-gray-500">Giờ học</p>
-              </div>
-              <div className="rounded-2xl bg-[#5a2dff]/5 p-3">
-                <p className="text-2xl font-bold text-[#5a2dff]">6</p>
-                <p className="text-xs uppercase text-gray-500">Chứng chỉ</p>
-              </div>
-            </div>
-            <div className="mt-5 space-y-3 text-sm text-gray-600">
-              <div className="flex items-center justify-between rounded-2xl border border-gray-200 px-4 py-3">
-                <span>🔥 Streak hiện tại</span>
-                <span className="font-semibold text-gray-900">15 ngày</span>
-              </div>
-              <div className="flex items-center justify-between rounded-2xl border border-gray-200 px-4 py-3">
-                <span>⭐ Đánh giá TB</span>
-                <span className="font-semibold text-gray-900">4.7/5.0</span>
-              </div>
-            </div>
+            <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-500">
+              Thống kê học tập
+            </h3>
+            {/* Dữ liệu từ API */}
+            {stats ? (
+              <>
+                <div className="mt-4">
+                  <div className="flex items-center justify-between text-sm font-medium text-gray-700">
+                    <span>Tiến độ hoàn thành</span>
+                    <span>{stats.completionProgress}%</span>
+                  </div>
+                  <div className="mt-2 h-2 w-full rounded-full bg-gray-200">
+                    <div
+                      className="h-full rounded-full bg-[#5a2dff]"
+                      style={{ width: `${stats.completionProgress}%` }}
+                    />
+                  </div>
+                </div>
+                <div className="mt-5 grid grid-cols-2 gap-3 text-center text-sm font-semibold text-gray-700">
+                  <div className="rounded-2xl bg-[#5a2dff]/5 p-3">
+                    <p className="text-2xl font-bold text-[#5a2dff]">{stats.totalHours}</p>
+                    <p className="text-xs uppercase text-gray-500">Giờ học</p>
+                  </div>
+                  <div className="rounded-2xl bg-[#5a2dff]/5 p-3">
+                    <p className="text-2xl font-bold text-[#5a2dff]">{stats.totalCertificates}</p>
+                    <p className="text-xs uppercase text-gray-500">Chứng chỉ</p>
+                  </div>
+                </div>
+                <div className="mt-5 space-y-3 text-sm text-gray-600">
+                  <div className="flex items-center justify-between rounded-2xl border border-gray-200 px-4 py-3">
+                    <span>🔥 Streak hiện tại</span>
+                    <span className="font-semibold text-gray-900">{stats.currentStreak} ngày</span>
+                  </div>
+                  <div className="flex items-center justify-between rounded-2xl border border-gray-200 px-4 py-3">
+                    <span>⭐ Đánh giá TB</span>
+                    <span className="font-semibold text-gray-900">
+                      {stats.averageGivenRating.toFixed(1)}/5.0
+                    </span>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <p className="mt-4 text-sm text-gray-500">Chưa có thống kê.</p>
+            )}
             <Link
               to="/user/mycourses"
               className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#5a2dff] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#4a21eb]"
@@ -356,9 +445,11 @@ const MyInfo: React.FC = () => {
               <button
                 type="button"
                 onClick={handleToggleEdit}
-                disabled={isSaving}
+                disabled={isSaving} // Lấy từ hook
                 className={`inline-flex items-center gap-2 rounded-full border border-[#5a2dff] px-5 py-2 text-sm font-semibold transition ${
-                  isEditing ? "bg-[#5a2dff] text-white hover:bg-[#4a21eb]" : "bg-white text-[#5a2dff] hover:bg-[#efe7ff]"
+                  isEditing
+                    ? "bg-[#5a2dff] text-white hover:bg-[#4a21eb]"
+                    : "bg-white text-[#5a2dff] hover:bg-[#efe7ff]"
                 } ${isSaving ? "cursor-not-allowed opacity-70" : ""}`}
               >
                 {isSaving ? "Đang lưu..." : isEditing ? "Lưu thay đổi" : "Chỉnh sửa"}
@@ -383,19 +474,21 @@ const MyInfo: React.FC = () => {
               <div className="space-y-4">
                 {personalInfoConfig.left.map(({ key, label }) => {
                   const value = personalInfo[key];
-                  const isEmpty = !value.trim();
+                  const isEmpty = !value || value === "Chưa cập nhật";
                   return (
                     <label key={key} className="block space-y-1">
                       <span className="text-xs font-semibold uppercase text-gray-400">{label}</span>
                       <input
                         value={value}
                         onChange={(event) => handlePersonalInfoChange(key, event.target.value)}
-                        disabled={!isEditing}
+                        disabled={!isEditing || key === "email"} // Không cho sửa email
                         placeholder="Chưa cập nhật"
                         className={`h-11 w-full rounded-2xl border px-4 text-sm font-semibold outline-none transition ${
-                          isEditing
+                          isEditing && key !== "email"
                             ? "border-[#d6d7e4] bg-white text-gray-900 focus:border-[#5a2dff] focus:shadow-[0_0_0_1px_rgba(98,70,234,0.12)]"
-                            : `border-transparent bg-[#f7f7fb] ${isEmpty ? "text-gray-400" : "text-gray-900"}`
+                            : `border-transparent bg-[#f7f7fb] ${
+                                isEmpty ? "text-gray-400" : "text-gray-900"
+                              } ${key === "email" ? "cursor-not-allowed text-gray-500" : ""}`
                         }`}
                       />
                     </label>
@@ -405,19 +498,21 @@ const MyInfo: React.FC = () => {
               <div className="space-y-4">
                 {personalInfoConfig.right.map(({ key, label }) => {
                   const value = personalInfo[key];
-                  const isEmpty = !value.trim();
+                  const isEmpty = !value || value === "Chưa cập nhật";
                   return (
                     <label key={key} className="block space-y-1">
                       <span className="text-xs font-semibold uppercase text-gray-400">{label}</span>
                       <input
                         value={value}
                         onChange={(event) => handlePersonalInfoChange(key, event.target.value)}
-                        disabled={!isEditing}
+                        disabled={!isEditing || key === "email"}
                         placeholder="Chưa cập nhật"
                         className={`h-11 w-full rounded-2xl border px-4 text-sm font-semibold outline-none transition ${
-                          isEditing
+                          isEditing && key !== "email"
                             ? "border-[#d6d7e4] bg-white text-gray-900 focus:border-[#5a2dff] focus:shadow-[0_0_0_1px_rgba(98,70,234,0.12)]"
-                            : `border-transparent bg-[#f7f7fb] ${isEmpty ? "text-gray-400" : "text-gray-900"}`
+                            : `border-transparent bg-[#f7f7fb] ${
+                                isEmpty ? "text-gray-400" : "text-gray-900"
+                              } ${key === "email" ? "cursor-not-allowed text-gray-500" : ""}`
                         }`}
                       />
                     </label>
@@ -427,7 +522,9 @@ const MyInfo: React.FC = () => {
             </div>
             <div className="mt-6 space-y-4">
               <label className="block space-y-1">
-                <span className="text-xs font-semibold uppercase text-gray-400">Giới thiệu bản thân</span>
+                <span className="text-xs font-semibold uppercase text-gray-400">
+                  Giới thiệu bản thân
+                </span>
                 <textarea
                   value={about}
                   onChange={(event) => setAbout(event.target.value)}
@@ -525,6 +622,8 @@ const MyInfo: React.FC = () => {
                 onClick={() => {
                   if (!isEditing) return;
                   console.log("Saved links", socialLinks);
+                  // API của bạn chưa có endpoint cho social links
+                  // Khi có, bạn sẽ gọi một hook mutation tương tự ở đây
                 }}
                 disabled={!isEditing}
               >
