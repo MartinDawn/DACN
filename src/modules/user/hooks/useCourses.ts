@@ -1,97 +1,97 @@
 // src/hooks/useCourses.ts
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react'; // 1. Thêm useCallback
 import type { RecommendedCourse, CourseDetail, CourseComment } from '../models/course';
 import { courseService } from '../services/course.service';
 
 export const useCourses = () => {
+  // --- Các state không thay đổi ---
   const [recommendedCourses, setRecommendedCourses] = useState<RecommendedCourse[]>([]);
   const [courseDetail, setCourseDetail] = useState<CourseDetail | null>(null);
   const [courseComments, setCourseComments] = useState<CourseComment[]>([]);
   const [isRecommendedLoading, setIsRecommendedLoading] = useState(false);
-  const [isCourseDetailLoading, setIsCourseDetailLoading] = useState(false);
+  const [isDetailLoading, setIsDetailLoading] = useState(false);
   const [isCommentsLoading, setIsCommentsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [detailError, setDetailError] = useState<string | null>(null);
   const [commentsError, setCommentsError] = useState<string | null>(null);
 
-  const fetchRecommendedCourses = async () => {
-    try {
-      setIsRecommendedLoading(true);
-      setError(null); // Reset lỗi trước khi gọi API
-      const response = await courseService.getRecommendedCourses();
-      if (response.success) {
-        setRecommendedCourses(response.data);
-      } else {
-        setError(response.message || 'Không thể tải khóa học đề xuất');
-      }
-    } catch (err) {
-      setError('Không thể tải khóa học đề xuất. Vui lòng thử lại.');
-      console.error(err);
-    } finally {
-      setIsRecommendedLoading(false);
-    }
-  };
-
+  // --- Logic fetch recommended courses không thay đổi ---
   useEffect(() => {
+    const fetchRecommendedCourses = async () => {
+      setIsRecommendedLoading(true);
+      try {
+        const response = await courseService.getRecommendedCourses();
+        if (response.success) {
+          setRecommendedCourses(response.data);
+        }
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setIsRecommendedLoading(false);
+      }
+    };
     fetchRecommendedCourses();
   }, []);
 
-  const getCourseDetail = async (courseId: string) => {
+  // 2. Bọc các hàm gọi API bằng useCallback để ổn định chúng
+  const getCourseDetail = useCallback(async (courseId: string) => {
     if (!courseId) return;
     
+    setIsDetailLoading(true);
+    setDetailError(null);
     try {
-      if (!isCourseDetailLoading) {
-        setIsCourseDetailLoading(true);
-        setError(null);
-      }
-      
       const response = await courseService.getCourseDetail(courseId);
       if (response.success) {
-        setCourseDetail(prevDetail => {
-          if (JSON.stringify(prevDetail) !== JSON.stringify(response.data)) {
-            return response.data;
-          }
-          return prevDetail;
-        });
+        // Đơn giản hóa logic, React sẽ tự xử lý việc có render lại hay không
+        setCourseDetail(response.data);
+      } else {
+        setDetailError(response.message || 'Không thể tải thông tin khóa học');
       }
-      return response.data;
     } catch (err) {
-      setError('Không thể tải thông tin khóa học');
-      throw err;
+      setDetailError('Không thể tải thông tin khóa học');
+      throw err; // Ném lỗi ra để component có thể bắt
     } finally {
-      setIsCourseDetailLoading(false);
+      setIsDetailLoading(false);
     }
-  };
+  }, []); // Mảng dependency rỗng vì hàm này không phụ thuộc vào state nào
 
-  const getCourseComments = async (courseId: string) => {
+  const getCourseComments = useCallback(async (courseId: string) => {
     if (!courseId) return;
     
+    setIsCommentsLoading(true);
+    setCommentsError(null);
     try {
-      setIsCommentsLoading(true);
-      setCommentsError(null);
-      
       const response = await courseService.getCourseComments(courseId);
       if (response.success) {
         setCourseComments(response.data);
+      } else {
+        setCommentsError(response.message || 'Không thể tải bình luận');
       }
-      return response;
     } catch (err) {
       setCommentsError('Không thể tải bình luận');
       throw err;
     } finally {
       setIsCommentsLoading(false);
     }
-  };
+  }, []); // Mảng dependency rỗng
 
+  // 3. Trả về các trạng thái một cách rõ ràng và riêng biệt
   return { 
+    // Dữ liệu
     recommendedCourses, 
     courseDetail,
     courseComments,
-    // Thay đổi duy nhất ở đây: trả về đúng trạng thái loading
-    loading: isRecommendedLoading, 
-    commentsLoading: isCommentsLoading,
-    error,
+    
+    // Các trạng thái loading
+    isRecommendedLoading,
+    isDetailLoading, 
+    isCommentsLoading,
+    
+    // Các trạng thái lỗi
+    detailError,
     commentsError,
+    
+    // Các hàm để gọi
     getCourseDetail,
     getCourseComments
   };

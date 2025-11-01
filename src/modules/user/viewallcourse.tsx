@@ -2,28 +2,23 @@ import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { ArrowLeftIcon } from "@heroicons/react/24/outline";
 import UserLayout from "./layout/layout";
-import PostCard from "./components/post_card2"; // Giả sử post_card2 tương thích
-import { useCoursesFilter } from "./hooks/useCoursesFilter"; // Import hook mới
+import PostCard from "./components/post_card2";
+import { useCoursesFilter } from "./hooks/useCoursesFilter";
 import type { FilterParams } from './models/course';
 
-// Định nghĩa kiểu sắp xếp khớp với API và UI
 type SortOption = "popularity" | "rating" | "newest" | "priceasc" | "pricedesc";
 
-const priceLimit = 5_000_000; // Tăng giới hạn giá
+const priceLimit = 5_000_000;
 const currencyFormatter = new Intl.NumberFormat("vi-VN");
 
 const ViewAllCourse: React.FC = () => {
-  // State quản lý các giá trị của bộ lọc
   const [selectedTagId, setSelectedTagId] = useState<string>("all");
   const [maxPrice, setMaxPrice] = useState<number>(priceLimit);
   const [sortOption, setSortOption] = useState<SortOption>("popularity");
-  // Các state khác chưa được API hỗ trợ, tạm thời giữ lại cho UI
-  // const [selectedLevel, setSelectedLevel] = React.useState<LevelFilter>("all");
-  // const [onlyOnSale, setOnlyOnSale] = React.useState(false);
 
-  // Sử dụng hook mới để lấy dữ liệu
   const {
     courses,
+    pagination,
     coursesLoading,
     coursesError,
     tags,
@@ -32,22 +27,19 @@ const ViewAllCourse: React.FC = () => {
     fetchFilteredCourses,
   } = useCoursesFilter();
   
-  // Effect để gọi lại API mỗi khi bộ lọc thay đổi
   useEffect(() => {
     const params: FilterParams = {
       SortBy: sortOption,
       TagId: selectedTagId === "all" ? undefined : selectedTagId,
       MinPrice: 0,
-      MaxPrice: maxPrice === priceLimit ? undefined : maxPrice, // Nếu là max thì không cần gửi
+      MaxPrice: maxPrice === priceLimit ? undefined : maxPrice,
       Page: 1,
-      PageSize: 20, // Lấy 20 khóa học mỗi lần
+      PageSize: 20,
     };
     
-    // Gọi hàm fetch từ hook
     fetchFilteredCourses(params);
 
   }, [selectedTagId, maxPrice, sortOption, fetchFilteredCourses]);
-
 
   const resetFilters = () => {
     setSelectedTagId("all");
@@ -69,6 +61,7 @@ const ViewAllCourse: React.FC = () => {
         </Link>
 
         <div className="grid gap-10 lg:grid-cols-[280px,1fr]">
+          {/* SỬA LẠI TOÀN BỘ KHỐI ASIDE NÀY */}
           <aside className="space-y-10 rounded-[32px] bg-white p-8 shadow-[0_16px_40px_rgba(15,23,42,0.08)] lg:sticky lg:top-28 lg:self-start">
             <div className="space-y-5">
               <div className="flex items-center justify-between">
@@ -84,7 +77,6 @@ const ViewAllCourse: React.FC = () => {
               <div className="space-y-1.5">
                 <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">Danh mục</p>
                 <div className="space-y-2">
-                  {/* Nút "Tất cả" */}
                   <button
                     type="button"
                     onClick={() => setSelectedTagId("all")}
@@ -96,8 +88,11 @@ const ViewAllCourse: React.FC = () => {
                   >
                     Tất cả
                   </button>
-                  {/* Render tags từ API */}
-                  {tagsLoading ? <p>Đang tải...</p> : tagsError ? <p className="text-red-500">{tagsError}</p> :
+                  {tagsLoading ? (
+                    <p className="p-2 text-sm text-gray-400">Đang tải...</p>
+                  ) : tagsError ? (
+                    <p className="p-2 text-sm text-red-500">{tagsError}</p>
+                  ) : (
                     tags.map((tag) => (
                       <button
                         key={tag.id}
@@ -111,12 +106,11 @@ const ViewAllCourse: React.FC = () => {
                       >
                         {tag.name}
                       </button>
-                    ))}
+                    ))
+                  )}
                 </div>
               </div>
             </div>
-
-            {/* ... Các bộ lọc khác như Cấp độ, Bộ lọc nâng cao có thể giữ lại nhưng sẽ không ảnh hưởng đến API ... */}
 
             <div className="space-y-4">
               <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">Khoảng giá</p>
@@ -139,7 +133,9 @@ const ViewAllCourse: React.FC = () => {
             <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
               <div>
                 <h1 className="text-3xl font-bold text-gray-900">Tất cả khóa học</h1>
-                <p className="text-sm text-gray-500">{courses.length} khóa học được tìm thấy</p>
+                <p className="text-sm text-gray-500">
+                  {pagination?.totalCount ?? 0} khóa học được tìm thấy
+                </p>
               </div>
               <div className="relative w-full sm:w-56">
                 <select
@@ -169,16 +165,15 @@ const ViewAllCourse: React.FC = () => {
                     href={`/courses/${course.id}`}
                     title={course.name}
                     instructor={course.instructorName}
-                    rating={course.rating}
+                    rating={course.averageRating} 
                     price={`${course.price.toLocaleString()}đ`}
                     image={course.imageUrl}
-                    // Các props khác của PostCard2 mà API không có, có thể bỏ trống hoặc dùng giá trị mặc định
+                    students={`${course.totalStudents} học viên`}
+                    duration={`${course.totalHours} giờ`}
+                    originalPrice={course.originalPrice ? `${course.originalPrice.toLocaleString()}đ` : ""}
+                    ratingCount={`${course.totalReviews}`}
                     description=""
-                    ratingCount=""
-                    students=""
-                    duration=""
-                    originalPrice=""
-                    badges={[]}
+                    badges={course.isBestseller ? ["Bán chạy"] : []}
                   />
                 ))}
               </div>

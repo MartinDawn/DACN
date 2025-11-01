@@ -1,11 +1,11 @@
-export interface MyCourse {
-  id: string;
-  imageUrl: string;
-  name: string;
-  instructorName: string;
-  rating: number;
-  price: number;
-}
+// export interface MyCourse {
+//   id: string;
+//   imageUrl: string;
+//   name: string;
+//   instructorName: string;
+//   rating: number;
+//   price: number;
+// }
 
 export interface RecommendedCourse {
   id: string;
@@ -59,8 +59,23 @@ export interface MyCourse {
   imageUrl: string;
   name: string;
   instructorName: string;
-  rating: number;
+  // Sửa 'rating' thành 'averageRating' để khớp với API mới
+  averageRating: number; 
+  totalReviews: number;
   price: number;
+  originalPrice?: number | null;
+  totalHours: number;
+  totalStudents: number;
+  isBestseller: boolean;
+}
+export interface PaginatedCourses {
+  items: MyCourse[];
+  page: number;
+  pageSize: number;
+  totalCount: number;
+  totalPages: number;
+  hasNextPage: boolean;
+  hasPreviousPage: boolean;
 }
 
 export interface FilterParams {

@@ -2,8 +2,8 @@
 
 import axios from 'axios';
 // Giả sử ApiResponse được định nghĩa trong course.model.ts
-import type { ApiResponse } from '../models/course.model'; 
-import type { Cart } from '../models/cart.model';
+import type { ApiResponse } from '../models/course.ts'; 
+import type { Cart } from '../models/cart.ts';
 
 const API_URL = 'http://dacn.runasp.net/api';
 
@@ -15,7 +15,7 @@ const axiosInstance = axios.create({
   }
 });
 
-// Interceptor để thêm token vào mỗi request (rất quan trọng)
+// Interceptor để thêm token vào mỗi request 
 axiosInstance.interceptors.request.use((config) => {
   const userDataString = localStorage.getItem('user_data');
   if (userDataString) {
@@ -33,6 +33,19 @@ export const cartService = {
   async getCartItems(): Promise<ApiResponse<Cart>> {
     const response = await axiosInstance.get<ApiResponse<Cart>>(
       `${API_URL}/Cart/cart-items`
+    );
+    return response.data;
+  },
+  async addCourseToCart(courseId: string): Promise<ApiResponse<any>> {
+    const response = await axiosInstance.post<ApiResponse<any>>(
+      `${API_URL}/Cart/add-course`,
+      { courseId } // Body của request
+    );
+    return response.data;
+  },
+  async removeCourseFromCart(courseId: string): Promise<ApiResponse<any>> {
+    const response = await axiosInstance.delete<ApiResponse<any>>(
+      `${API_URL}/Cart/remove-course/${courseId}`
     );
     return response.data;
   }

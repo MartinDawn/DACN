@@ -1,7 +1,7 @@
 // src/services/course.service.ts
 
 import axios from 'axios';
-import type { ApiResponse, RecommendedCourse, CourseDetail, MyCourse, CourseComment, FilterParams, } from '../models/course';
+import type { ApiResponse, RecommendedCourse, CourseDetail, MyCourse, CourseComment, FilterParams, PaginatedCourses, } from '../models/course';
 import type { Tag } from '../models/tag.ts';
 
 const API_URL = 'http://dacn.runasp.net/api';
@@ -59,8 +59,8 @@ export const courseService = {
     );
     return response.data;
   },
-  async getFilteredCourses(params: FilterParams): Promise<ApiResponse<MyCourse[]>> {
-    const response = await axiosInstance.get<ApiResponse<MyCourse[]>>(
+  async getFilteredCourses(params: FilterParams): Promise<ApiResponse<PaginatedCourses>> {
+    const response = await axiosInstance.get<ApiResponse<PaginatedCourses>>(
       `${API_URL}/Course/filtered-courses`,
       { params } 
     );

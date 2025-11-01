@@ -2,28 +2,33 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { courseService } from '../services/course.service';
-import type { MyCourse, FilterParams } from '../models/course';
+// Import thêm PaginatedCourses
+import type { MyCourse, FilterParams, PaginatedCourses } from '../models/course';
 import type { Tag } from '../models/tag.ts';
 
 export const useCoursesFilter = () => {
-  // State cho danh sách khóa học
   const [courses, setCourses] = useState<MyCourse[]>([]);
+  // Thêm state để lưu thông tin phân trang (tùy chọn nhưng nên có)
+  const [pagination, setPagination] = useState<Omit<PaginatedCourses, 'items'> | null>(null);
+  
   const [coursesLoading, setCoursesLoading] = useState(true);
   const [coursesError, setCoursesError] = useState<string | null>(null);
-
-  // State cho danh sách tags
   const [tags, setTags] = useState<Tag[]>([]);
   const [tagsLoading, setTagsLoading] = useState(true);
   const [tagsError, setTagsError] = useState<string | null>(null);
 
-  // Hàm gọi API để lấy khóa học theo bộ lọc
   const fetchFilteredCourses = useCallback(async (params: FilterParams) => {
     setCoursesLoading(true);
     setCoursesError(null);
     try {
       const response = await courseService.getFilteredCourses(params);
       if (response.success) {
-        setCourses(response.data);
+        // SỬA Ở ĐÂY: Lấy mảng 'items' từ trong 'data'
+        setCourses(response.data.items); 
+        
+        // Tách và lưu thông tin phân trang
+        const { items, ...paginationInfo } = response.data;
+        setPagination(paginationInfo);
       } else {
         setCoursesError(response.message || 'Không thể tải khóa học.');
       }
@@ -34,7 +39,6 @@ export const useCoursesFilter = () => {
     }
   }, []);
 
-  // Lấy danh sách tags khi hook được sử dụng lần đầu
   useEffect(() => {
     const fetchTags = async () => {
       setTagsLoading(true);
@@ -57,6 +61,7 @@ export const useCoursesFilter = () => {
 
   return {
     courses,
+    pagination, // Trả về thông tin phân trang để UI có thể sử dụng sau này
     coursesLoading,
     coursesError,
     tags,

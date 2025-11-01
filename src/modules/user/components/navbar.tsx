@@ -9,13 +9,13 @@ import {
   KeyIcon,
   ArrowLeftOnRectangleIcon,
 } from "@heroicons/react/24/outline";
-
+import { useCart } from "../hooks/useCart";
 const Navbar: React.FC = () => {
   const [isProfileOpen, setProfileOpen] = useState(false);
   const profileMenuRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const [isLogoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
-
+  const { cart } = useCart();
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (profileMenuRef.current && !profileMenuRef.current.contains(event.target as Node)) {
@@ -80,9 +80,11 @@ const Navbar: React.FC = () => {
             className="relative rounded-full border border-gray-200 p-2 text-gray-500 transition hover:text-[#5a2dff]"
           >
             <ShoppingCartIcon className="h-5 w-5" />
-            <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-[#5a2dff] text-xs font-semibold text-white">
-              3
-            </span>
+            {cart && cart.totalItems > 0 && (
+              <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-[#5a2dff] text-xs font-semibold text-white">
+                {cart.totalItems}
+              </span>
+            )}
           </Link>
           <Link
             to="/user/notifications"
