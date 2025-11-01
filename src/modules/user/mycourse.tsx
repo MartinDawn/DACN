@@ -31,6 +31,7 @@ type CourseProgress = MyCourseModel & {
   lastActivity: string;
 };
 
+// ... các hằng số khác giữ nguyên ...
 const filters: { label: string; value: FilterValue }[] = [
   { label: "All Courses", value: "all" },
   { label: "In Progress", value: "inProgress" },
@@ -157,6 +158,7 @@ const MyCourse: React.FC = () => {
     []
   );
 
+  // ... các hàm tính toán `useMemo` khác giữ nguyên ...
   const totalHours = React.useMemo(
     () =>
       Math.round(
@@ -180,6 +182,7 @@ const MyCourse: React.FC = () => {
     myCourses.reduce((sum: number, course) => sum + course.progress, 0) / (myCourses.length || 1)
   );
 
+  // THAY ĐỔI 2: Tạm thời vô hiệu hóa bộ lọc và tìm kiếm
   const visibleCourses = React.useMemo(() => {
     const normalizedSearch = searchTerm.trim().toLowerCase();
     return myCourses.filter((course) => {
@@ -197,9 +200,10 @@ const MyCourse: React.FC = () => {
     });
   }, [activeFilter, searchTerm, myCourses]);
 
+  // Phần Giao diện (JSX) bên dưới không cần thay đổi
   return (
     <UserLayout>
-      <div className="space-y-8">
+       <div className="space-y-8">
         <Link
           to="/user/home"
           className="inline-flex items-center gap-2 text-sm font-semibold text-[#5a2dff] transition hover:text-[#3c1cd6]"
@@ -431,7 +435,7 @@ const MyCourse: React.FC = () => {
                 })}
               {!visibleCourses.length && (
                 <div className="rounded-3xl border border-dashed border-gray-200 bg-white p-12 text-center text-sm font-semibold text-gray-500">
-                  Không có khóa học nào khớp với bộ lọc hiện tại.
+                  Bạn chưa đăng ký khóa học nào.
                 </div>
               )}
             </div>
@@ -495,7 +499,6 @@ const MyCourse: React.FC = () => {
                   </Link>
                 ))}
               </div>
-            </div>
 
             <div className="rounded-3xl bg-white p-6 shadow-[0_24px_56px_rgba(15,23,42,0.08)]">
               <h3 className="text-lg font-semibold text-gray-900">
@@ -515,7 +518,6 @@ const MyCourse: React.FC = () => {
                 ))}
               </ul>
             </div>
-          </div>
           </aside>
         </div>
       </div>
