@@ -2,7 +2,7 @@
 
 import axios from 'axios';
 // Giả sử ApiResponse được định nghĩa trong course.model.ts
-import type { ApiResponse } from '../models/course.ts'; 
+import type { ApiResponse } from '../../course/models/course.ts'; 
 import type { Cart } from '../models/cart.ts';
 
 const API_URL = 'http://dacn.runasp.net/api';

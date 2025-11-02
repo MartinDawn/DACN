@@ -5,17 +5,17 @@ import ForgetPasswordPage from './modules/auth/forgetpw';
 import Homepage from './modules/homepage/home';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import UserHome from './modules/user/home';
-import ViewAllCourse from './modules/user/viewallcourse';
-import MyCourse  from './modules/user/mycourse';
+import ViewAllCourse from './modules/course/filter_course';
+import MyCourse  from './modules/course/mycourse';
 import MyCart from './modules/user/mycart';
 import NotificationPage from './modules/header/notification'; 
 import MyInfo from './modules/avatar_info/myinfo'; 
 import ChangePasswordPage from './modules/avatar_info/changepw';
-import CourseDetail from './modules/user/detailcourse';
+import CourseDetail from './modules/course/detailcourse';
 import CheckoutPage from './modules/user/checkout';
 import CourseProgressPage from './modules/user/courseProgress';
 import LessonContentPage from './modules/user/lessonContent';
-
+import SearchPage from './modules/course/searchCoursePage';
 function App() {
   return (
     <Router>
@@ -39,6 +39,7 @@ function App() {
         <Route path="/user/course-progress" element={<CourseProgressPage />} />
         <Route path="/user/course-progress/:courseId" element={<CourseProgressPage />} />
         <Route path="/user/course-progress/:courseId/lesson/:lessonId" element={<LessonContentPage />} />
+        <Route path="/search" element={<SearchPage />} />
       </Routes>
     </Router>
   );

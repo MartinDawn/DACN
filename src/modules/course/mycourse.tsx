@@ -11,8 +11,8 @@ import {
 import { Link } from "react-router-dom";
 import UserLayout from "./layout/layout";
 
-import type { MyCourse } from './models/course';
-import { courseService } from './services/course.service';
+import type { MyCourse } from './models/course.ts';
+import { courseService } from './services/course.service.ts';
 
 type CourseStatus = "completed" | "inProgress" | "notStarted";
 type FilterValue = "all" | CourseStatus;

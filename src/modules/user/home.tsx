@@ -9,7 +9,7 @@ import {
 } from "@heroicons/react/24/outline";
 import UserLayout from "./layout/layout";
 import PostCard from "./components/post_card";
-import { useCourses } from './hooks/useCourses';
+import { useCourses } from '../course/hooks/useCourses';
 interface UserData {
   accessToken: string;
   avatarUrl: string;

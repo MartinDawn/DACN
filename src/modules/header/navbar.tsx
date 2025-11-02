@@ -11,7 +11,7 @@ import {
   KeyIcon,
   ArrowLeftOnRectangleIcon,
 } from "@heroicons/react/24/outline";
-import { useCart } from "../user/hooks/useCart"; // Giả sử hook này từ file bạn đã tạo
+import { useCart } from "../user/hooks/useCart"; 
 
 const Navbar: React.FC = () => {
   const [isProfileOpen, setProfileOpen] = useState(false);
@@ -20,7 +20,6 @@ const Navbar: React.FC = () => {
   const [isLogoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
   const { cart } = useCart();
   
-  // --- THÊM MỚI ---
   // 1. State để lưu nội dung ô tìm kiếm
   const [searchTerm, setSearchTerm] = useState("");
 
@@ -28,11 +27,14 @@ const Navbar: React.FC = () => {
   const handleSearchSubmit = (event: React.KeyboardEvent<HTMLInputElement>) => {
     // Nếu phím nhấn là 'Enter' và có nội dung (đã bỏ qua khoảng trắng)
     if (event.key === 'Enter' && searchTerm.trim()) {
-      // Chuyển hướng đến trang /courses với query param
-      navigate(`/courses?search=${encodeURIComponent(searchTerm.trim())}`);
+      
+      // --- THAY ĐỔI TẠI ĐÂY ---
+      // Điều hướng đến trang /search, không phải /courses
+      navigate(`/search?search=${encodeURIComponent(searchTerm.trim())}`);
+      // --- KẾT THÚC THAY ĐỔI ---
+
     }
   };
-  // --- KẾT THÚC THÊM MỚI ---
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -62,7 +64,7 @@ const Navbar: React.FC = () => {
   return (
     <header className="fixed inset-x-0 top-0 z-50 bg-white shadow-sm">
       <div className="mx-auto flex w-full max-w-7xl items-center gap-4 px-6 py-4">
-        <Link to="/homepage" className="flex items-center gap-2 text-lg font-semibold text-[#5a2dff]">
+        <Link to="/user/home" className="flex items-center gap-2 text-lg font-semibold text-[#5a2dff]">
           <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-[#5a2dff] text-white">
             📘
           </span>
@@ -73,6 +75,8 @@ const Navbar: React.FC = () => {
             Danh mục
             <ChevronDownIcon className="h-4 w-4" />
           </button>
+          
+          {/* Link này ĐÚNG: đi đến trang lọc */}
           <Link to="/courses" className="transition hover:text-[#5a2dff]">
             Duyệt khóa học
           </Link>
@@ -85,12 +89,10 @@ const Navbar: React.FC = () => {
               placeholder="Tìm kiếm khóa học..."
               className="h-11 w-full rounded-full border border-gray-200 bg-gray-50 pl-12 pr-4 text-sm font-medium text-gray-600 outline-none transition focus:border-[#5a2dff] focus:bg-white"
               
-              // --- THÊM MỚI ---
               // 3. Liên kết input với state và hàm xử lý
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               onKeyDown={handleSearchSubmit}
-              // --- KẾT THÚC THÊM MỚI ---
             />
           </div>
         </div>

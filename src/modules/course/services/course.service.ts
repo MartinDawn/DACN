@@ -10,8 +10,8 @@ import type {
   PaginatedCourses,
   CourseSearchResponse, // <-- THÊM MỚI
   SearchParams,         // <-- THÊM MỚI
-} from '../models/course';
-import type { Tag } from '../models/tag.ts';
+} from '../../course/models/course.ts';
+import type { Tag } from '../../course/models/tag.ts';
 
 const API_URL = 'http://dacn.runasp.net/api';
 
@@ -81,22 +81,17 @@ export const courseService = {
     return response.data;
   },
 
-  // 2. THÊM HÀM SEARCH VÀO ĐÂY
-  /**
-   * Gọi API tìm kiếm khóa học
-   * (API này dùng Headers để truyền tham số)
-   */
   async searchCourses(params: SearchParams): Promise<ApiResponse<CourseSearchResponse>> {
-    const response = await axiosInstance.get<ApiResponse<CourseSearchResponse>>(
-      `${API_URL}/Course/search`,
-      {
-        headers: {
-          'SearchTerm': params.searchTerm,
-          'Page': params.page,
-          'PageSize': params.pageSize
-        }
+  const response = await axiosInstance.get<ApiResponse<CourseSearchResponse>>(
+    `${API_URL}/Course/search`,
+    {
+      params: {
+        SearchTerm: params.searchTerm,
+        Page: params.page,
+        PageSize: params.pageSize
       }
-    );
-    return response.data;
-  },
+    }
+  );
+  return response.data;
+},
 };

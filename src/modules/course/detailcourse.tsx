@@ -13,10 +13,10 @@ import {
   UserGroupIcon,
 } from "@heroicons/react/24/outline";
 import { CheckCircleIcon, StarIcon } from "@heroicons/react/20/solid";
-import UserLayout from "./layout/layout";
-import { useCourses } from "./hooks/useCourses";
-import { useCart } from "./hooks/useCart"; // 1. Import hook giỏ hàng
-import { cartService } from "./services/cart.service"; // 2. Import service giỏ hàng
+import UserLayout from "../user/layout/layout";
+import { useCourses } from "./hooks/useCourses.ts";
+import { useCart } from "../user/hooks/useCart"; // 1. Import hook giỏ hàng
+import { cartService } from "../user/services/cart.service"; // 2. Import service giỏ hàng
 import { toast } from "react-hot-toast";
 const tabs = [
   { id: "overview", label: "Tổng quan" },
