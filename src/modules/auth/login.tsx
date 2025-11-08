@@ -47,7 +47,6 @@ const LoginPage: React.FC = () => {
     event.preventDefault();
     try {
       const response = await login(formData);
-      // Kiểm tra response có success và có data không
       if (response?.success && response.data) {
         if (rememberMe) {
           localStorage.setItem('remember_username', formData.username);
@@ -55,8 +54,6 @@ const LoginPage: React.FC = () => {
           localStorage.removeItem('remember_username');
         }
 
-        // *** LOGIC MỚI: Lưu thông tin người dùng vào localStorage ***
-        // response.data chứa accessToken, avatarUrl, fullName, email
         localStorage.setItem('user_data', JSON.stringify(response.data));
 
         setNotification({

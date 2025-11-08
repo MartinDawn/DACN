@@ -1,4 +1,6 @@
-import React from "react";
+// src/modules/course/mycourse.tsx
+
+import React, { useState, useMemo, useEffect } from "react";
 import {
   ArrowLeftIcon,
   BookOpenIcon,
@@ -8,15 +10,19 @@ import {
   MagnifyingGlassIcon,
   SparklesIcon,
 } from "@heroicons/react/24/outline";
-import { Link } from "react-router-dom";
-import UserLayout from "./layout/layout";
+// 1. THÊM useNavigate
+import { Link, useNavigate } from "react-router-dom";
+import UserLayout from "../user/layout/layout"; 
 
 import type { MyCourse } from './models/course.ts';
-import { courseService } from './services/course.service.ts';
+import { useCourses } from './hooks/useCourses'; 
+
+// --- TYPES ---
 
 type CourseStatus = "completed" | "inProgress" | "notStarted";
 type FilterValue = "all" | CourseStatus;
 
+// Type này kết hợp dữ liệu gốc từ API (MyCourse) với dữ liệu tiến độ
 type CourseProgress = MyCourse & {
   durationHours: number;
   lessonsCompleted: number;
@@ -24,10 +30,10 @@ type CourseProgress = MyCourse & {
   status: CourseStatus;
   progress: number;
   lastActivity: string;
-  rating: number;
 };
 
-// ... các hằng số khác giữ nguyên ...
+// --- CONSTANTS ---
+
 const filters: { label: string; value: FilterValue }[] = [
   { label: "All Courses", value: "all" },
   { label: "In Progress", value: "inProgress" },
@@ -48,74 +54,78 @@ const achievements = [
   { title: "Week Streak", date: "Jan 20, 2024" },
 ];
 
-const MyCourse: React.FC = () => {
-  const [activeFilter, setActiveFilter] = React.useState<FilterValue>("all");
-  const [searchTerm, setSearchTerm] = React.useState("");
-  const [myCourses, setMyCourses] = React.useState<CourseProgress[]>([]);
-  const [loading, setLoading] = React.useState(true);
-  const [error, setError] = React.useState<string | null>(null);
+// --- COMPONENT ---
 
-  React.useEffect(() => {
-    const fetchMyCourses = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const response = await courseService.getMyCourses();
-        if (response.success) {
-          // THAY ĐỔI 1: Đơn giản hóa việc biến đổi dữ liệu
-          const transformedCourses: CourseProgress[] = response.data.map(course => ({
-            ...course,
-            // Các thuộc tính gốc như name, instructorName, imageUrl đã có sẵn
-            durationHours: 10, // Giá trị mặc định
-            lessonsCompleted: 5,
-            lessonsTotal: 10,
-            status: "inProgress" as CourseStatus, // Trạng thái mặc định
-            progress: 50, // Tiến độ mặc định
-            lastActivity: "Hôm qua", // Hoạt động cuối mặc định
-            rating : 0.0, // Đánh giá mặc định
-          }));
-          setMyCourses(transformedCourses);
-        } else {
-          setError(response.message || "Không thể tải danh sách khóa học.");
-        }
-      } catch (err) {
-        setError("Lỗi kết nối. Không thể tải danh sách khóa học.");
-      } finally {
-        setLoading(false);
-      }
-    };
+const MyCoursePage: React.FC = () => {
+  // 2. KHỞI TẠO NAVIGATE
+  const navigate = useNavigate();
 
-    fetchMyCourses();
-  }, []);
+  // State quản lý UI (filter và search)
+  const [activeFilter, setActiveFilter] = useState<FilterValue>("all");
+  const [searchTerm, setSearchTerm] = useState("");
 
-  // ... các hàm tính toán `useMemo` khác giữ nguyên ...
-  const totalHours = React.useMemo(
-    () => myCourses.reduce((sum: number, course) => sum + course.durationHours, 0),
-    [myCourses]
+  const { 
+    myCourses, 
+    isMyCoursesLoading, 
+    myCoursesError, 
+    getMyCourses 
+  } = useCourses();
+
+  // Gọi API một lần khi component được tải
+  useEffect(() => {
+    getMyCourses();
+  }, [getMyCourses]); // [getMyCourses] an toàn vì đã được bọc trong useCallback ở hook
+
+  // Biến đổi dữ liệu: Gắn dữ liệu hardcode (progress) vào dữ liệu thật (myCourses)
+  const coursesWithProgress: CourseProgress[] = useMemo(() => {
+    return myCourses.map(course => ({
+      ...course, // Lấy id, name, imageUrl, instructorName, rating từ API
+
+      // Dữ liệu tiến độ (hiện đang hardcode, sau này sẽ thay bằng dữ liệu thật)
+      durationHours: 10, 
+      lessonsCompleted: 5,
+      lessonsTotal: 10,
+      status: "inProgress" as CourseStatus, // Giả sử tất cả đang học
+      progress: 50, // Giả sử 50%
+      lastActivity: "Hôm qua", 
+    }));
+  }, [myCourses]); // Chỉ tính toán lại khi `myCourses` từ API thay đổi
+
+  // Tính toán các số liệu thống kê dựa trên dữ liệu đã biến đổi
+  const totalHours = useMemo(
+    () => coursesWithProgress.reduce((sum: number, course) => sum + course.durationHours, 0),
+    [coursesWithProgress]
   );
-  const completedCount = React.useMemo(
-    () => myCourses.filter((course) => course.status === "completed").length,
-    [myCourses]
+  const completedCount = useMemo(
+    () => coursesWithProgress.filter((course) => course.status === "completed").length,
+    [coursesWithProgress]
   );
-  const inProgressCount = React.useMemo(
-    () => myCourses.filter((course) => course.status === "inProgress").length,
-    [myCourses]
+  const inProgressCount = useMemo(
+    () => coursesWithProgress.filter((course) => course.status === "inProgress").length,
+    [coursesWithProgress]
   );
-  const notStartedCount = myCourses.length - completedCount - inProgressCount;
+  const notStartedCount = coursesWithProgress.length - completedCount - inProgressCount;
+  
   const averageProgress = Math.round(
-    myCourses.reduce((sum: number, course) => sum + course.progress, 0) / (myCourses.length || 1)
+    coursesWithProgress.reduce((sum: number, course) => sum + course.progress, 0) / (coursesWithProgress.length || 1)
   );
 
-  // THAY ĐỔI 2: Tạm thời vô hiệu hóa bộ lọc và tìm kiếm
-  const visibleCourses = React.useMemo(() => {
-    // Luôn trả về toàn bộ danh sách khóa học đã nhận được
-    return myCourses;
-  }, [myCourses]);
+  // Lọc danh sách khóa học hiển thị dựa trên filter và search term
+  const visibleCourses = useMemo(() => {
+    return coursesWithProgress.filter((course) => {
+      const matchesFilter =
+        activeFilter === "all" || course.status === activeFilter;
+      const matchesSearch = course.name
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase());
+      return matchesFilter && matchesSearch;
+    });
+  }, [coursesWithProgress, activeFilter, searchTerm]);
 
-  // Phần Giao diện (JSX) bên dưới không cần thay đổi
+  // --- RENDER ---
   return (
     <UserLayout>
-       <div className="space-y-8">
+      <div className="space-y-8">
         <Link
           to="/user/home"
           className="inline-flex items-center gap-2 text-sm font-semibold text-[#5a2dff] transition hover:text-[#3c1cd6]"
@@ -123,6 +133,8 @@ const MyCourse: React.FC = () => {
           <ArrowLeftIcon className="h-4 w-4" />
           Quay lại trang chủ
         </Link>
+        
+        {/* Section Header & Stats */}
         <section className="space-y-6">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div>
@@ -149,6 +161,7 @@ const MyCourse: React.FC = () => {
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            {/* Stat: Total Courses */}
             <div className="rounded-3xl bg-white p-6 shadow-[0_18px_40px_rgba(15,23,42,0.08)]">
               <div className="flex items-center justify-between">
                 <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-[#efe7ff] text-[#5a2dff]">
@@ -159,11 +172,11 @@ const MyCourse: React.FC = () => {
                 </span>
               </div>
               <p className="mt-6 text-3xl font-semibold text-gray-900">
-                {myCourses.length}
+                {coursesWithProgress.length}
               </p>
               <p className="text-sm text-gray-500">Khóa học đã đăng ký</p>
             </div>
-
+            {/* Stat: Completed */}
             <div className="rounded-3xl bg-white p-6 shadow-[0_18px_40px_rgba(15,23,42,0.08)]">
               <div className="flex items-center justify-between">
                 <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-500">
@@ -178,7 +191,7 @@ const MyCourse: React.FC = () => {
               </p>
               <p className="text-sm text-gray-500">Khóa học đã kết thúc</p>
             </div>
-
+            {/* Stat: Total Hours */}
             <div className="rounded-3xl bg-white p-6 shadow-[0_18px_40px_rgba(15,23,42,0.08)]">
               <div className="flex items-center justify-between">
                 <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-sky-50 text-sky-500">
@@ -193,7 +206,7 @@ const MyCourse: React.FC = () => {
               </p>
               <p className="text-sm text-gray-500">Thời gian học tích lũy</p>
             </div>
-
+            {/* Stat: In Progress */}
             <div className="rounded-3xl bg-white p-6 shadow-[0_18px_40px_rgba(15,23,42,0.08)]">
               <div className="flex items-center justify-between">
                 <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-500">
@@ -211,7 +224,9 @@ const MyCourse: React.FC = () => {
           </div>
         </section>
 
+        {/* Section Main Content (List) & Sidebar */}
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr),320px]">
+          {/* Main Content: Course List */}
           <section className="space-y-6">
             <div className="flex flex-wrap items-center gap-2 rounded-full bg-gray-100 p-1 text-sm font-semibold text-gray-500">
               {filters.map((tab) => (
@@ -231,9 +246,17 @@ const MyCourse: React.FC = () => {
             </div>
 
             <div className="space-y-5">
-              {loading && <div className="text-center p-8">Đang tải các khóa học của bạn...</div>}
-              {error && <div className="text-center p-8 text-red-500">{error}</div>}
-              {!loading && !error && visibleCourses.map((course) => {
+              {/* Trạng thái Loading / Error */}
+              {isMyCoursesLoading && (
+                <div className="text-center p-8">Đang tải các khóa học của bạn...</div>
+              )}
+              {myCoursesError && (
+                <div className="text-center p-8 text-red-500">{myCoursesError}</div>
+              )}
+
+              {/* Render danh sách khóa học */}
+              {!isMyCoursesLoading && !myCoursesError && visibleCourses.map((course) => {
+                // (Các biến logic bên trong map giữ nguyên)
                 const lessonsLabel = `${course.lessonsCompleted}/${course.lessonsTotal} bài học`;
                 const statusBadge =
                   course.status === "completed"
@@ -253,12 +276,8 @@ const MyCourse: React.FC = () => {
                     : course.status === "inProgress"
                     ? "Continue"
                     : "Start";
-                const actionVariant =
-                  course.status === "completed"
-                    ? "bg-[#5a2dff]"
-                    : course.status === "inProgress"
-                    ? "bg-[#5a2dff]"
-                    : "bg-[#5a2dff]";
+                const actionVariant = "bg-[#5a2dff]"; // Luôn là màu chính
+
                 return (
                   <article
                     key={course.id}
@@ -288,7 +307,7 @@ const MyCourse: React.FC = () => {
                             </p>
                           </div>
                           <span className="text-sm font-semibold text-amber-500">
-                            ★ {course.rating.toFixed(1)}
+                            ★ {course.rating.toFixed(1)} {/* Dùng rating thật */}
                           </span>
                         </div>
                         <div className="space-y-2">
@@ -315,8 +334,10 @@ const MyCourse: React.FC = () => {
                           </span>
                         </p>
                         <div className="flex items-center gap-2">
+                          {/* 3. THÊM onClick VÀO NÚT NÀY */}
                           <button
                             type="button"
+                            onClick={() => navigate(`/user/course-progress/${course.id}`)}
                             className={`rounded-full px-4 py-2 text-sm font-semibold text-white shadow-sm shadow-[#5a2dff]/30 transition ${actionVariant} hover:bg-[#4a21eb]`}
                           >
                             {actionLabel}
@@ -333,14 +354,20 @@ const MyCourse: React.FC = () => {
                   </article>
                 );
               })}
-              {!loading && !error && !visibleCourses.length && (
+
+              {/* Trạng thái Rỗng */}
+              {!isMyCoursesLoading && !myCoursesError && !visibleCourses.length && (
                 <div className="rounded-3xl border border-dashed border-gray-200 bg-white p-12 text-center text-sm font-semibold text-gray-500">
-                  Bạn chưa đăng ký khóa học nào.
+                  {searchTerm
+                    ? "Không tìm thấy khóa học nào khớp với tìm kiếm."
+                    : "Bạn chưa đăng ký khóa học nào trong mục này."
+                  }
                 </div>
               )}
             </div>
           </section>
 
+          {/* Sidebar */}
           <aside className="space-y-6">
             <div className="rounded-3xl bg-white p-6 shadow-[0_24px_56px_rgba(15,23,42,0.08)]">
               <h3 className="text-lg font-semibold text-gray-900">
@@ -427,4 +454,4 @@ const MyCourse: React.FC = () => {
   );
 };
 
-export default MyCourse;
+export default MyCoursePage;

@@ -1,8 +1,9 @@
 import axios from 'axios';
-import type { AxiosError, AxiosRequestConfig } from 'axios';
+import type { AxiosError, AxiosRequestConfig,InternalAxiosRequestConfig } from 'axios';
 import { authService } from './auth.service'; // Dùng để logout và set token
 
 const API_URL = 'http://dacn.runasp.net/api';
+// const API_URL = 'http://localhost:5223/api';
 
 /**
  * Tạo instance axios trung tâm
@@ -15,7 +16,21 @@ const apiClient = axios.create({
   },
   withCredentials: true, // Quan trọng để gửi cookie (refresh token)
 });
-
+apiClient.interceptors.request.use(
+  (config: InternalAxiosRequestConfig) => {
+    // Chỉ lấy token từ localStorage khi request
+    const token = localStorage.getItem('accessToken');
+    
+    // Không gắn token cho request refresh
+    if (token && !config.url?.includes('/Account/refresh-token')) {
+      config.headers['Authorization'] = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
 /**
  * --- Biến quản lý refresh token ---
  */

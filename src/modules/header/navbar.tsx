@@ -1,4 +1,4 @@
-// src/components/Navbar.tsx (Đã cập nhật)
+// src/components/Navbar.tsx 
 
 import React, { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";

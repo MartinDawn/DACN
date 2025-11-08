@@ -126,3 +126,17 @@ export interface SearchParams {
   page: number;
   pageSize: number;
 }
+export interface ApiLecture {
+  id: string;
+  name: string;
+  description: string;
+  videoNames: string[];
+  documentNames: string[];
+  quizNames: string[];
+}
+
+export interface ApiCourseContent {
+  id: string;
+  name: string;
+  lectures: ApiLecture[];
+}

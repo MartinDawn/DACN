@@ -9,12 +9,12 @@ import ViewAllCourse from './modules/course/filter_course';
 import MyCourse  from './modules/course/mycourse';
 import MyCart from './modules/user/mycart';
 import NotificationPage from './modules/header/notification'; 
-import MyInfo from './modules/avatar_info/myinfo'; 
+import MyInfo from './modules/avatar_info/myinfo';  
 import ChangePasswordPage from './modules/avatar_info/changepw';
 import CourseDetail from './modules/course/detailcourse';
 import CheckoutPage from './modules/user/checkout';
-import CourseProgressPage from './modules/user/courseProgress';
-import LessonContentPage from './modules/user/lessonContent';
+import CourseProgressPage from './modules/course/courseProgress';
+import LessonContentPage from './modules/course/lessonContent';
 import SearchPage from './modules/course/searchCoursePage';
 function App() {
   return (

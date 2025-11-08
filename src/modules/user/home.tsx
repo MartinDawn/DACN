@@ -118,7 +118,7 @@ const SummaryTabSwitcher: React.FC<{
 
 const UserHome: React.FC = () => {
   const [activeTab, setActiveTab] = React.useState<SummaryTab>(summaryTabs[0]);
-  const { recommendedCourses, loading, error } = useCourses();
+  const { recommendedCourses: hookRecommendedCourses, isRecommendedLoading } = useCourses();
   const [user, setUser] = React.useState<UserData | null>(null);
 
   React.useEffect(() => {
@@ -234,14 +234,12 @@ const UserHome: React.FC = () => {
                 <p className="text-sm text-gray-500">Dựa trên sở thích của bạn</p>
               </div>
               <div className="mt-6 grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
-                {loading ? (
+                {isRecommendedLoading ? (
                   <div className="col-span-full text-center py-8">Đang tải khóa học...</div>
-                ) : error ? (
-                  <div className="col-span-full text-center text-red-500 py-8">{error}</div>
-                ) : recommendedCourses.length === 0 ? (
+                ) : hookRecommendedCourses.length === 0 ? (
                   <div className="col-span-full text-center py-8">Không có khóa học đề xuất</div>
                 ) : (
-                  recommendedCourses.map((course) => (
+                  hookRecommendedCourses.map((course) => (
                     <PostCard
                       key={course.id}
                       image={course.imageUrl || 'https://via.placeholder.com/400x300'}

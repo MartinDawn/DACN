@@ -1,35 +1,49 @@
-import React from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
-import UserLayout from './layout/layout';
-import {
-  COURSE_FALLBACK_ID,
-  courseProgressMap,
-  lessonTypeLabel,
-  lessonTypeStyles,
-  lessonTypeIcons,
-  lessonTypeDescriptions,
-  lessonIconWrappers,
-  DEFAULT_DOCUMENT_DOWNLOAD_PATH,
-  normalizeToFileName,
-  LessonItem,
-  CourseSection,
-} from './courseProgress';
+// src/modules/user/lessonContent.tsx (Ho%E1%BA%B7c t%C3%AAn file c%E1%BB%A7a b%E1%BA%A1n)
+
+import React, { useMemo, useEffect, useState, useCallback } from 'react';
+import { Link, useNavigate, useParams } from 'react-router-dom';
+import UserLayout from './layout/layout'; // Đảm bảo đường dẫn layout đúng
 import {
   AcademicCapIcon,
   ArrowDownTrayIcon,
   ArrowLeftIcon,
+  BookOpenIcon,
   CheckCircleIcon,
   ChevronRightIcon,
-  ClipboardDocumentCheckIcon,
+  ClipboardDocumentCheckIcon, // Giữ lại icon
   ClockIcon,
   DocumentTextIcon,
+  LockClosedIcon,
+  PlayCircleIcon,
+  PlayIcon,
+  QuestionMarkCircleIcon,
 } from '@heroicons/react/24/outline';
 
-type LessonTimelineEntry = {
-  section: CourseSection;
-  lesson: LessonItem;
-};
+// 1. IMPORT HOOK
+import { useCourses } from './hooks/useCourses'; // Đảm bảo đường dẫn hook đúng
 
+// --- TYPES & CONSTANTS (ĐÃ SỬA) ---
+
+// 2. LOẠI BỎ 'assignment' VÌ API KHÔNG CUNG CẤP
+export type LessonType = 'video' | 'quiz' | 'doc';
+type LessonFilterValue = 'all' | LessonType;
+
+export interface LessonItem {
+  id: string;
+  title: string;
+  type: LessonType; // <-- Type đã được sửa
+  duration: string;
+  isPreview?: boolean;
+  isCompleted?: boolean;
+}
+export interface CourseSection {
+  id: string;
+  title: string;
+  summary: string;
+  totalDuration: string;
+  items: LessonItem[];
+}
+// Giữ lại các type cho Quiz và Doc (dùng cho mock nội dung)
 type QuizQuestion = {
   id: string;
   question: string;
@@ -37,18 +51,55 @@ type QuizQuestion = {
   answer: string;
   explanation: string;
 };
-
-type AssignmentGuide = {
-  objective: string;
-  steps: string[];
-  deliverables: string[];
-  tips: string[];
-};
-
 type DocumentGuide = {
   summary: string;
   highlights: string[];
 };
+// Dùng để tạo timeline
+type LessonTimelineEntry = {
+  section: CourseSection;
+  lesson: LessonItem;
+};
+
+// 3. LOẠI BỎ 'assignment' KHỎI CÁC CONST
+export const lessonTypeLabel: Record<LessonType, string> = {
+  video: 'Video',
+  quiz: 'Quiz',
+  doc: 'Tài liệu',
+};
+export const lessonTypeStyles: Record<LessonType, string> = {
+  video: 'bg-indigo-100 text-indigo-600',
+  quiz: 'bg-amber-100 text-amber-600',
+  doc: 'bg-sky-100 text-sky-600',
+};
+export const lessonTypeIcons: Record<LessonType, React.ComponentType<React.SVGProps<SVGSVGElement>>> = {
+  video: PlayCircleIcon,
+  quiz: QuestionMarkCircleIcon,
+  doc: DocumentTextIcon,
+};
+export const lessonIconWrappers: Record<LessonType, string> = {
+  video: 'bg-indigo-50 text-indigo-500',
+  quiz: 'bg-amber-50 text-amber-500',
+  doc: 'bg-sky-50 text-sky-500',
+};
+export const lessonTypeDescriptions: Record<LessonType, string> = {
+  video: 'Bài giảng video với ví dụ trực quan và hướng dẫn chi tiết.',
+  quiz: 'Quiz ngắn giúp bạn củng cố kiến thức vừa học.',
+  doc: 'Tài liệu tham khảo và checklist hỗ trợ học tập.',
+};
+
+export const normalizeToFileName = (value: string) =>
+  value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^\w\s-]/g, '')
+    .trim()
+    .replace(/\s+/g, '-')
+    .toLowerCase();
+export const DEFAULT_DOCUMENT_DOWNLOAD_PATH = '/resources/sample-react-handout.txt';
+
+// --- DỮ LIỆU MOCK CỤ BỘ (Cho nội dung quiz/doc) ---
+// (Vì API chỉ trả về *tên* quiz, không phải *câu hỏi*)
 
 const sampleVideoUrl = 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4';
 
@@ -60,46 +111,12 @@ const quizBank: Record<string, QuizQuestion[]> = {
       options: [
         { id: 'library', label: 'Một thư viện JavaScript để xây dựng giao diện người dùng' },
         { id: 'backend', label: 'Một framework backend' },
-        { id: 'database', label: 'Một cơ sở dữ liệu' },
-        { id: 'language', label: 'Một ngôn ngữ lập trình' },
       ],
       answer: 'library',
       explanation: 'React là thư viện JavaScript do Meta phát triển để xây dựng UI.',
     },
-    {
-      id: 'jsx',
-      question: 'JSX mô tả điều gì?',
-      options: [
-        { id: 'templating', label: 'Cú pháp mở rộng để viết UI bằng JavaScript' },
-        { id: 'styling', label: 'CSS-in-JS' },
-        { id: 'routing', label: 'Định nghĩa đường dẫn' },
-        { id: 'state', label: 'Định nghĩa state toàn cục' },
-      ],
-      answer: 'templating',
-      explanation: 'JSX giúp mô tả UI bằng cú pháp giống HTML nằm trong JavaScript.',
-    },
+    // ... (Thêm các câu hỏi mock khác nếu muốn)
   ],
-};
-
-const assignmentBank: Record<string, AssignmentGuide> = {
-  default: {
-    objective: 'Xây dựng component ứng dụng kiến thức vừa học.',
-    steps: [
-      'Phân tích yêu cầu và xác định props/state cần dùng.',
-      'Tạo component, triển khai logic và style cơ bản.',
-      'Kiểm tra component hoạt động với dữ liệu mẫu.',
-    ],
-    deliverables: [
-      'Mã nguồn component hoàn chỉnh.',
-      'Ảnh chụp hoặc video demo.',
-      'Ghi chú ngắn mô tả cách tiếp cận.',
-    ],
-    tips: [
-      'Áp dụng quy tắc đặt tên rõ ràng.',
-      'Tách component nhỏ nếu cần tái sử dụng.',
-      'Kiểm tra UI trên thiết bị di động.',
-    ],
-  },
 };
 
 const documentBank: Record<string, DocumentGuide> = {
@@ -108,14 +125,14 @@ const documentBank: Record<string, DocumentGuide> = {
     highlights: [
       'Các định nghĩa và lưu ý quan trọng.',
       'Checklist những việc cần thực hành.',
-      'Đường dẫn tới tài nguyên tham khảo.',
     ],
   },
 };
 
 const getQuizQuestions = (lessonId: string) => quizBank[lessonId] ?? quizBank.default;
-const getAssignmentGuide = (lessonId: string) => assignmentBank[lessonId] ?? assignmentBank.default;
 const getDocumentGuide = (lessonId: string) => documentBank[lessonId] ?? documentBank.default;
+
+// --- CÁC COMPONENT CON (Render nội dung) ---
 
 const VideoContent: React.FC<{ lesson: LessonItem; description: string }> = ({ lesson, description }) => (
   <div className="space-y-6">
@@ -125,24 +142,15 @@ const VideoContent: React.FC<{ lesson: LessonItem; description: string }> = ({ l
         Trình duyệt của bạn không hỗ trợ video.
       </video>
     </div>
-    <div className="grid gap-4 md:grid-cols-2">
-      <div className="rounded-3xl border border-slate-200 bg-white/70 p-6 shadow-sm shadow-slate-900/5">
-        <h3 className="text-sm font-semibold uppercase tracking-wide text-indigo-500">Ghi chú chính</h3>
-        <ul className="mt-3 list-disc space-y-2 pl-5 text-sm text-slate-600">
-          <li>{lesson.title} giới thiệu khái niệm cốt lõi.</li>
-          <li>Tạm dừng và thử ngay trong editor.</li>
-          <li>Đánh dấu câu hỏi để trao đổi với giảng viên.</li>
-        </ul>
-      </div>
-      <div className="rounded-3xl border border-slate-200 bg-white/70 p-6 shadow-sm shadow-slate-900/5">
-        <h3 className="text-sm font-semibold uppercase tracking-wide text-indigo-500">Transcript mẫu</h3>
-        <p className="mt-3 text-sm text-slate-600">{description}</p>
-      </div>
+    <div className="rounded-3xl border border-slate-200 bg-white/70 p-6 shadow-sm shadow-slate-900/5">
+      <h3 className="text-sm font-semibold uppercase tracking-wide text-indigo-500">Mô tả bài học</h3>
+      <p className="mt-3 text-sm text-slate-600">{description}</p>
     </div>
   </div>
 );
 
 const QuizContent: React.FC<{ questions: QuizQuestion[] }> = ({ questions }) => {
+  // ... (Toàn bộ logic của QuizContent giữ nguyên như file gốc của bạn)
   const [answers, setAnswers] = React.useState<Record<string, string>>({});
   const [submitted, setSubmitted] = React.useState(false);
 
@@ -259,47 +267,6 @@ const QuizContent: React.FC<{ questions: QuizQuestion[] }> = ({ questions }) => 
   );
 };
 
-const AssignmentContent: React.FC<{ guide: AssignmentGuide }> = ({ guide }) => (
-  <div className="space-y-6">
-    <div className="rounded-3xl border border-slate-200 bg-white/80 p-6 shadow-sm shadow-slate-900/5">
-      <div className="flex items-center gap-3 text-indigo-600">
-        <ClipboardDocumentCheckIcon className="h-6 w-6" />
-        <h3 className="text-lg font-semibold text-slate-900">Mục tiêu</h3>
-      </div>
-      <p className="mt-3 text-sm text-slate-600">{guide.objective}</p>
-    </div>
-    <div className="grid gap-4 md:grid-cols-2">
-      <div className="rounded-3xl border border-slate-200 bg-white/80 p-6 shadow-sm shadow-slate-900/5">
-        <h4 className="text-sm font-semibold uppercase tracking-wide text-indigo-500">Các bước gợi ý</h4>
-        <ul className="mt-3 space-y-2 text-sm text-slate-600">
-          {guide.steps.map((step, index) => (
-            <li key={step} className="flex gap-2">
-              <span className="mt-1 h-6 w-6 shrink-0 rounded-full bg-indigo-100 text-center text-xs font-semibold leading-6 text-indigo-600">
-                {index + 1}
-              </span>
-              <span>{step}</span>
-            </li>
-          ))}
-        </ul>
-      </div>
-      <div className="rounded-3xl border border-slate-200 bg-white/80 p-6 shadow-sm shadow-slate-900/5">
-        <h4 className="text-sm font-semibold uppercase tracking-wide text-indigo-500">Bàn giao</h4>
-        <ul className="mt-3 list-disc space-y-2 pl-5 text-sm text-slate-600">
-          {guide.deliverables.map((item) => (
-            <li key={item}>{item}</li>
-          ))}
-        </ul>
-        <h4 className="mt-4 text-sm font-semibold uppercase tracking-wide text-indigo-500">Mẹo</h4>
-        <ul className="mt-3 list-disc space-y-2 pl-5 text-sm text-slate-600">
-          {guide.tips.map((tip) => (
-            <li key={tip}>{tip}</li>
-          ))}
-        </ul>
-      </div>
-    </div>
-  </div>
-);
-
 const DocumentContent: React.FC<{ lesson: LessonItem; guide: DocumentGuide; onDownload: () => void }> = ({
   lesson,
   guide,
@@ -328,50 +295,156 @@ const DocumentContent: React.FC<{ lesson: LessonItem; guide: DocumentGuide; onDo
     </div>
   </div>
 );
+// --- KẾT THÚC COMPONENT CON ---
 
+
+// --- COMPONENT CHÍNH ---
 const LessonContentPage: React.FC = () => {
-  const { courseId, lessonId } = useParams();
+  const { courseId, lessonId } = useParams<{ courseId: string, lessonId: string }>();
   const navigate = useNavigate();
 
-  const effectiveCourseId = courseId && courseProgressMap[courseId] ? courseId : COURSE_FALLBACK_ID;
-  const isFallback = Boolean(courseId) && effectiveCourseId !== courseId;
-  const course = courseProgressMap[effectiveCourseId];
+  // 4. GỌI HOOK LẤY DỮ LIỆU
+  const { 
+    courseContent, 
+    isContentLoading, 
+    contentError, 
+    getCourseContent,
+    courseDetail,      // <-- LẤY CẢ DETAIL
+    isDetailLoading,
+    detailError,
+    getCourseDetail
+  } = useCourses();
 
-  const timeline = React.useMemo(() => {
+  // 5. GỌI CẢ 2 API
+  useEffect(() => {
+    if (courseId) {
+      getCourseContent(courseId);
+      getCourseDetail(courseId); // <-- GỌI DETAIL
+    } else {
+      navigate('/user/mycourses');
+    }
+  }, [courseId, getCourseContent, getCourseDetail, navigate]);
+
+  // 6. "BẮC CẦU" DỮ LIỆU VÀ TÌM BÀI HỌC HIỆN TẠI
+  const { courseTitle, timeline, currentEntry, previousEntry, nextEntry } = useMemo(() => {
+    // Đợi cả hai API
+    if (!courseContent || !courseDetail) {
+      return { courseTitle: '', timeline: [], currentEntry: null, previousEntry: null, nextEntry: null };
+    }
+    
     const entries: LessonTimelineEntry[] = [];
-    course.sections.forEach((section) => {
-      section.items.forEach((lesson) => {
+    
+    // Dùng transformer logic giống hệt `courseProgress.tsx`
+    const transformedSections: CourseSection[] = courseContent.lectures
+      .sort((a, b) => a.name.localeCompare(b.name)) 
+      .map(lecture => {
+      const items: LessonItem[] = []; 
+      lecture.videoNames.forEach((name, index) => items.push({ id: `${lecture.id}-video-${index}`, title: name, type: 'video', duration: 'N/A', isCompleted: false, isPreview: false }));
+      lecture.documentNames.forEach((name, index) => items.push({ id: `${lecture.id}-doc-${index}`, title: name, type: 'doc', duration: 'Tài liệu', isCompleted: false, isPreview: false }));
+      lecture.quizNames.forEach((name, index) => items.push({ id: `${lecture.id}-quiz-${index}`, title: name, type: 'quiz', duration: 'N/A', isCompleted: false, isPreview: false }));
+      
+      const section: CourseSection = {
+        id: lecture.id,
+        title: lecture.name,
+        summary: lecture.description,
+        totalDuration: 'N/A',
+        items: items,
+      };
+
+      // Đồng thời tạo timeline
+      items.forEach(lesson => {
         entries.push({ section, lesson });
       });
+
+      return section;
     });
-    return entries;
-  }, [course]);
 
-  const currentIndex = React.useMemo(
-    () => timeline.findIndex((entry) => entry.lesson.id === lessonId),
-    [timeline, lessonId]
-  );
+    const currentIndex = entries.findIndex((entry) => entry.lesson.id === lessonId);
+    const currentEntry = currentIndex >= 0 ? entries[currentIndex] : null;
+    const previousEntry = currentIndex > 0 ? entries[currentIndex - 1] : null;
+    const nextEntry = currentIndex >= 0 && currentIndex < entries.length - 1 ? entries[currentIndex + 1] : null;
 
-  const currentEntry = currentIndex >= 0 ? timeline[currentIndex] : null;
-  const previousEntry = currentIndex > 0 ? timeline[currentIndex - 1] : null;
-  const nextEntry = currentIndex >= 0 && currentIndex < timeline.length - 1 ? timeline[currentIndex + 1] : null;
+    return { 
+      courseTitle: courseDetail.name, // Lấy tên thật từ courseDetail
+      timeline: entries, 
+      currentEntry, 
+      previousEntry, 
+      nextEntry 
+    };
 
-  React.useEffect(() => {
-    if (!lessonId && timeline.length) {
-      navigate(`/user/course-progress/${course.id}/lesson/${timeline[0].lesson.id}`, { replace: true });
+  }, [courseContent, courseDetail, lessonId]);
+
+  // 7. CÁC HÀM NỘI BỘ (Giữ nguyên)
+  const [markedDone, setMarkedDone] = React.useState(false);
+
+  useEffect(() => {
+    if (currentEntry) {
+      setMarkedDone(Boolean(currentEntry.lesson.isCompleted));
     }
-  }, [lessonId, timeline, navigate, course.id]);
+  }, [currentEntry]);
 
-  const navigateToLesson = React.useCallback(
+  // Chuyển hướng nếu không có lessonId
+  useEffect(() => {
+    if (!lessonId && timeline.length && courseId) {
+      navigate(`/user/course-progress/${courseId}/lesson/${timeline[0].lesson.id}`, { replace: true });
+    }
+  }, [lessonId, timeline, navigate, courseId]);
+
+  const navigateToLesson = useCallback(
     (lesson: LessonItem) => {
-      navigate(`/user/course-progress/${course.id}/lesson/${lesson.id}`);
+      if(courseId) {
+        navigate(`/user/course-progress/${courseId}/lesson/${lesson.id}`);
+      }
     },
-    [navigate, course.id]
+    [navigate, courseId]
   );
 
-  const handleBackToCourse = React.useCallback(() => {
-    navigate(`/user/course-progress/${course.id}`);
-  }, [navigate, course.id]);
+  const handleBackToCourse = useCallback(() => {
+    if(courseId) {
+      navigate(`/user/course-progress/${courseId}`);
+    }
+  }, [navigate, courseId]);
+
+  const handleDocumentDownload = useCallback((lesson: LessonItem) => {
+    if (lesson.type !== 'doc' || typeof document === 'undefined') return;
+    const link = document.createElement('a');
+    link.href = DEFAULT_DOCUMENT_DOWNLOAD_PATH;
+    link.rel = 'noopener';
+    link.download = `${normalizeToFileName(lesson.title)}.txt`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }, []);
+
+  // 8. XỬ LÝ LOADING / ERROR
+  const isLoading = isContentLoading || isDetailLoading;
+  const apiError = contentError || detailError;
+
+  if (isLoading) {
+    return (
+      <UserLayout>
+        <div className="flex h-96 items-center justify-center">
+          <p className="text-lg font-semibold text-gray-700">Đang tải bài học...</p>
+        </div>
+      </UserLayout>
+    );
+  }
+
+  if (apiError) {
+    return (
+      <UserLayout>
+        <div className="flex h-96 flex-col items-center justify-center gap-4">
+          <p className="text-lg font-semibold text-red-600">{apiError}</p>
+          <Link
+            to="/user/mycourses"
+            className="rounded-full bg-indigo-600 px-4 py-2 text-sm font-semibold text-white"
+          >
+            Quay lại
+          </Link>
+        </div>
+      </UserLayout>
+    );
+  }
 
   if (!currentEntry) {
     return (
@@ -386,63 +459,47 @@ const LessonContentPage: React.FC = () => {
             Quay lại khóa học
           </button>
           <div className="mt-6 rounded-3xl border border-rose-200 bg-rose-50 p-6 text-sm font-semibold text-rose-600">
-            Không tìm thấy bài học, vui lòng chọn bài khác trong khóa học.
+            Không tìm thấy bài học. Có thể {lessonId ? `bài học "${lessonId}" không tồn tại` : "khóa học này chưa có bài học nào"}.
           </div>
         </div>
       </UserLayout>
     );
   }
 
+  // 9. RENDER NỘI DUNG (Đã an toàn)
   const { lesson, section } = currentEntry;
   const LessonIcon = lessonTypeIcons[lesson.type];
   const lessonDescription = lessonTypeDescriptions[lesson.type];
   const sectionLessons = section.items;
-  const [markedDone, setMarkedDone] = React.useState(Boolean(lesson.isCompleted));
-
-  React.useEffect(() => {
-    setMarkedDone(Boolean(lesson.isCompleted));
-  }, [lesson.id, lesson.isCompleted]);
-
-  const handleDocumentDownload = React.useCallback(() => {
-    if (lesson.type !== 'doc' || typeof document === 'undefined') return;
-    const link = document.createElement('a');
-    link.href = DEFAULT_DOCUMENT_DOWNLOAD_PATH;
-    link.rel = 'noopener';
-    link.download = `${normalizeToFileName(lesson.title)}.txt`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  }, [lesson]);
 
   let renderedContent: React.ReactNode = null;
   if (lesson.type === 'video') {
     renderedContent = <VideoContent lesson={lesson} description={lessonDescription} />;
   } else if (lesson.type === 'quiz') {
     renderedContent = <QuizContent questions={getQuizQuestions(lesson.id)} />;
-  } else if (lesson.type === 'assignment') {
-    renderedContent = <AssignmentContent guide={getAssignmentGuide(lesson.id)} />;
   } else if (lesson.type === 'doc') {
-    renderedContent = <DocumentContent lesson={lesson} guide={getDocumentGuide(lesson.id)} onDownload={handleDocumentDownload} />;
+    renderedContent = <DocumentContent lesson={lesson} guide={getDocumentGuide(lesson.id)} onDownload={() => handleDocumentDownload(lesson)} />;
   }
+  // 'assignment' đã bị xóa
 
+  // 10. RENDER JSX (Giữ nguyên)
   return (
     <UserLayout>
       <div className="space-y-6 px-4 py-8 lg:px-10">
         <div className="flex flex-wrap items-center gap-2 text-sm text-slate-500">
-          <button
-            type="button"
-            onClick={() => navigate('/user/mycourses')}
+          <Link // Đổi từ button sang Link
+            to="/user/mycourses"
             className="font-semibold text-indigo-500 transition hover:text-indigo-600"
           >
             Khóa học của tôi
-          </button>
+          </Link>
           <ChevronRightIcon className="h-4 w-4 text-slate-400" />
           <button
             type="button"
             onClick={handleBackToCourse}
             className="font-semibold text-indigo-500 transition hover:text-indigo-600"
           >
-            {course.title}
+            {courseTitle} {/* Dùng tên thật */}
           </button>
           <ChevronRightIcon className="h-4 w-4 text-slate-400" />
           <span className="font-semibold text-slate-700">{lesson.title}</span>
@@ -457,11 +514,7 @@ const LessonContentPage: React.FC = () => {
           Quay lại danh sách bài học
         </button>
 
-        {isFallback && (
-          <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700">
-            Không tìm thấy khóa học với ID “{courseId}”, đã chuyển sang khóa học mặc định.
-          </div>
-        )}
+        {/* Xóa bỏ `isFallback` */}
 
         <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr),320px]">
           <section className="space-y-6">

@@ -1,51 +1,39 @@
-// src/services/cart.service.ts
+import apiClient from "../../auth/services/apiClient"; 
 
-import axios from 'axios';
-// Giả sử ApiResponse được định nghĩa trong course.model.ts
+// 3. Import các 'type'
 import type { ApiResponse } from '../../course/models/course.ts'; 
 import type { Cart } from '../models/cart.ts';
 
-const API_URL = 'http://dacn.runasp.net/api';
-
-// Tạo một axios instance để tự động đính kèm token
-const axiosInstance = axios.create({
-  headers: {
-    'Accept-Language': 'vi',
-    'Content-Type': 'application/json',
-  }
-});
-
-// Interceptor để thêm token vào mỗi request 
-axiosInstance.interceptors.request.use((config) => {
-  const userDataString = localStorage.getItem('user_data');
-  if (userDataString) {
-    const userData = JSON.parse(userDataString);
-    const token = userData?.accessToken;
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-  }
-  return config;
-});
 
 export const cartService = {
-  // Hàm để lấy tất cả các sản phẩm trong giỏ hàng
+  /**
+   * Hàm để lấy tất cả các sản phẩm trong giỏ hàng
+   */
   async getCartItems(): Promise<ApiResponse<Cart>> {
-    const response = await axiosInstance.get<ApiResponse<Cart>>(
-      `${API_URL}/Cart/cart-items`
+    // 5. DÙNG apiClient VÀ ĐƯỜNG DẪN TƯƠNG ĐỐI
+    const response = await apiClient.get<ApiResponse<Cart>>(
+      '/Cart/cart-items'
     );
     return response.data;
   },
+
+  /**
+   * Thêm khóa học vào giỏ hàng
+   */
   async addCourseToCart(courseId: string): Promise<ApiResponse<any>> {
-    const response = await axiosInstance.post<ApiResponse<any>>(
-      `${API_URL}/Cart/add-course`,
-      { courseId } // Body của request
+    const response = await apiClient.post<ApiResponse<any>>(
+      '/Cart/add-course',
+      { courseId } 
     );
     return response.data;
   },
+
+  /**
+   * Xóa khóa học khỏi giỏ hàng
+   */
   async removeCourseFromCart(courseId: string): Promise<ApiResponse<any>> {
-    const response = await axiosInstance.delete<ApiResponse<any>>(
-      `${API_URL}/Cart/remove-course/${courseId}`
+    const response = await apiClient.delete<ApiResponse<any>>(
+      `/Cart/remove-course/${courseId}` 
     );
     return response.data;
   }
