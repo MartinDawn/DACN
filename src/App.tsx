@@ -21,7 +21,7 @@ import CheckoutPage from './modules/user/checkout';
 import CourseProgressPage from './modules/user/courseProgress';
 import LessonContentPage from './modules/user/lessonContent';
 import RegisterTeacherPage from './modules/user/register_teacher';
-import RegisterTeacherFormPage from './modules/user/register_teacher_form';
+// import RegisterTeacherFormPage from './modules/user/register_teacher_form';
 
 function App() {
   return (
@@ -34,7 +34,7 @@ function App() {
         <Route path="/forgot-password" element={<ForgetPasswordPage />} />
         <Route path="/homepage" element={<Homepage />} />
         <Route path="/register-teacher" element={<RegisterTeacherPage />} />
-        <Route path="/register-teacher/form" element={<RegisterTeacherFormPage />} />
+        {/* <Route path="/register-teacher/form" element={<RegisterTeacherFormPage />} /> */}
         <Route path="/user/home" element={<UserHome />} />
         <Route path="/user/mycourses" element={<MyCourse />} />
         <Route path="/user/cart" element={<MyCart />} />
