@@ -5,10 +5,8 @@ import UserLayout from "./layout/layout";
 export default function RegisterTeacherPage() {
 	const navigate = useNavigate();
 
-	// helper: navigate to page and scroll to form
 	const goToForm = () => {
-		// điều hướng tới trang form riêng
-		navigate("/register-teacher/form");
+		navigate("/instructor/register-teacher/form");
 	};
 
 	return (
