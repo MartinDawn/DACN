@@ -38,7 +38,7 @@ const PostCard: React.FC<CourseCardProps> = ({
       <div className="flex items-center justify-between text-sm">
         <span className="flex items-center gap-1 text-gray-600">
           <StarIcon className="h-5 w-5 text-amber-400" />
-          <span className="font-semibold text-gray-900">{rating.toFixed(1)}</span>
+          <span className="font-semibold text-gray-900">{(rating|0).toFixed(1)}</span>
           <span className="text-xs text-gray-400">{students}</span>
         </span>
         <span className="text-base font-semibold text-[#5a2dff]">{price}</span>

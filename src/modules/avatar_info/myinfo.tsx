@@ -14,7 +14,7 @@ import {
   useUserProfileData,
   useUpdateProfile,
   formatBirthDateToInput,
-} from "./hooks/useUserProfile.ts"; // <-- Cập nhật đường dẫn này
+} from "./hooks/useUserProfile.ts"; 
 import { type UserProfile, type UserProfileStats } from "./models/userProfile.model"; // <-- Cập nhật đường dẫn này
 
 const defaultSkills = ["React", "Node.js", "Python", "JavaScript", "TypeScript", "MongoDB"];
@@ -76,7 +76,7 @@ const initialPersonalInfo: PersonalInfo = {
 };
 
 const initialAbout = "Đang tải...";
-const initialWebsite = "Đang tải..."; // API của bạn không có trường này, sẽ giữ giá trị này
+const initialWebsite = "Đang tải..."; 
 
 type ProfileSnapshot = {
   personalInfo: PersonalInfo;
@@ -206,7 +206,6 @@ const MyInfo: React.FC = () => {
   };
 
   // --- LOGIC MỚI (ĐÃ THAY ĐỔI) ---
-  // Xóa hàm `uploadAvatar` (đã chuyển vào hook)
 
   const handleToggleEdit = async () => {
     if (isSaving) return;

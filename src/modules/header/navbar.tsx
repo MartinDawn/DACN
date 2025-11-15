@@ -13,26 +13,22 @@ import {
 } from "@heroicons/react/24/outline";
 import { useCart } from "../user/hooks/useCart"; 
 
+import { useAuth } from "../auth/hooks/useAuth"; 
+
 const Navbar: React.FC = () => {
   const [isProfileOpen, setProfileOpen] = useState(false);
   const profileMenuRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const [isLogoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
+
   const { cart } = useCart();
-  
-  // 1. State để lưu nội dung ô tìm kiếm
+  const { user, logout } = useAuth(); 
+
   const [searchTerm, setSearchTerm] = useState("");
 
-  // 2. Hàm xử lý khi nhấn phím (Enter)
   const handleSearchSubmit = (event: React.KeyboardEvent<HTMLInputElement>) => {
-    // Nếu phím nhấn là 'Enter' và có nội dung (đã bỏ qua khoảng trắng)
     if (event.key === 'Enter' && searchTerm.trim()) {
-      
-      // --- THAY ĐỔI TẠI ĐÂY ---
-      // Điều hướng đến trang /search, không phải /courses
       navigate(`/search?search=${encodeURIComponent(searchTerm.trim())}`);
-      // --- KẾT THÚC THAY ĐỔI ---
-
     }
   };
 
@@ -55,15 +51,20 @@ const Navbar: React.FC = () => {
     return () => document.removeEventListener("keydown", handleEsc);
   }, [isLogoutConfirmOpen]);
 
+  // 3. GỌI HÀM LOGOUT TỪ CONTEXT
   const handleConfirmLogout = () => {
-    // Giả sử bạn có logic logout ở đây (xóa token, gọi authService.logout())
+    logout(); // Gọi hàm logout toàn cục
     setLogoutConfirmOpen(false);
-    navigate("/homepage"); // Hoặc trang login
+    navigate("/homepage"); // Điều hướng về trang chủ
   };
+  
+  // Lấy chữ cái đầu của user
+  const userInitials = user?.fullName ? user.fullName[0].toUpperCase() : (user?.email ? user.email[0].toUpperCase() : 'A');
 
   return (
     <header className="fixed inset-x-0 top-0 z-50 bg-white shadow-sm">
       <div className="mx-auto flex w-full max-w-7xl items-center gap-4 px-6 py-4">
+        {/* ... (Logo, Links, Search bar giữ nguyên) ... */}
         <Link to="/user/home" className="flex items-center gap-2 text-lg font-semibold text-[#5a2dff]">
           <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-[#5a2dff] text-white">
             📘
@@ -75,8 +76,6 @@ const Navbar: React.FC = () => {
             Danh mục
             <ChevronDownIcon className="h-4 w-4" />
           </button>
-          
-          {/* Link này ĐÚNG: đi đến trang lọc */}
           <Link to="/courses" className="transition hover:text-[#5a2dff]">
             Duyệt khóa học
           </Link>
@@ -88,8 +87,6 @@ const Navbar: React.FC = () => {
               type="search"
               placeholder="Tìm kiếm khóa học..."
               className="h-11 w-full rounded-full border border-gray-200 bg-gray-50 pl-12 pr-4 text-sm font-medium text-gray-600 outline-none transition focus:border-[#5a2dff] focus:bg-white"
-              
-              // 3. Liên kết input với state và hàm xử lý
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               onKeyDown={handleSearchSubmit}
@@ -104,7 +101,9 @@ const Navbar: React.FC = () => {
             Khóa học của tôi
           </Link>
         </div>
+        
         <div className="flex items-center gap-3">
+          {/* Cart (Đã đúng) */}
           <Link
             to="/user/cart"
             className="relative rounded-full border border-gray-200 p-2 text-gray-500 transition hover:text-[#5a2dff]"
@@ -116,15 +115,19 @@ const Navbar: React.FC = () => {
               </span>
             )}
           </Link>
+          
+          {/* Notifications (Vẫn đang hardcode, cần hook `useNotifications`) */}
           <Link
             to="/user/notifications"
             className="relative rounded-full border border-gray-200 p-2 text-gray-500 transition hover:text-[#5a2dff]"
           >
             <BellIcon className="h-5 w-5" />
-            <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-[#ff7e6c] text-xs font-semibold text-white">
-              5
-            </span>
+            {/* <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-[#ff7e6c] text-xs font-semibold text-white">
+              5 
+            </span> */}
           </Link>
+          
+          {/* 4. DÙNG DỮ LIỆU USER TỪ CONTEXT */}
           <div className="relative" ref={profileMenuRef}>
             <button
               type="button"
@@ -132,7 +135,7 @@ const Navbar: React.FC = () => {
               className="flex items-center gap-2 rounded-full border border-gray-200 px-2 py-1 text-sm font-semibold text-gray-600 transition hover:text-[#5a2dff]"
             >
               <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#efe7ff] text-[#5a2dff]">
-                T {/* Bạn nên thay bằng tên user */}
+                {userInitials} {/* Thay T bằng chữ cái đầu */}
               </span>
               <ChevronDownIcon className="h-4 w-4" />
             </button>
@@ -140,11 +143,11 @@ const Navbar: React.FC = () => {
               <div className="absolute right-0 mt-3 w-56 rounded-2xl border border-gray-100 bg-white p-3 shadow-xl">
                 <div className="flex items-center gap-3 rounded-xl bg-[#f6f0ff] px-3 py-2">
                   <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#efe7ff] text-[#5a2dff]">
-                    T {/* Thay bằng tên user */}
+                    {userInitials} {/* Thay T bằng chữ cái đầu */}
                   </span>
-                  <div className="text-sm">
-                    <p className="font-semibold text-gray-900">Username</p>
-                    <p className="text-xs text-gray-500">vnt@gmail.com</p>
+                  <div className="text-sm overflow-hidden">
+                    <p className="font-semibold text-gray-900 truncate">{user?.fullName || "Người dùng"}</p>
+                    <p className="text-xs text-gray-500 truncate">{user?.email || "..."}</p>
                   </div>
                 </div>
                 <div className="mt-3 space-y-1 text-sm text-gray-600">
@@ -176,6 +179,8 @@ const Navbar: React.FC = () => {
           </div>
         </div>
       </div>
+      
+      {/* Logout Modal (Giữ nguyên) */}
       {isLogoutConfirmOpen && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40">
           <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl">

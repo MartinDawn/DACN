@@ -15,9 +15,10 @@ import {
 import { CheckCircleIcon, StarIcon } from "@heroicons/react/20/solid";
 import UserLayout from "../user/layout/layout";
 import { useCourses } from "./hooks/useCourses.ts";
-import { useCart } from "../user/hooks/useCart"; // 1. Import hook giỏ hàng
-import { cartService } from "../user/services/cart.service"; // 2. Import service giỏ hàng
-import { toast } from "react-hot-toast";
+import { useCart } from "../user/hooks/useCart";
+import { cartService } from "../user/services/cart.service";
+import { toast } from "react-hot-toast"; // 1. Import toast đã có
+
 const tabs = [
   { id: "overview", label: "Tổng quan" },
   { id: "curriculum", label: "Chương trình học" },
@@ -27,24 +28,20 @@ const tabs = [
 const DetailCourse: React.FC = () => {
   const { courseId } = useParams<{ courseId: string }>();
 
-  // Dữ liệu khóa học
   const { 
     getCourseDetail, 
     getCourseComments,
     courseDetail, 
     courseComments,
-    loading, 
+    isDetailLoading, 
     commentsLoading,
-    error,
+    detailError,    
     commentsError 
   } = useCourses();
   
-  // 3. Lấy dữ liệu và hàm từ hook giỏ hàng
   const { cart, refreshCart } = useCart();
   
-  // 4. State để quản lý UI khi thêm vào giỏ hàng
   const [isAdding, setIsAdding] = useState(false);
-  const [notification, setNotification] = useState<string | null>(null);
   
   const [activeTab, setActiveTab] = useState<(typeof tabs)[number]["id"]>("overview");
 
@@ -55,43 +52,33 @@ const DetailCourse: React.FC = () => {
     }
   }, [courseId, getCourseDetail, getCourseComments]);
 
-  // 5. Kiểm tra xem khóa học hiện tại đã có trong giỏ hàng chưa
   const isInCart = useMemo(() => {
     if (!cart || !courseId) return false;
-    return cart.items.some(item => item.id === courseId);
+
+    return cart.items.some(item => item.id === courseId || item.id === courseId);
   }, [cart, courseId]);
 
-  // 6. Hàm xử lý khi nhấn nút "Thêm vào giỏ hàng"
   const handleAddToCart = useCallback(async () => {
     if (!courseId || isInCart) return;
 
     setIsAdding(true);
-    setNotification(null);
     try {
-      const response = await cartService.addCourseToCart(courseId);
+      const response = await cartService.addCourseToCart(courseId); 
       if (response.success) {
-        setNotification("Đã thêm vào giỏ hàng thành công!");
-        refreshCart(); // Quan trọng: Làm mới dữ liệu giỏ hàng để cập nhật icon navbar
+        toast.success("Đã thêm vào giỏ hàng thành công!");
+        refreshCart(); 
       } else {
-        setNotification(response.message || "Thêm vào giỏ hàng thất bại.");
+        toast.error(response.message || "Thêm vào giỏ hàng thất bại.");
       }
     } catch (err) {
-      setNotification("Lỗi: Không thể kết nối đến máy chủ.");
+      toast.error("Lỗi: Không thể kết nối đến máy chủ.");
     } finally {
       setIsAdding(false);
-      // Tự động ẩn thông báo sau 3 giây
-      setTimeout(() => setNotification(null), 3000);
     }
   }, [courseId, isInCart, refreshCart]);
   
   return (
     <UserLayout>
-      {/* Hiển thị thông báo */}
-      {notification && (
-        <div className="fixed top-24 right-6 z-50 rounded-md bg-green-500 px-4 py-2 text-white shadow-lg">
-            {notification}
-        </div>
-      )}
 
       <div className="space-y-8">
         <Link
@@ -102,54 +89,55 @@ const DetailCourse: React.FC = () => {
           Quay lại khóa học
         </Link>
 
-        {loading && <div className="text-center p-12">Đang tải...</div>}
-        {error && <div className="text-center p-12 text-red-500">{error}</div>}
+        {/* 6. THAY ĐỔI: Dùng state `isDetailLoading` và `detailError` */}
+        {isDetailLoading && <div className="text-center p-12">Đang tải...</div>}
+        {detailError && <div className="text-center p-12 text-red-500">{detailError}</div>}
         
-        {!loading && !error && courseDetail && (
+        {!isDetailLoading && !detailError && courseDetail && (
           <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr),360px]">
             <section className="space-y-10">
-              {/* ... Phần header và các tab giữ nguyên ... */}
               
-              {/* Cuối */}
-               <header className="space-y-6 rounded-[32px] bg-white p-8 shadow-[0_16px_40px_rgba(15,23,42,0.08)]">
-                  <h1 className="text-4xl font-bold text-gray-900">{courseDetail.name}</h1>
-                  <p className="text-lg text-gray-600">{courseDetail.description}</p>
-                  <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500">
-                    <div className="flex items-center gap-1 text-yellow-500">
-                      <StarIcon className="h-5 w-5" />
-                      <span className="font-semibold text-gray-900">{courseDetail.rating?.toFixed(1)}</span>
-                      <span>({courseDetail.totalReviews} đánh giá)</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <UserGroupIcon className="h-5 w-5" />
-                      {courseDetail.totalStudents} học viên
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <ClockIcon className="h-5 w-5" />
-                      {courseDetail.totalHours} giờ
-                    </div>
+              {/* Header */}
+              <header className="space-y-6 rounded-[32px] bg-white p-8 shadow-[0_16px_40px_rgba(15,23,42,0.08)]">
+                <h1 className="text-4xl font-bold text-gray-900">{courseDetail.name}</h1>
+                <p className="text-lg text-gray-600">{courseDetail.description}</p>
+                <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500">
+                  <div className="flex items-center gap-1 text-yellow-500">
+                    <StarIcon className="h-5 w-5" />
+                    <span className="font-semibold text-gray-900">{courseDetail.rating?.toFixed(1)}</span>
+                    <span>({courseDetail.totalReviews} đánh giá)</span>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <img 
-                      src={courseDetail.instructorAvatar || "https://via.placeholder.com/100"} 
-                      alt={courseDetail.instructorName} 
-                      className="h-14 w-14 rounded-full object-cover" 
-                    />
-                    <div>
-                      <p className="text-sm text-gray-500">Giảng viên</p>
-                      <p className="text-base font-semibold text-gray-900">{courseDetail.instructorName}</p>
-                    </div>
+                  <div className="flex items-center gap-2">
+                    <UserGroupIcon className="h-5 w-5" />
+                    {courseDetail.totalStudents} học viên
                   </div>
-                  <div className="overflow-hidden rounded-[28px]">
-                    <img 
-                      src={courseDetail.imageUrl || "https://via.placeholder.com/800x450"} 
-                      alt={courseDetail.name} 
-                      className="h-64 w-full object-cover" 
-                    />
+                  <div className="flex items-center gap-2">
+                    <ClockIcon className="h-5 w-5" />
+                    {courseDetail.totalHours} giờ
                   </div>
-                </header>
-                {/* Tong quan , danh gia , comment */}
-                 <nav className="flex flex-wrap gap-3 border-b border-gray-200 pb-2">
+                </div>
+                <div className="flex items-center gap-3">
+                  <img 
+                    src={courseDetail.instructorAvatar || "https://via.placeholder.com/100"} 
+                    alt={courseDetail.instructorName} 
+                    className="h-14 w-14 rounded-full object-cover" 
+                  />
+                  <div>
+                    <p className="text-sm text-gray-500">Giảng viên</p>
+                    <p className="text-base font-semibold text-gray-900">{courseDetail.instructorName}</p>
+                  </div>
+                </div>
+                <div className="overflow-hidden rounded-[28px]">
+                  <img 
+                    src={courseDetail.imageUrl || "https://via.placeholder.com/800x450"} 
+                    alt={courseDetail.name} 
+                    className="h-64 w-full object-cover" 
+                  />
+                </div>
+              </header>
+              
+              {/* Tabs Navigation */}
+              <nav className="flex flex-wrap gap-3 border-b border-gray-200 pb-2">
                 {tabs.map((tab) => (
                   <button
                     key={tab.id}
@@ -164,14 +152,15 @@ const DetailCourse: React.FC = () => {
                 ))}
               </nav>
 
+              {/* Tab Content: Overview */}
               {activeTab === "overview" && (
                 <div className="space-y-8">
                   <div className="rounded-[28px] bg-white p-8 shadow-[0_16px_40px_rgba(15,23,42,0.08)]">
                     <h2 className="text-xl font-bold text-gray-900">Bạn sẽ học được gì</h2>
                     <div className="mt-6 grid gap-4 sm:grid-cols-2">
-                      {courseDetail.learningObjectives?.map((item: string) => (
-                        <div key={item} className="flex items-start gap-3 rounded-2xl bg-[#f8f8ff] p-4">
-                          <CheckCircleIcon className="h-5 w-5 text-[#5a2dff]" />
+                      {courseDetail.learningObjectives?.map((item: string, index: number) => (
+                        <div key={index} className="flex items-start gap-3 rounded-2xl bg-[#f8f8ff] p-4">
+                          <CheckCircleIcon className="h-5 w-5 flex-shrink-0 text-[#5a2dff]" />
                           <p className="text-sm font-semibold text-gray-700">{item}</p>
                         </div>
                       ))}
@@ -180,10 +169,11 @@ const DetailCourse: React.FC = () => {
                 </div>
               )}
 
+              {/* Tab Content: Curriculum */}
               {activeTab === "curriculum" && (
                 <div className="space-y-6">
-                  {courseDetail.curriculum?.map((section: any) => (
-                    <div key={section.title} className="rounded-[28px] border border-gray-200 bg-white p-6">
+                  {courseDetail.curriculum?.map((section: any, index: number) => (
+                    <div key={index} className="rounded-[28px] border border-gray-200 bg-white p-6">
                       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                         <div>
                           <h3 className="text-lg font-semibold text-gray-900">{section.title}</h3>
@@ -193,8 +183,8 @@ const DetailCourse: React.FC = () => {
                         </div>
                       </div>
                       <ul className="mt-4 space-y-3 text-sm text-gray-600">
-                        {section.topics?.map((topic: string) => (
-                          <li key={topic} className="flex items-start gap-2">
+                        {section.topics?.map((topic: string, topicIndex: number) => (
+                          <li key={topicIndex} className="flex items-start gap-2">
                             <CheckCircleIcon className="h-5 w-5 flex-shrink-0 text-[#5a2dff]" />
                             <span>{topic}</span>
                           </li>
@@ -205,6 +195,7 @@ const DetailCourse: React.FC = () => {
                 </div>
               )}
 
+              {/* Tab Content: Reviews */}
               {activeTab === "reviews" && (
                 <div className="rounded-[28px] bg-white p-8 shadow-[0_16px_40px_rgba(15,23,42,0.08)]">
                   {commentsLoading && (
@@ -221,7 +212,7 @@ const DetailCourse: React.FC = () => {
 
                   {!commentsLoading && !commentsError && courseComments.length === 0 && (
                     <div className="rounded-[28px] border border-dashed border-gray-200 bg-white p-12 text-center text-sm font-semibold text-gray-500">
-                      Chưa có đánh giá nào được hiển thị. Hãy là người đầu tiên để lại đánh giá cho khóa học này.
+                      Chưa có đánh giá nào được hiển thị.
                     </div>
                   )}
 
@@ -232,7 +223,7 @@ const DetailCourse: React.FC = () => {
                         {courseComments.map((comment) => (
                           <div key={comment.commentId} className="py-6">
                             <div className="flex items-start gap-4">
-                              <div className="h-10 w-10 rounded-full bg-gray-100 flex items-center justify-center">
+                              <div className="h-10 w-10 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
                                 <span className="text-lg font-semibold text-gray-600">
                                   {comment.studentName[0].toUpperCase()}
                                 </span>
@@ -243,13 +234,11 @@ const DetailCourse: React.FC = () => {
                                     <p className="font-semibold text-gray-900">{comment.studentName}</p>
                                     <p className="text-sm text-gray-500">
                                       {new Date(comment.timestamp).toLocaleDateString('vi-VN', {
-                                        year: 'numeric',
-                                        month: 'long',
-                                        day: 'numeric'
+                                        year: 'numeric', month: 'long', day: 'numeric'
                                       })}
                                     </p>
                                   </div>
-                                  <div className="flex items-center gap-1 text-yellow-500">
+                                  <div className="flex items-center gap-1 text-yellow-500 flex-shrink-0">
                                     {[...Array(5)].map((_, index) => (
                                       <StarIcon
                                         key={index}
@@ -273,6 +262,7 @@ const DetailCourse: React.FC = () => {
               
             </section>
 
+            {/* Sidebar (Phần giỏ hàng) */}
             <aside className="space-y-6 rounded-[32px] bg-white p-8 shadow-[0_16px_40px_rgba(15,23,42,0.08)] lg:sticky lg:top-28">
               <div className="space-y-4">
                 <div className="flex items-baseline gap-3">
