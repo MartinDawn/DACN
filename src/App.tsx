@@ -3,7 +3,7 @@ import LoginCard from './modules/auth/login';
 import RegisterPage from './modules/auth/register';
 import ForgetPasswordPage from './modules/auth/forgetpw';
 import Homepage from './modules/homepage/home';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import UserHome from './modules/user/home';
 import ViewAllCourse from './modules/course/filter_course';
 import MyCourse  from './modules/course/mycourse';
@@ -16,6 +16,9 @@ import CheckoutPage from './modules/user/checkout';
 import CourseProgressPage from './modules/course/courseProgress';
 import LessonContentPage from './modules/course/lessonContent';
 import SearchPage from './modules/course/searchCoursePage';
+import RegisterTeacherPage from './modules/instructor/register_teacher';
+import RegisterTeacherFormPage from './modules/instructor/register_teacher_form';
+
 function App() {
   return (
     <Router>
@@ -40,6 +43,10 @@ function App() {
         <Route path="/user/course-progress/:courseId" element={<CourseProgressPage />} />
         <Route path="/user/course-progress/:courseId/lesson/:lessonId" element={<LessonContentPage />} />
         <Route path="/search" element={<SearchPage />} />
+        <Route path="/register-teacher" element={<RegisterTeacherPage />} />
+        <Route path="/register-teacher/form" element={<RegisterTeacherFormPage />} />
+        <Route path="/instructor/register-teacher" element={<RegisterTeacherPage />} />
+        <Route path="/instructor/register-teacher/form" element={<RegisterTeacherFormPage />} />
       </Routes>
     </Router>
   );
