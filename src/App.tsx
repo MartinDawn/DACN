@@ -18,6 +18,7 @@ import LessonContentPage from './modules/course/lessonContent';
 import SearchPage from './modules/course/searchCoursePage';
 import RegisterTeacherPage from './modules/instructor/register_teacher';
 import RegisterTeacherFormPage from './modules/instructor/register_teacher_form';
+import TeacherDashboard from './modules/instructor/teacher';
 
 function App() {
   return (
@@ -47,6 +48,8 @@ function App() {
         <Route path="/register-teacher/form" element={<RegisterTeacherFormPage />} />
         <Route path="/instructor/register-teacher" element={<RegisterTeacherPage />} />
         <Route path="/instructor/register-teacher/form" element={<RegisterTeacherFormPage />} />
+        <Route path="/instructor" element={<TeacherDashboard />} />
+        <Route path="/instructor/dashboard" element={<TeacherDashboard />} />
       </Routes>
     </Router>
   );

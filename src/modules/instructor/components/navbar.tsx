@@ -41,7 +41,7 @@ const Navbar: React.FC = () => {
   return (
     <header className="fixed inset-x-0 top-0 z-50 bg-white shadow-sm">
       <div className="mx-auto flex w-full max-w-7xl items-center gap-4 px-6 py-4">
-        <Link to="/homepage" className="flex items-center gap-2 text-lg font-semibold text-[#5a2dff]">
+        <Link to="/user/home" className="flex items-center gap-2 text-lg font-semibold text-[#5a2dff]">
           <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-[#5a2dff] text-white">
             📘
           </span>
