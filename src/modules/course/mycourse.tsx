@@ -138,9 +138,9 @@ const MyCoursePage: React.FC = () => {
         <section className="space-y-6">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div>
-              <p className="text-sm font-semibold uppercase tracking-[0.3em] text-indigo-400">
+              {/* <p className="text-sm font-semibold uppercase tracking-[0.3em] text-indigo-400">
                 Dashboard
-              </p>
+              </p> */}
               <h1 className="text-3xl font-bold text-gray-900">
                 Khóa học của tôi
               </h1>
