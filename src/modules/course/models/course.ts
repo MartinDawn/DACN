@@ -82,7 +82,7 @@ export interface FilterParams {
   Page?: number;
   PageSize?: number;
   SortBy?: 'rating' | 'newest' | 'priceasc' | 'pricedesc' | 'popularity';
-  TagId?: string;
+  TagId?: string[];
   MinPrice?: number;
   MaxPrice?: number;
 }

@@ -6,7 +6,11 @@ import PostCard from "./components/post_card2";
 
 // Chỉ import hook cho LỌC
 import { useCoursesFilter } from "./hooks/useCoursesFilter"; 
-import type { FilterParams, CourseSearchItem } from './models/course';
+import type { FilterParams, MyCourse } from './models/course'; 
+
+// interface CourseWithRating extends MyCourse {
+//   averageRating?: number; // Thêm thuộc tính này
+// }
 
 type SortOption = "popularity" | "rating" | "newest" | "priceasc" | "pricedesc";
 
@@ -14,19 +18,17 @@ const priceLimit = 5_000_000;
 const currencyFormatter = new Intl.NumberFormat("vi-VN");
 
 const ViewAllCourse: React.FC = () => {
-  // 1. Bỏ logic search (searchTerm, isSearchMode)
-
-  // 2. State cho bộ lọc
-  const [selectedTagId, setSelectedTagId] = useState<string>("all");
+  // 2. State cho bộ lọc - SỬA THÀNH MẢNG (string[])
+  const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]); // Mặc định rỗng là "Tất cả"
   const [maxPrice, setMaxPrice] = useState<number>(priceLimit);
   const [sortOption, setSortOption] = useState<SortOption>("popularity");
   
   // 3. State cho phân trang
   const [page, setPage] = useState(1);
 
-  // 4. Khởi tạo CHỈ hook LỌC
+  // 4. Khởi tạo hook
   const {
-    courses: filteredCourses,
+    courses: rawCourses,
     pagination: filterPagination,
     coursesLoading: filterLoading,
     coursesError: filterError,
@@ -36,24 +38,39 @@ const ViewAllCourse: React.FC = () => {
     fetchFilteredCourses,
   } = useCoursesFilter();
   
-
   const isLoading = filterLoading;
   const error = filterError;
-  const courses: CourseSearchItem[] = filteredCourses as CourseSearchItem[];
+  const courses = rawCourses as MyCourse[]; 
   const pagination = filterPagination;
 
-  // 7. useEffect để reset trang
+  // 5. Hàm xử lý chọn Tag (Logic Multi-select)
+  const toggleTag = (tagId: string) => {
+    setPage(1); // Reset trang khi đổi filter
+    setSelectedTagIds(prev => {
+      if (prev.includes(tagId)) {
+        return prev.filter(id => id !== tagId); // Bỏ chọn nếu đã có
+      } else {
+        return [...prev, tagId]; // Thêm vào nếu chưa có
+      }
+    });
+  };
+
+  const clearTags = () => {
+    setPage(1);
+    setSelectedTagIds([]); // Về rỗng (Tất cả)
+  };
+
+  // 6. useEffect reset trang khi đổi giá hoặc sort
   useEffect(() => {
-    // Khi người dùng thay đổi bộ lọc, reset về trang 1
     setPage(1); 
-  }, [selectedTagId, maxPrice, sortOption]); 
+  }, [maxPrice, sortOption]); 
 
-  // 8. useEffect để gọi API 
+  // 7. Gọi API với mảng TagId
   useEffect(() => {
-
     const params: FilterParams = {
       SortBy: sortOption,
-      TagId: selectedTagId === "all" ? undefined : selectedTagId,
+      // Truyền trực tiếp mảng selectedTagIds (nếu rỗng thì là undefined để lấy tất cả)
+      TagId: selectedTagIds.length > 0 ? selectedTagIds : undefined, 
       MinPrice: 0,
       MaxPrice: maxPrice === priceLimit ? undefined : maxPrice,
       Page: page,
@@ -63,14 +80,14 @@ const ViewAllCourse: React.FC = () => {
   }, [
     page, 
     fetchFilteredCourses, 
-    selectedTagId, 
+    selectedTagIds, // Phụ thuộc vào mảng tag
     maxPrice, 
     sortOption,
     priceLimit
   ]); 
 
   const resetFilters = () => {
-    setSelectedTagId("all");
+    setSelectedTagIds([]);
     setMaxPrice(priceLimit);
     setSortOption("popularity");
     setPage(1);
@@ -89,10 +106,9 @@ const ViewAllCourse: React.FC = () => {
           Quay lại trang chủ
         </Link>
 
-        {/* 10. Layout 2 cột CỐ ĐỊNH */}
         <div className="grid gap-10 lg:grid-cols-[280px,1fr]">
           
-          {/* 11. Sidebar LỌC luôn hiển thị */}
+          {/* Sidebar LỌC */}
           <aside className="space-y-10 rounded-[32px] bg-white p-8 shadow-[0_16px_40px_rgba(15,23,42,0.08)] lg:sticky lg:top-28 lg:self-start">
             <div className="space-y-5">
               <div className="flex items-center justify-between">
@@ -108,36 +124,43 @@ const ViewAllCourse: React.FC = () => {
               <div className="space-y-1.5">
                 <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">Danh mục</p>
                 <div className="space-y-2">
+                  {/* Nút "Tất cả" */}
                   <button
                     type="button"
-                    onClick={() => setSelectedTagId("all")}
+                    onClick={clearTags}
                     className={`w-full rounded-2xl px-4 py-3 text-left text-sm font-semibold transition ${
-                      selectedTagId === "all"
+                      selectedTagIds.length === 0
                         ? "bg-[#05001a] text-white shadow-[0_10px_30px_rgba(5,0,26,0.25)]"
                         : "text-gray-700 hover:bg-[#f3f4fb]"
                     }`}
                   >
                     Tất cả
                   </button>
+
+                  {/* Danh sách Tags (Multi-select) */}
                   {tagsLoading ? (
                     <p className="p-2 text-sm text-gray-400">Đang tải...</p>
                   ) : tagsError ? (
                     <p className="p-2 text-sm text-red-500">{tagsError}</p>
                   ) : (
-                    tags.map((tag) => (
-                      <button
-                        key={tag.id}
-                        type="button"
-                        onClick={() => setSelectedTagId(tag.id)}
-                        className={`w-full rounded-2xl px-4 py-3 text-left text-sm font-semibold transition ${
-                          selectedTagId === tag.id
-                            ? "bg-[#05001a] text-white shadow-[0_10px_30px_rgba(5,0,26,0.25)]"
-                            : "text-gray-700 hover:bg-[#f3f4fb]"
-                        }`}
-                      >
-                        {tag.name}
-                      </button>
-                    ))
+                    tags.map((tag) => {
+                      const isSelected = selectedTagIds.includes(tag.id);
+                      return (
+                        <button
+                          key={tag.id}
+                          type="button"
+                          onClick={() => toggleTag(tag.id)}
+                          className={`flex w-full items-center justify-between rounded-2xl px-4 py-3 text-left text-sm font-semibold transition ${
+                            isSelected
+                              ? "bg-[#5a2dff] text-white shadow-[0_10px_30px_rgba(90,45,255,0.3)]"
+                              : "text-gray-700 hover:bg-[#f3f4fb]"
+                          }`}
+                        >
+                          <span>{tag.name}</span>
+                          {isSelected && <span>✓</span>} 
+                        </button>
+                      );
+                    })
                   )}
                 </div>
               </div>
@@ -158,21 +181,18 @@ const ViewAllCourse: React.FC = () => {
                 <p className="text-right text-sm font-semibold text-gray-600">Tối đa: {formattedMaxPrice}</p>
               </div>
             </div>
-            {/* --- Kết thúc <aside> --- */}
           </aside>
 
-          {/* 12. PHẦN HIỂN THỊ KẾT QUẢ */}
+          {/* Kết quả */}
           <section className="space-y-8">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
               <div>
-                {/* 13. Tiêu đề CỐ ĐỊNH */}
                 <h1 className="text-3xl font-bold text-gray-900">Tất cả khóa học</h1>
                 <p className="text-sm text-gray-500">
                   {pagination?.totalCount ?? 0} khóa học được tìm thấy
                 </p>
               </div>
               
-              {/* 14. SẮP XẾP luôn hiển thị */}
               <div className="relative w-full sm:w-56">
                 <select
                   value={sortOption}
@@ -189,7 +209,6 @@ const ViewAllCourse: React.FC = () => {
               </div>
             </div>
 
-            {/* 15. Logic render kết quả (dùng chung) */}
             {isLoading ? (
               <div className="text-center p-12 text-lg font-semibold text-gray-500">Đang tải các khóa học...</div>
             ) : error ? (
@@ -202,26 +221,28 @@ const ViewAllCourse: React.FC = () => {
                     href={`/courses/${course.id}`}
                     title={course.name}
                     instructor={course.instructorName}
-                    rating={course.averageRating} 
-                    price={`${course.price.toLocaleString()}đ`}
-                    image={course.imageUrl}
-                    students={`${course.totalStudents} học viên`}
-                    duration={`${course.totalHours} giờ`}
-                    originalPrice={course.originalPrice ? `${course.originalPrice.toLocaleString()}đ` : ""}
-                    ratingCount={`${course.totalReviews}`}
+                    
+                    // 8. SỬ DỤNG averageRating (có thể undefined nếu API chưa trả về, nên fallback về 0)
+                    rating={course.averageRating || course.rating || 0} 
+                    
+                    price={`${currencyFormatter.format(course.price)}đ`}
+                    image={course.imageUrl || "https://via.placeholder.com/300x200"}
+                    students={`${course.totalStudents || 0} học viên`}
+                    duration={`${course.totalHours || 0} giờ`}
+                    originalPrice={course.originalPrice ? `${currencyFormatter.format(course.originalPrice)}đ` : undefined}
+                    ratingCount="0" 
                     description=""
-                    badges={course.isBestseller ? ["Bán chạy"] : []}
+                    badges={[]}
                   />
                 ))}
               </div>
             ) : (
               <div className="rounded-3xl border border-dashed border-gray-200 bg-white p-12 text-center text-sm font-semibold text-gray-500">
-                {/* 16. Thông báo CỐ ĐỊNH */}
                 Không tìm thấy khóa học phù hợp với bộ lọc hiện tại.
               </div>
             )}
             
-            {/* 17. Phân Trang */}
+            {/* Phân Trang */}
             {pagination && pagination.totalPages > 1 && (
               <div className="flex items-center justify-center gap-4 text-sm font-semibold">
                 <button

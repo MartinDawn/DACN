@@ -34,6 +34,7 @@ function App() {
         <Route path="/user/mycourses" element={<MyCourse />} />
         <Route path="/user/cart" element={<MyCart />} />
         <Route path="/user/checkout" element={<CheckoutPage />} />
+        <Route path="/payment-success" element={<Navigate to="/user/mycourses" />} />
         <Route path="/user/notifications" element={<NotificationPage />} />
         <Route path="/courses" element={<ViewAllCourse />} />
         <Route path="/courses/complete-react-developer-2024" element={<CourseDetail />} />
