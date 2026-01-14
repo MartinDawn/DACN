@@ -53,6 +53,8 @@ export const courseService = {
       '/Course/filtered-courses',
       { params } // Logic 'params' này đã đúng, giữ nguyên
     );
+    console.log(params)
+    console.log(response.data)
     return response.data;
   },
 

@@ -1,14 +1,13 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useCallback } from "react"; // Bỏ useEffect vì không cần sync selection nữa
 import { Link, useNavigate } from "react-router-dom";
 import {
   ArrowLeftIcon,
   HeartIcon,
-  ShieldCheckIcon,
   TrashIcon,
-} from "@heroicons/react/24/outline";
+} from "@heroicons/react/24/outline"; // Bỏ ShieldCheckIcon nếu không dùng chỗ nào khác
 import UserLayout from "./layout/layout";
 import { useCart } from "./hooks/useCart";
-import { cartService } from "./services/cart.service"; // THAY ĐỔI 1: Import cartService
+import { cartService } from "./services/cart.service";
 
 // Dữ liệu tĩnh giữ nguyên
 type RecommendedCourse = {
@@ -67,27 +66,23 @@ const MyCart: React.FC = () => {
 
   const [selectedPayment, setSelectedPayment] = useState<string>(paymentMethods[0]?.value ?? "card");
   const [promoCode, setPromoCode] = useState("");
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const [deletingId, setDeletingId] = useState<string | null>(null); // THAY ĐỔI 2: State để quản lý trạng thái xóa
+  // ĐÃ BỎ: State selectedIds
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (cart?.items) {
-      setSelectedIds(cart.items.map((item) => item.id));
-    }
-  }, [cart]);
+  // ĐÃ BỎ: useEffect sync selectedIds
 
-  const selectedCartItems = React.useMemo(
-    () => (cart?.items ?? []).filter((item) => selectedIds.includes(item.id)),
-    [cart, selectedIds]
+  // THAY ĐỔI: Lấy tất cả items trong giỏ hàng thay vì items được chọn
+  const validCartItems = React.useMemo(
+    () => cart?.items ?? [],
+    [cart]
   );
 
-  // THAY ĐỔI 3: Cập nhật hàm handleRemove để gọi API
   const handleRemove = useCallback(async (id: string) => {
-    setDeletingId(id); // Bắt đầu trạng thái đang xóa
+    setDeletingId(id);
     try {
         const response = await cartService.removeCourseFromCart(id);
         if (response.success) {
-            refreshCart(); // Tải lại giỏ hàng để cập nhật UI
+            refreshCart();
         } else {
             alert(`Lỗi: ${response.message || 'Không thể xóa khóa học.'}`);
         }
@@ -95,23 +90,20 @@ const MyCart: React.FC = () => {
         console.error("Lỗi khi xóa khóa học:", err);
         alert("Đã xảy ra lỗi kết nối. Vui lòng thử lại.");
     } finally {
-        setDeletingId(null); // Kết thúc trạng thái đang xóa
+        setDeletingId(null);
     }
   }, [refreshCart]);
 
-  const handleToggleSelect = useCallback((id: string) => {
-    setSelectedIds((prev) =>
-      prev.includes(id) ? prev.filter((itemId) => itemId !== id) : [...prev, id]
-    );
-  }, []);
-  
+  // ĐÃ BỎ: handleToggleSelect
+
   const handleAddRecommended = useCallback(async (course: RecommendedCourse) => {
       console.log(`Yêu cầu thêm sản phẩm ${course.id}. Cần triển khai API.`);
       // await cartService.addCourseToCart(course.id);
       refreshCart();
   }, [refreshCart]);
 
-  const subtotal = selectedCartItems.reduce((sum, item) => sum + item.price, 0);
+  // THAY ĐỔI: Tính tổng dựa trên toàn bộ items
+  const subtotal = validCartItems.reduce((sum, item) => sum + item.price, 0);
   const total = subtotal;
 
   const handleCheckout = () => {
@@ -154,24 +146,19 @@ const MyCart: React.FC = () => {
             <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr),360px]">
               <section className="space-y-6">
                 {cart.items.map((item) => {
-                  const isSelected = selectedIds.includes(item.id);
                   const detailPath = `/courses/${item.id}`;
-                  const isDeleting = deletingId === item.id; // THAY ĐỔI 4: Biến kiểm tra đang xóa
+                  const isDeleting = deletingId === item.id;
                   
                   return (
                     <article
                       key={item.id}
-                      className={`rounded-3xl border ${isSelected ? "border-[#5a2dff]" : "border-gray-100"} bg-white p-6 shadow-[0_20px_50px_rgba(15,23,42,0.08)]`}
+                      // THAY ĐỔI: Bỏ logic border theo selection, để mặc định border-gray-100
+                      className={`rounded-3xl border border-gray-100 bg-white p-6 shadow-[0_20px_50px_rgba(15,23,42,0.08)]`}
                     >
                       <div className="flex flex-col gap-6 md:flex-row">
                         <div className="flex items-start gap-4">
-                          <input
-                            type="checkbox"
-                            checked={isSelected}
-                            onChange={() => handleToggleSelect(item.id)}
-                            aria-label={`Chọn ${item.name}`}
-                            className="mt-2 h-5 w-5 rounded border-gray-300 text-[#5a2dff] focus:ring-[#5a2dff]"
-                          />
+                          {/* ĐÃ BỎ: thẻ <input type="checkbox" ... /> ở đây */}
+                          
                           <Link
                             to={detailPath}
                             className="relative h-40 w-full overflow-hidden rounded-2xl md:w-48"
@@ -206,7 +193,7 @@ const MyCart: React.FC = () => {
                                 <HeartIcon className="h-4 w-4" />
                                 Lưu để sau
                               </button>
-                              {/* THAY ĐỔI 5: Cập nhật nút xóa */}
+                              
                               <button
                                 type="button"
                                 onClick={() => handleRemove(item.id)}
@@ -273,7 +260,8 @@ const MyCart: React.FC = () => {
                   <h2 className="text-lg font-semibold text-gray-900">Tóm tắt đơn hàng</h2>
                   <div className="mt-4 space-y-3 text-sm">
                     <div className="flex items-center justify-between text-gray-500">
-                      <span>Tổng phụ ({selectedCartItems.length} khóa học)</span>
+                      {/* THAY ĐỔI: Hiển thị tổng số lượng item thay vì item đã chọn */}
+                      <span>Tổng phụ ({validCartItems.length} khóa học)</span>
                       <span className="font-semibold text-gray-900">{formatCurrency(subtotal)}</span>
                     </div>
                   </div>
@@ -285,9 +273,10 @@ const MyCart: React.FC = () => {
                   <button
                     type="button"
                     onClick={handleCheckout}
-                    disabled={selectedCartItems.length === 0}
+                    // THAY ĐỔI: Disable nếu giỏ hàng rỗng (không phải selection rỗng)
+                    disabled={validCartItems.length === 0}
                     className={`mt-6 w-full rounded-full px-4 py-3 text-sm font-semibold text-white shadow-[0_14px_34px_rgba(90,45,255,0.35)] transition ${
-                      selectedCartItems.length === 0
+                      validCartItems.length === 0
                         ? "cursor-not-allowed bg-[#5a2dff]/60"
                         : "bg-[#5a2dff] hover:bg-[#4a21eb]"
                     }`}
