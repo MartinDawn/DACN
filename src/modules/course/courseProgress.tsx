@@ -512,7 +512,7 @@ const CourseProgressPage: React.FC = () => {
                             // `item.type` giờ là ('video' | 'quiz' | 'doc')
                             // và các const cũng chỉ chứa 3 key đó.
                             const LessonIcon = lessonTypeIcons[item.type];
-                            const StatusIcon = item.isCompleted ? CheckCircleIcon : LockClosedIcon;
+                            const StatusIcon = item.isCompleted ? CheckCircleIcon : PlayCircleIcon;
                             const statusTone = item.isCompleted
                               ? lessonStatusStyles.completed
                               : lessonStatusStyles.locked;
@@ -561,12 +561,6 @@ const CourseProgressPage: React.FC = () => {
                                         <ArrowDownTrayIcon className="h-4 w-4" />
                                       </button>
                                     )}
-                                    <button
-                                      type="button"
-                                      className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 text-slate-400 transition hover:border-indigo-200 hover:text-indigo-600"
-                                    >
-                                      <ArrowDownTrayIcon className="h-4 w-4" />
-                                    </button>
                                     <button
                                       type="button"
                                       onClick={() => toggleItem(item.id)}

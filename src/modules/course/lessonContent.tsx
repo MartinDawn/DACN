@@ -473,9 +473,7 @@ const LessonContentPage: React.FC = () => {
   const sectionLessons = section.items;
 
   let renderedContent: React.ReactNode = null;
-  if (lesson.type === 'video') {
-    renderedContent = <VideoContent lesson={lesson} description={lessonDescription} />;
-  } else if (lesson.type === 'quiz') {
+  if (lesson.type === 'quiz') {
     renderedContent = <QuizContent questions={getQuizQuestions(lesson.id)} />;
   } else if (lesson.type === 'doc') {
     renderedContent = <DocumentContent lesson={lesson} guide={getDocumentGuide(lesson.id)} onDownload={() => handleDocumentDownload(lesson)} />;
@@ -570,6 +568,8 @@ const LessonContentPage: React.FC = () => {
               <div className="rounded-3xl border border-dashed border-indigo-200 bg-indigo-50/60 p-5 text-sm text-indigo-600">
                 {lessonDescription}
               </div>
+
+              {lesson.type === 'video' && <VideoContent lesson={lesson} description={lessonDescription} />}
 
               <button
                 type="button"
