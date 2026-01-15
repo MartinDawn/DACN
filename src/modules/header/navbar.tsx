@@ -94,7 +94,7 @@ const Navbar: React.FC = () => {
           </div>
         </div>
         <div className="hidden items-center gap-5 text-sm font-semibold text-gray-600 lg:flex">
-          <Link to="#" className="transition hover:text-[#5a2dff]">
+          <Link to="/register-teacher" className="transition hover:text-[#5a2dff]">
             Giảng dạy
           </Link>
           <Link to="/user/mycourses" className="transition hover:text-[#5a2dff]">

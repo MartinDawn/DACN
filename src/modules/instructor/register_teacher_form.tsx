@@ -1,5 +1,5 @@
 import React from "react";
-import UserLayout from "./layout/layout";
+import UserLayout from "../user/layout/layout";
 import RegisterFormTeacher from "./registerform_teacher";
 
 export default function RegisterTeacherFormPage() {
