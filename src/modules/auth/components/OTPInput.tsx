@@ -61,16 +61,15 @@ export const OTPInput: React.FC<OTPInputProps> = ({
     // Xử lý phím Backspace
     if (e.key === 'Backspace') {
       e.preventDefault();
-      if (otp[index]) {
+      const newOtp = [...otp];
+      if (newOtp[index]) {
         // Nếu ô hiện tại có giá trị, xóa giá trị đó
-        const newOtp = [...otp];
         newOtp[index] = '';
         setOtp(newOtp);
         onChange?.(newOtp.join(''));
       } else if (index > 0) {
-        // Nếu ô hiện tại trống, di chuyển về ô trước và xóa giá trị
+        // Nếu ô hiện tại trống, di chuyển về ô trước và xóa giá trị của ô đó
         inputRefs.current[index - 1]?.focus();
-        const newOtp = [...otp];
         newOtp[index - 1] = '';
         setOtp(newOtp);
         onChange?.(newOtp.join(''));

@@ -74,6 +74,7 @@ const ChangePasswordPage: React.FC = () => {
                 name="newPassword"
                 type="password"
                 required
+                minLength={8}
                 value={form.newPassword}
                 onChange={handleChange}
                 className="h-11 w-full rounded-2xl border border-gray-200 px-4 text-sm text-gray-700 outline-none transition focus:border-[#5a2dff] focus:ring-2 focus:ring-[#5a2dff]/10"

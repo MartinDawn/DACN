@@ -206,6 +206,7 @@ const RegisterPage: React.FC = () => {
                 value={formData.password}
                 onChange={(e) => setFormData({...formData, password: e.target.value})}
                 required
+                minLength={8}
               />
               <button
                 type="button"

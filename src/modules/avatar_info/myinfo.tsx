@@ -258,7 +258,7 @@ const MyInfo: React.FC = () => {
       // Cập nhật avatar
       if (result.newAvatarUrl) {
         setAvatarPreview(result.newAvatarUrl);
-      } else if (avatarFile && avatarPreview?.startsWith("blob:")) {
+      } else if (avatarFile && avatarPreview?.startsWith("blob:") && !result.success) {
         // Nếu upload thất bại nhưng vẫn lưu, quay lại avatar cũ
         setAvatarPreview(profileSnapshotRef.current?.avatarPreview || null);
       }

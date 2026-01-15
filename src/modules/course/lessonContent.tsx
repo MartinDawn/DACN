@@ -473,7 +473,9 @@ const LessonContentPage: React.FC = () => {
   const sectionLessons = section.items;
 
   let renderedContent: React.ReactNode = null;
-  if (lesson.type === 'quiz') {
+  if (lesson.type === 'video') {
+    renderedContent = <VideoContent lesson={lesson} description={lessonDescription} />;
+  } else if (lesson.type === 'quiz') {
     renderedContent = <QuizContent questions={getQuizQuestions(lesson.id)} />;
   } else if (lesson.type === 'doc') {
     renderedContent = <DocumentContent lesson={lesson} guide={getDocumentGuide(lesson.id)} onDownload={() => handleDocumentDownload(lesson)} />;

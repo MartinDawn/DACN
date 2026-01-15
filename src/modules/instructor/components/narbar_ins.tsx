@@ -82,7 +82,7 @@ const Navbar: React.FC = () => {
           {isProfileOpen && (
             <div
               ref={menuRef}
-              className="fixed right-4 top-14 z-[60] w-56 rounded-2xl border border-gray-100 bg-white p-3 shadow-xl"
+              className="fixed right-4 top-20 z-[60] w-56 rounded-2xl border border-gray-100 bg-white p-3 shadow-xl"
             >
               <div className="flex items-center gap-3 rounded-xl bg-[#f6f0ff] px-3 py-2">
                 <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#efe7ff] text-[#5a2dff]">

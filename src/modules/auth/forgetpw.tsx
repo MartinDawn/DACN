@@ -169,7 +169,7 @@ const ForgetPasswordPage: React.FC = () => {
                   value={newPassword}
                   onChange={(event) => setNewPassword(event.target.value)}
                   required
-                  minLength={6}
+                  minLength={8}
                 />
               </div>
             </div>
