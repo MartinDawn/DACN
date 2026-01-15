@@ -468,11 +468,7 @@ const LessonContentPage: React.FC = () => {
             <article className="space-y-6 rounded-3xl bg-white p-8 shadow-xl shadow-slate-900/6">
               <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                 <div className="space-y-3">
-                  <span
-                    className={`inline-flex h-11 w-11 items-center justify-center rounded-2xl ${lessonIconWrappers[lesson.type]}`}
-                  >
-                    <LessonIcon className="h-5 w-5" />
-                  </span>
+                
                   <h1 className="text-2xl font-semibold text-slate-900">{lesson.title}</h1>
                   <div className="flex flex-wrap items-center gap-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
                     <span className={`inline-flex items-center rounded-full px-3 py-1 ${lessonTypeStyles[lesson.type]}`}>

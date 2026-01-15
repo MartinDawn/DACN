@@ -116,7 +116,7 @@ export const normalizeToFileName = (value: string) =>
 export const DEFAULT_DOCUMENT_DOWNLOAD_PATH = '/resources/sample-react-handout.txt';
 export const lessonStatusStyles = {
   completed: 'border-emerald-500 bg-emerald-50 text-emerald-500',
-  locked: 'border-slate-200 bg-white text-slate-300',
+  locked: 'border-slate-200 bg-slate-50 text-slate-400',
 };
 export const lessonFilterTabs: Array<{ label: string; value: LessonFilterValue }> = [
   { label: 'Tất cả', value: 'all' },
@@ -678,7 +678,7 @@ const CourseProgressPage: React.FC = () => {
                         <ul className="space-y-3">
                           {visibleItems.map((item) => {
                             const LessonIcon = lessonTypeIcons[item.type];
-                            const StatusIcon = item.isCompleted ? CheckCircleIcon : LockClosedIcon;
+                            const StatusIcon = item.isCompleted ? CheckCircleIcon : PlayCircleIcon;
                             const statusTone = item.isCompleted
                               ? lessonStatusStyles.completed
                               : lessonStatusStyles.locked;
@@ -737,12 +737,6 @@ const CourseProgressPage: React.FC = () => {
                                         <ArrowDownTrayIcon className="h-4 w-4" />
                                       </button>
                                     )}
-                                    <button
-                                      type="button"
-                                      className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 text-slate-400 transition hover:border-indigo-200 hover:text-indigo-600"
-                                    >
-                                      <ArrowDownTrayIcon className="h-4 w-4" />
-                                    </button>
                                     <button
                                       type="button"
                                       onClick={() => toggleItem(item.id)}

@@ -325,7 +325,7 @@ const MyCourse: React.FC = () => {
                     : "Chưa có dữ liệu bài học";
                   const isCompleted = course.status === "completed";
                   const isInProgress = course.status === "inProgress";
-                  const progressTone = isCompleted ? "bg-emerald-500" : "bg-[#05001a]";
+                  const progressTone = isCompleted ? "bg-emerald-500" : "bg-[#5a2dff]";
                   const primaryLabel = isCompleted ? "Review" : isInProgress ? "Continue" : "Start";
                   const ratingSource = (course as Record<string, unknown>).averageRating ?? course.rating ?? 0;
                   const ratingValue =
