@@ -8,7 +8,6 @@ import { useNavigate } from "react-router-dom";
 import InstructorLayout from "../user/layout/layout";
 import { ArrowLeft, Book, Camera, FileText, Lightbulb, UploadCloud, X } from "lucide-react";
 
-import { courseService } from "../course/services/course.service";
 import { toast } from "react-hot-toast";
 
 // Định nghĩa kiểu dữ liệu cho một khóa học
@@ -48,8 +47,8 @@ const InstructorDashboard: React.FC = () => {
   const [isLoadingCourses, setIsLoadingCourses] = useState(true); // State cho trạng thái loading
 
   // Gọi API để lấy danh sách khóa học của giảng viên
-  const fetchCourses = async () => {
-    setIsLoadingCourses(true);
+  const fetchCourses = async (isBackground = false) => {
+    if (!isBackground) setIsLoadingCourses(true);
     try {
       // Thay thế URL bằng API endpoint thực tế của bạn để lấy khóa học của giảng viên
       const response = await fetch("http://localhost:5000/api/Course/my-courses", {
@@ -63,7 +62,9 @@ const InstructorDashboard: React.FC = () => {
 
       if (response.ok) {
         const data = await response.json();
-        setCourses(data); // Cập nhật state với dữ liệu từ API
+        // Cập nhật: Kiểm tra nếu data bọc trong object (vd: {data: []}) hoặc là mảng trực tiếp
+        const coursesList = Array.isArray(data) ? data : (data.data || []);
+        setCourses(coursesList);
       } else {
         console.error("Failed to fetch courses:", response.statusText);
         // Có thể hiển thị thông báo lỗi cho người dùng
@@ -96,6 +97,11 @@ const InstructorDashboard: React.FC = () => {
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      // Kiểm tra dung lượng file (tối đa 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error("Ảnh quá lớn. Vui lòng chọn ảnh dưới 5MB");
+        return;
+      }
       setCourseImage(file);
       const reader = new FileReader();
       reader.onloadend = () => {
@@ -123,11 +129,43 @@ const InstructorDashboard: React.FC = () => {
     // formData.append("CategoryId", categoryId); // Add if needed
 
     try {
-      const response = await courseService.createCourse(formData);
+      // Sử dụng fetch trực tiếp để đảm bảo Token được gửi đúng
+      const token = localStorage.getItem('token');
+      if (!token) {
+        toast.error("Vui lòng đăng nhập lại để thực hiện thao tác này.");
+        setIsSubmitting(false);
+        return;
+      }
 
-      if (response.success) {
+      const response = await fetch("http://localhost:5000/api/Course/create", {
+        method: "POST",
+        headers: {
+          'Authorization': `Bearer ${token}`
+          // Không cần Content-Type, trình duyệt tự động set boundary cho FormData
+        },
+        body: formData
+      });
+
+      // Kiểm tra loại nội dung trả về để tránh lỗi parse JSON
+      const contentType = response.headers.get("content-type");
+      let data;
+      try {
+        if (contentType && contentType.indexOf("application/json") !== -1) {
+          data = await response.json();
+        } else {
+          // Nếu server trả về text/html lỗi
+          const text = await response.text();
+          data = { message: text }; 
+        }
+      } catch (err) {
+        data = null;
+      }
+
+      if (response.ok) {
         toast.success("Tạo khóa học thành công!");
-        const newCourse = response.data;
+        
+        // Lấy thông tin khóa học mới
+        const newCourse = data?.data || data;
 
         // Reset form fields
         setCourseName("");
@@ -136,20 +174,36 @@ const InstructorDashboard: React.FC = () => {
         setCourseImage(null);
         setImagePreview(null);
         setShowCreateCourseForm(false);
+        
+        // Thêm dòng này để chuyển tab về danh sách khóa học
+        setActiveTab("courses");
 
-        // Reload the course list to show the new one
-        await fetchCourses();
-
-        // Navigate to the new course management page
-        if (newCourse && newCourse.id) {
-          navigate(`/instructor/courses/manage/${newCourse.id}`);
+        // Cập nhật ngay lập tức vào danh sách hiển thị
+        if (newCourse) {
+          // Nếu backend trả về object chưa đúng chuẩn format Course, gán tạm id để hiện
+          const courseToAdd = {
+             ...newCourse,
+             id: newCourse.id || Date.now().toString(), // Fallback id nếu thiếu
+             studentCount: 0,
+             averageRating: 0,
+             ratingCount: 0
+          };
+          setCourses(prev => [courseToAdd, ...prev]);
         }
+
+        // Reload the course list silently from server
+        fetchCourses(true);
+
       } else {
-        toast.error(`Lỗi: ${response.message || 'Không thể tạo khóa học.'}`);
+        const message = data?.message || "Không thể tạo khóa học.";
+        // Hiển thị mã lỗi cụ thể nếu có
+        toast.error(`Lỗi ${response.status}: ${message}`);
+        console.error("Create course failed:", data);
       }
     } catch (error: any) {
       console.error("Lỗi khi gọi API tạo khóa học:", error);
-      toast.error(error.response?.data?.message || "Đã xảy ra lỗi khi tạo khóa học.");
+      // Hiển thị chi tiết lỗi mạng để dễ debug
+      toast.error(`Lỗi: ${error.message || "Không thể kết nối đến máy chủ."}`);
     } finally {
       setIsSubmitting(false);
     }
