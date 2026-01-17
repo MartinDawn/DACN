@@ -1,15 +1,306 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 // import InstructorLayout from "./layout/layout_ins";
 // import InstructorLayout from "./layout/layout";
 
 // import UserLayout from './layout/layout';
 // import UserLayout from "../user/layout/layout";
 import InstructorLayout from "../user/layout/layout";
+import { ArrowLeft, Book, Camera, FileText, Lightbulb, UploadCloud, X } from "lucide-react";
 
+import { courseService } from "../course/services/course.service";
+import { toast } from "react-hot-toast";
+
+// Định nghĩa kiểu dữ liệu cho một khóa học
+interface Course {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  imageUrl: string;
+  // Thêm các thuộc tính khác nếu cần
+  // Ví dụ:
+  studentCount: number;
+  averageRating: number;
+  ratingCount: number;
+}
+
+// Định nghĩa kiểu dữ liệu cho một danh mục
+// interface Category {
+//   id: string;
+//   name: string;
+// }
 
 const InstructorDashboard: React.FC = () => {
   // Thêm state quản lý tab
   const [activeTab, setActiveTab] = useState<"overview" | "courses" | "analytics" | "activity">("overview");
+  const [showCreateCourseForm, setShowCreateCourseForm] = useState(false);
+  const [courseName, setCourseName] = useState("");
+  const [coursePrice, setCoursePrice] = useState<number | string>("");
+  const [courseDescription, setCourseDescription] = useState("");
+  const [courseImage, setCourseImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  // const [categoryId, setCategoryId] = useState(""); // State cho category
+  // const [categories, setCategories] = useState<Category[]>([]); // State cho danh sách category
+  const navigate = useNavigate();
+  const [courses, setCourses] = useState<Course[]>([]); // State để lưu danh sách khóa học
+  const [isLoadingCourses, setIsLoadingCourses] = useState(true); // State cho trạng thái loading
+
+  // Gọi API để lấy danh sách khóa học của giảng viên
+  const fetchCourses = async () => {
+    setIsLoadingCourses(true);
+    try {
+      // Thay thế URL bằng API endpoint thực tế của bạn để lấy khóa học của giảng viên
+      const response = await fetch("http://localhost:5000/api/Course/my-courses", {
+        method: "GET",
+        headers: {
+          'Accept-Language': 'vi',
+          // Thêm Authorization header nếu API yêu cầu
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setCourses(data); // Cập nhật state với dữ liệu từ API
+      } else {
+        console.error("Failed to fetch courses:", response.statusText);
+        // Có thể hiển thị thông báo lỗi cho người dùng
+      }
+    } catch (error) {
+      console.error("Error fetching courses:", error);
+    } finally {
+      setIsLoadingCourses(false);
+    }
+  };
+  useEffect(() => {
+    fetchCourses();
+    // Lấy danh sách danh mục khi component mount
+    // const fetchCategories = async () => {
+    //   try {
+    //     const response = await fetch("http://localhost:5000/api/Category/get-all");
+    //     if (response.ok) {
+    //       const data = await response.json();
+    //       setCategories(data);
+    //     } else {
+    //       console.error("Failed to fetch categories");
+    //     }
+    //   } catch (error) {
+    //     console.error("Error fetching categories:", error);
+    //   }
+    // };
+    // fetchCategories();
+  }, []); // Mảng rỗng đảm bảo useEffect chỉ chạy 1 lần khi component mount
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setCourseImage(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleCreateCourse = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+
+    if (!courseName || !coursePrice || !courseDescription || !courseImage) {
+      toast.error("Vui lòng điền đầy đủ các trường bắt buộc.");
+      setIsSubmitting(false);
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("Name", courseName);
+    formData.append("Description", courseDescription);
+    formData.append("Price", coursePrice.toString());
+    formData.append("ImageFile", courseImage);
+    // formData.append("CategoryId", categoryId); // Add if needed
+
+    try {
+      const response = await courseService.createCourse(formData);
+
+      if (response.success) {
+        toast.success("Tạo khóa học thành công!");
+        const newCourse = response.data;
+
+        // Reset form fields
+        setCourseName("");
+        setCoursePrice("");
+        setCourseDescription("");
+        setCourseImage(null);
+        setImagePreview(null);
+        setShowCreateCourseForm(false);
+
+        // Reload the course list to show the new one
+        await fetchCourses();
+
+        // Navigate to the new course management page
+        if (newCourse && newCourse.id) {
+          navigate(`/instructor/courses/manage/${newCourse.id}`);
+        }
+      } else {
+        toast.error(`Lỗi: ${response.message || 'Không thể tạo khóa học.'}`);
+      }
+    } catch (error: any) {
+      console.error("Lỗi khi gọi API tạo khóa học:", error);
+      toast.error(error.response?.data?.message || "Đã xảy ra lỗi khi tạo khóa học.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  if (showCreateCourseForm) {
+    return (
+      <InstructorLayout>
+        <div className="mx-auto max-w-4xl">
+          <button onClick={() => setShowCreateCourseForm(false)} className="mb-6 flex items-center gap-2 text-sm font-semibold text-gray-600 hover:text-gray-900">
+            <ArrowLeft size={16} />
+            Quay lại
+          </button>
+          <div className="mb-6">
+            <h1 className="text-3xl font-bold text-gray-900">Tạo Khóa Học Mới</h1>
+            <p className="mt-2 text-sm text-gray-500">Nhập thông tin cơ bản để bắt đầu</p>
+          </div>
+
+          <form onSubmit={handleCreateCourse} className="space-y-8">
+            <div className="rounded-2xl border border-gray-200 bg-white p-6">
+              <div className="flex items-center gap-3">
+                <FileText className="text-gray-500" />
+                <h3 className="text-lg font-semibold text-gray-800">Thông Tin Khóa Học</h3>
+              </div>
+              <p className="mt-1 ml-9 text-sm text-gray-500">Sau khi tạo khóa học, bạn có thể thêm chương, bài học và video trong phần quản lý khóa học</p>
+
+              <div className="mt-6 space-y-6">
+                {/* Tên Khóa Học */}
+                <div>
+                  <label htmlFor="name" className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                    <Book size={16} /> Tên Khóa Học <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    id="name"
+                    value={courseName}
+                    onChange={(e) => setCourseName(e.target.value)}
+                    required
+                    placeholder="Ví dụ: Khóa học React Toàn Diện"
+                    className="mt-2 block w-full rounded-lg border-gray-200 bg-gray-50 p-3 text-sm focus:border-blue-500 focus:ring-blue-500"
+                  />
+                </div>
+
+                
+                {/* Giá Khóa Học */}
+                <div>
+                  <label htmlFor="price" className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                    <span className="font-bold">$</span> Giá Khóa Học (VND) <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="number"
+                    id="price"
+                    value={coursePrice}
+                    onChange={(e) => setCoursePrice(e.target.value)}
+                    required
+                    placeholder="Ví dụ: 1999000"
+                    className="mt-2 block w-full rounded-lg border-gray-200 bg-gray-50 p-3 text-sm focus:border-blue-500 focus:ring-blue-500"
+                  />
+                </div>
+
+                {/* Mô Tả Khóa Học */}
+                <div>
+                  <label htmlFor="description" className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                    <FileText size={16} /> Mô Tả Khóa Học <span className="text-red-500">*</span>
+                  </label>
+                  <textarea
+                    id="description"
+                    rows={4}
+                    value={courseDescription}
+                    onChange={(e) => setCourseDescription(e.target.value)}
+                    placeholder="Mô tả chi tiết về nội dung và mục tiêu của khóa học..."
+                    className="mt-2 block w-full rounded-lg border-gray-200 bg-gray-50 p-3 text-sm focus:border-blue-500 focus:ring-blue-500"
+                  ></textarea>
+                  <p className="mt-2 text-xs text-gray-500">Mô tả rõ ràng về những gì học viên sẽ học được trong khóa học</p>
+                </div>
+
+                {/* Ảnh Hiển Thị */}
+                <div>
+                  <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                    <Camera size={16} /> Ảnh Hiển Thị Khóa Học <span className="text-red-500">*</span>
+                  </label>
+                  <div className="mt-2 flex justify-center rounded-lg border-2 border-dashed border-gray-300 px-6 py-10">
+                    {imagePreview ? (
+                      <div className="relative">
+                        <img src={imagePreview} alt="Xem trước" className="h-48 w-auto rounded-md object-cover" />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setImagePreview(null);
+                            setCourseImage(null);
+                          }}
+                          className="absolute -right-2 -top-2 rounded-full bg-red-500 p-1 text-white shadow-md"
+                        >
+                          <X size={14} />
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="text-center">
+                        <UploadCloud className="mx-auto h-12 w-12 text-gray-400" />
+                        <p className="mt-2 text-sm text-gray-600">Tải ảnh hiển thị khóa học lên</p>
+                        <p className="text-xs text-gray-500">Khuyến nghị: 1280x720px, JPG hoặc PNG, tối đa 5MB</p>
+                        <label htmlFor="image-upload" className="mt-4 inline-flex cursor-pointer items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50">
+                          <UploadCloud size={16} />
+                          Chọn Ảnh
+                        </label>
+                        <input id="image-upload" name="image-upload" type="file" className="sr-only" accept="image/*" onChange={handleImageChange} />
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Lưu ý */}
+            <div className="rounded-2xl bg-purple-50 p-6">
+              <div className="flex items-start gap-3">
+                <Lightbulb className="mt-1 text-purple-500" />
+                <div>
+                  <h4 className="font-semibold text-gray-800">Lưu ý</h4>
+                  <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-gray-600">
+                    <li>Sau khi tạo khóa học, bạn sẽ được chuyển đến trang quản lý khóa học</li>
+                    <li>Tại đó bạn có thể thêm chương, bài học và upload video</li>
+                    <li>Bạn có thể chỉnh sửa thông tin khóa học bất cứ lúc nào</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="flex justify-end gap-4 pt-4">
+              <button
+                type="button"
+                onClick={() => setShowCreateCourseForm(false)}
+                className="rounded-lg border border-gray-300 bg-white px-6 py-2.5 text-sm font-semibold text-gray-700 shadow-sm transition hover:bg-gray-50"
+              >
+                Hủy
+              </button>
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="flex items-center gap-2 rounded-lg bg-[#5a2dff] px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#4a21eb] disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <Book size={16} />
+                {isSubmitting ? "Đang tạo..." : "Tạo Khóa Học"}
+              </button>
+            </div>
+          </form>
+        </div>
+      </InstructorLayout>
+    );
+  }
 
   return (
     <InstructorLayout>
@@ -19,7 +310,9 @@ const InstructorDashboard: React.FC = () => {
           <p className="mt-2 text-sm text-gray-500">Quản lý khóa học và theo dõi hiệu suất của bạn.</p>
         </div>
         <div className="pt-2">
-          <button className="rounded-full bg-[#5a2dff] px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-[#5a2dff]/20 transition hover:-translate-y-0.5 hover:bg-[#4a21eb]">
+          <button 
+            onClick={() => setShowCreateCourseForm(true)}
+            className="rounded-full bg-[#5a2dff] px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-[#5a2dff]/20 transition hover:-translate-y-0.5 hover:bg-[#4a21eb]">
             Tạo Khóa Học Mới
           </button>
         </div>
@@ -96,7 +389,9 @@ const InstructorDashboard: React.FC = () => {
             <h3 className="text-lg font-semibold">Hành Động Nhanh</h3>
             <p className="mt-1 text-sm text-gray-500">Quản lý khóa học và nội dung của bạn</p>
             <div className="mt-6 grid gap-4 sm:grid-cols-3">
-              <button className="rounded-2xl border border-gray-200 bg-gray-50 p-6 text-center font-semibold text-gray-700 transition hover:border-[#5a2dff] hover:bg-white hover:text-[#5a2dff]">Tạo Khóa Học</button>
+              <button 
+                onClick={() => setShowCreateCourseForm(true)}
+                className="rounded-2xl border border-gray-200 bg-gray-50 p-6 text-center font-semibold text-gray-700 transition hover:border-[#5a2dff] hover:bg-white hover:text-[#5a2dff]">Tạo Khóa Học</button>
               <button className="rounded-2xl border border-gray-200 bg-gray-50 p-6 text-center font-semibold text-gray-700 transition hover:border-[#5a2dff] hover:bg-white hover:text-[#5a2dff]">Xem Phân Tích</button>
               <button className="rounded-2xl border border-gray-200 bg-gray-50 p-6 text-center font-semibold text-gray-700 transition hover:border-[#5a2dff] hover:bg-white hover:text-[#5a2dff]">Kiểm Tra Tin Nhắn</button>
             </div>
@@ -121,58 +416,42 @@ const InstructorDashboard: React.FC = () => {
       {activeTab === "courses" && (
         <section>
           <h3 className="mb-4 text-2xl font-bold">Khóa Học Của Tôi</h3>
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {/* Card 1 */}
-            <div className="overflow-hidden rounded-3xl bg-white shadow-lg shadow-slate-900/5 transition hover:-translate-y-1">
-              <div className="h-48 rounded-t-2xl bg-gray-200" />
-              <div className="p-5">
-                <h4 className="text-base font-semibold">Khóa học React Toàn Diện</h4>
-                <p className="mt-1 text-sm text-gray-500">Học React từ cơ bản đến nâng cao</p>
-                <div className="mt-4 flex items-center justify-between text-sm text-gray-600">
-                  <div className="font-medium">1,234 học viên</div>
-                  <div className="font-semibold text-amber-500">⭐ 4.8 (156)</div>
+          {isLoadingCourses ? (
+            <p>Đang tải danh sách khóa học...</p>
+          ) : courses.length > 0 ? (
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {courses.map((course) => (
+                <div key={course.id} className="overflow-hidden rounded-3xl bg-white shadow-lg shadow-slate-900/5 transition hover:-translate-y-1">
+                  <img src={course.imageUrl || "/placeholder.jpg"} alt={course.name} className="h-48 w-full rounded-t-2xl object-cover" />
+                  <div className="p-5">
+                    <h4 className="truncate text-base font-semibold" title={course.name}>{course.name}</h4>
+                    <p className="mt-1 line-clamp-2 text-sm text-gray-500">{course.description}</p>
+                    <div className="mt-4 flex items-center justify-between text-sm text-gray-600">
+                      <div className="font-medium">{course.studentCount || 0} học viên</div>
+                      <div className="font-semibold text-amber-500">⭐ {course.averageRating || 0} ({course.ratingCount || 0})</div>
+                    </div>
+                    <div className="mt-4 flex gap-3">
+                      <button 
+                        onClick={() => navigate(`/instructor/courses/manage/${course.id}`)}
+                        className="flex-1 rounded-full bg-[#5a2dff] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#4a21eb]">
+                          Quản lý
+                      </button>
+                      <button className="rounded-full border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-600 transition hover:bg-gray-100">Sửa</button>
+                    </div>
+                  </div>
                 </div>
-                <div className="mt-4 flex gap-3">
-                  <button className="flex-1 rounded-full bg-[#5a2dff] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#4a21eb]">Quản lý</button>
-                  <button className="rounded-full border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-600 transition hover:bg-gray-100">Sửa</button>
-                </div>
-              </div>
+              ))}
             </div>
-
-            {/* Card 2 */}
-            <div className="overflow-hidden rounded-3xl bg-white shadow-lg shadow-slate-900/5 transition hover:-translate-y-1">
-              <div className="h-48 rounded-t-2xl bg-gray-200" />
-              <div className="p-5">
-                <h4 className="text-base font-semibold">Thành Thạo JavaScript</h4>
-                <p className="mt-1 text-sm text-gray-500">Làm chủ lập trình JavaScript</p>
-                <div className="mt-4 flex items-center justify-between text-sm text-gray-600">
-                  <div className="font-medium">892 học viên</div>
-                  <div className="font-semibold text-amber-500">⭐ 4.6 (98)</div>
-                </div>
-                <div className="mt-4 flex gap-3">
-                  <button className="flex-1 rounded-full bg-[#5a2dff] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#4a21eb]">Quản lý</button>
-                  <button className="rounded-full border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-600 transition hover:bg-gray-100">Sửa</button>
-                </div>
-              </div>
+          ) : (
+            <div className="text-center py-10">
+              <p className="text-gray-500">Bạn chưa có khóa học nào.</p>
+              <button 
+                onClick={() => setShowCreateCourseForm(true)}
+                className="mt-4 rounded-lg bg-[#5a2dff] px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#4a21eb]">
+                Tạo khóa học đầu tiên
+              </button>
             </div>
-
-            {/* Card 3 */}
-            <div className="overflow-hidden rounded-3xl bg-white shadow-lg shadow-slate-900/5 transition hover:-translate-y-1">
-              <div className="h-48 rounded-t-2xl bg-gray-200" />
-              <div className="p-5">
-                <h4 className="text-base font-semibold">Phát Triển Backend Node.js</h4>
-                <p className="mt-1 text-sm text-gray-500">Xây dựng ứng dụng backend mở rộng</p>
-                <div className="mt-4 flex items-center justify-between text-sm text-gray-600">
-                  <div className="font-medium">543 học viên</div>
-                  <div className="font-semibold text-amber-500">⭐ 4.7 (67)</div>
-                </div>
-                <div className="mt-4 flex gap-3">
-                  <button className="flex-1 rounded-full bg-[#5a2dff] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#4a21eb]">Quản lý</button>
-                  <button className="rounded-full border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-600 transition hover:bg-gray-100">Sửa</button>
-                </div>
-              </div>
-            </div>
-          </div>
+          )}
         </section>
       )}
 
