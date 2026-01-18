@@ -72,13 +72,16 @@ const RegisterPage: React.FC = () => {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-100 px-4">
+    <div className="relative flex min-h-screen items-center justify-center bg-gray-100 px-4">
       <AuthNotification
         show={notification.show}
         type={notification.type}
         message={notification.message}
         onClose={() => setNotification(prev => ({ ...prev, show: false }))}
       />
+      <Link to="/" className="absolute left-4 top-4 z-10 inline-flex items-center gap-2 text-sm font-medium text-indigo-500 hover:text-indigo-400">
+        ← Trang chủ
+      </Link>
       <div className="w-full max-w-md rounded-3xl border border-gray-200 bg-white p-8 shadow-[0_24px_80px_rgba(15,23,42,0.08)]">
         <div className="space-y-2 text-center">
           <h1 className="text-3xl font-semibold text-gray-900">
@@ -97,13 +100,7 @@ const RegisterPage: React.FC = () => {
             <FcGoogle className="text-lg" />
             Đăng ký với Google
           </button>
-          <button
-            type="button"
-            className="flex h-12 w-full items-center justify-center gap-3 rounded-2xl border border-gray-200 bg-white text-sm font-medium text-gray-700 transition-colors hover:border-gray-300 hover:bg-gray-50"
-          >
-            <FaFacebookF className="text-lg text-[#1877f2]" />
-            Đăng ký với Facebook
-          </button>
+         
         </div>
 
         <div className="mt-6 flex items-center gap-4">
