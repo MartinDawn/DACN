@@ -9,7 +9,7 @@ export interface RegisterRequest {
     password: string;
     fullName: string;
     phoneNumber: string;
-    role: 'Student' | 'Instructor';
+    role: 'Student' | 'Instructor' | string;
 }
 
 export interface ForgetPasswordRequest {
@@ -53,3 +53,11 @@ export interface ResetPasswordRequest {
     newPassword: string;
     otp: string;
 }
+
+export type ServiceResponse<T = any> = {
+    success: boolean;
+    message?: string;
+    data?: T;
+    // for google auth url
+    url?: string;
+};

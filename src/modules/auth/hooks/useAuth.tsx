@@ -16,7 +16,7 @@ import { AuthNotification } from "./components/AuthNotification";
 
 const LoginPage: React.FC = () => {
   const navigate = useNavigate();
-  const { login, loading, error, getGoogleAuthUrl, getProfile } = useAuth();
+  const { login, loading, error } = useAuth();
   const [formData, setFormData] = useState<LoginRequest>({
     username: "",
     password: "",
@@ -40,34 +40,7 @@ const LoginPage: React.FC = () => {
       setFormData(prev => ({ ...prev, username: rememberedUsername }));
       setRememberMe(true);
     }
-
-    const params = new URLSearchParams(window.location.search);
-    const accessToken = params.get("access_token") || params.get("token") || params.get("accessToken");
-    if (accessToken) {
-      (async () => {
-        try {
-          // Persist token to the same key used across the app
-          localStorage.setItem("accessToken", accessToken);
-          const profileRes = await getProfile(accessToken);
-          if (profileRes?.success && profileRes.data) {
-            localStorage.setItem("user_data", JSON.stringify(profileRes.data));
-            navigate("/user/home");
-          } else {
-            setNotification({
-              show: true,
-              type: "error",
-              message: profileRes?.message || "Không lấy được thông tin người dùng"
-            });
-          }
-        } catch (err) {
-          console.error(err);
-        } finally {
-          // Remove query string so we don't re-process
-          window.history.replaceState({}, document.title, window.location.pathname);
-        }
-      })();
-    }
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);
 
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -113,29 +86,6 @@ const LoginPage: React.FC = () => {
     }
   };
 
-  // Thêm hàm xử lý Google auth
-  const handleGoogleAuth = async () => {
-    try {
-      const url = await getGoogleAuthUrl(window.location.origin + "/auth/google-callback");
-      if (url) {
-        window.location.href = url;
-      } else {
-        setNotification({
-          show: true,
-          type: "error",
-          message: "Không thể lấy đường dẫn Google. Vui lòng thử lại."
-        });
-      }
-    } catch (err) {
-      console.error("Google auth error:", err);
-      setNotification({
-        show: true,
-        type: "error",
-        message: (err instanceof Error && err.message) ? err.message : "Lỗi khi kết nối với Google."
-      });
-    }
-  };
-
   return (
     <div className="relative flex min-h-screen items-center justify-center bg-gray-100 px-4">
       <AuthNotification
@@ -158,7 +108,6 @@ const LoginPage: React.FC = () => {
         <div className="mt-6 space-y-3">
           <button
             type="button"
-            onClick={handleGoogleAuth}
             className="flex h-12 w-full items-center justify-center gap-3 rounded-2xl border border-gray-200 bg-white text-sm font-medium text-gray-700 transition-colors hover:border-gray-300 hover:bg-gray-50"
           >
             <FcGoogle className="text-lg" />
@@ -187,7 +136,7 @@ const LoginPage: React.FC = () => {
                 name="username"
                 type="text"
                 placeholder="Nhập tên đăng nhập"
-                className="w-full bg-transparent text-sm text-gray-900 placeholder-gray-400 outline outline"
+                className="w-full bg-transparent text-sm text-gray-900 placeholder-gray-400 outline-none"
                 value={formData.username}
                 onChange={(e) => setFormData({ ...formData, username: e.target.value })}
                 required
@@ -237,7 +186,7 @@ const LoginPage: React.FC = () => {
               to="/forgot-password"
               className="text-sm font-semibold text-indigo-500 hover:text-indigo-400"
             >
-              quên mật khẩu?
+              Quên mật khẩu?
             </Link>
           </div>
 

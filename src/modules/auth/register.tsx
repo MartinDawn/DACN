@@ -17,7 +17,7 @@ import { AuthNotification } from "./components/AuthNotification";
 
 const RegisterPage: React.FC = () => {
   const navigate = useNavigate();
-  const { register, loading, error } = useAuth();
+  const { register, loading, error, getGoogleAuthUrl } = useAuth();
   const [formData, setFormData] = useState<RegisterRequest>({
     userName: "",
     email: "",
@@ -71,6 +71,28 @@ const RegisterPage: React.FC = () => {
     }
   };
 
+  const handleGoogleAuth = async () => {
+    try {
+      const url = await getGoogleAuthUrl(window.location.origin + "/auth/google-callback");
+      if (url) {
+        window.location.href = url;
+      } else {
+        setNotification({
+          show: true,
+          type: "error",
+          message: "Không thể lấy đường dẫn Google. Vui lòng thử lại."
+        });
+      }
+    } catch (err) {
+      console.error("Google auth error:", err);
+      setNotification({
+        show: true,
+        type: "error",
+        message: (err instanceof Error && err.message) ? err.message : "Lỗi khi kết nối với Google."
+      });
+    }
+  };
+
   return (
     <div className="relative flex min-h-screen items-center justify-center bg-gray-100 px-4">
       <AuthNotification
@@ -95,6 +117,7 @@ const RegisterPage: React.FC = () => {
         <div className="mt-6 space-y-3">
           <button
             type="button"
+            onClick={handleGoogleAuth}
             className="flex h-12 w-full items-center justify-center gap-3 rounded-2xl border border-gray-200 bg-white text-sm font-medium text-gray-700 transition-colors hover:border-gray-300 hover:bg-gray-50"
           >
             <FcGoogle className="text-lg" />

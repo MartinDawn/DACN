@@ -1,6 +1,5 @@
 import axios from 'axios';
-import type { AxiosError, AxiosRequestConfig,InternalAxiosRequestConfig } from 'axios';
-import { authService } from './auth.service'; // Dùng để logout và set token
+import type { AxiosError, AxiosRequestConfig, InternalAxiosRequestConfig } from 'axios';
 
 const API_URL = 'http://dacn.runasp.net/api';
 // const API_URL = 'http://localhost:5223/api';
@@ -16,6 +15,7 @@ const apiClient = axios.create({
   },
   withCredentials: true, // Quan trọng để gửi cookie (refresh token)
 });
+
 apiClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
     // Chỉ lấy token từ localStorage khi request
@@ -72,8 +72,14 @@ apiClient.interceptors.response.use(
 
     // Nếu request là refresh-token thì logout luôn
     if (originalRequest.url?.includes('/Account/refresh-token')) {
-      console.error('Refresh token failed or expired. Logging out.');
-      authService.logout();
+      console.error('Refresh token failed or expired. Cleaning up client session.');
+      // local cleanup (don't import authService)
+      try {
+        localStorage.removeItem('accessToken');
+      } catch (e) {
+        // ignore
+      }
+      delete apiClient.defaults.headers.common['Authorization'];
       return Promise.reject(error);
     }
 
@@ -104,7 +110,7 @@ apiClient.interceptors.response.use(
       localStorage.setItem('accessToken', newAccessToken);
 
       // 2. Cập nhật header mặc định
-      authService.setAuthToken(newAccessToken);
+      apiClient.defaults.headers.common['Authorization'] = `Bearer ${newAccessToken}`;
 
       // 3. Gọi lại các request trong hàng đợi
       processQueue(null, newAccessToken);
@@ -118,7 +124,13 @@ apiClient.interceptors.response.use(
       console.error('Failed to refresh token', refreshError);
 
       processQueue(refreshError as Error, null);
-      authService.logout();
+
+      try {
+        localStorage.removeItem('accessToken');
+      } catch (e) {
+        // ignore
+      }
+      delete apiClient.defaults.headers.common['Authorization'];
 
       return Promise.reject(refreshError);
     } finally {
