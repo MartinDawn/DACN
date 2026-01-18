@@ -12,6 +12,13 @@ import type {
     ServiceResponse
 } from '../models/auth';
 
+// ensure apiClient is configured to use the Vite proxy path and send cookies
+if (apiClient && (apiClient as any).defaults) {
+    // use '/api' so Vite dev server proxy (configured in vite.config.ts) can forward requests to backend
+    (apiClient as any).defaults.baseURL = (apiClient as any).defaults.baseURL || '/api';
+    (apiClient as any).defaults.withCredentials = true;
+}
+
 export const authService = {
     async login(data: LoginRequest): Promise<ApiResponse<LoginResponse>> {
         const response = await apiClient.post<ApiResponse<LoginResponse>>('/Account/login', data);
@@ -50,8 +57,8 @@ export const authService = {
     // NEW: Get Google auth URL (backend will return a redirect URL)
     async getGoogleAuthUrl(returnUrl?: string): Promise<ServiceResponse<{ url: string }>> {
         try {
-            // Only send returnUrl when explicitly provided by caller.
-            const config = returnUrl ? { params: { returnUrl } } : undefined;
+            // send redirectUri param (backend commonly expects "redirectUri")
+            const config = returnUrl ? { params: { redirectUri: returnUrl } } : undefined;
 
             const response = await apiClient.get<any>(
                 '/Account/google-auth-url',

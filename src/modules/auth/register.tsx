@@ -73,7 +73,8 @@ const RegisterPage: React.FC = () => {
 
   const handleGoogleAuth = async () => {
     try {
-      const url = await getGoogleAuthUrl(); // service will build the correct redirect URI from apiClient.baseURL
+      const redirectUri = `${window.location.origin}/auth/google-callback`;
+      const url = await getGoogleAuthUrl(redirectUri);
       if (url) {
         window.location.href = url;
       } else {

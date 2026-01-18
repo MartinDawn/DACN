@@ -1,6 +1,6 @@
 import type { LoginRequest, RegisterRequest, ServiceResponse } from "../models/auth";
 
-const API_BASE = "http://dacn.runasp.net";
+const API_BASE = "/api"; // use relative path so Vite proxy forwards to backend
 
 async function request<T = any>(path: string, opts: RequestInit = {}): Promise<ServiceResponse<T>> {
 	const res = await fetch(`${API_BASE}${path}`, {
@@ -21,14 +21,14 @@ async function request<T = any>(path: string, opts: RequestInit = {}): Promise<S
 
 export const login = async (data: LoginRequest): Promise<ServiceResponse> => {
 	// Backend might expect { username, password } or different keys; adjust if needed.
-	return request("/api/Account/login", {
+	return request("/Account/login", {
 		method: "POST",
 		body: JSON.stringify(data),
 	});
 };
 
 export const register = async (data: RegisterRequest): Promise<ServiceResponse> => {
-	return request("/api/Account/register", {
+	return request("/Account/register", {
 		method: "POST",
 		body: JSON.stringify(data),
 	});
@@ -37,13 +37,13 @@ export const register = async (data: RegisterRequest): Promise<ServiceResponse> 
 export const getGoogleAuthUrl = async (redirectUri: string): Promise<ServiceResponse<{ url: string }>> => {
 	// Send redirectUri so backend can redirect back with token in query
 	const encoded = encodeURIComponent(redirectUri);
-	return request(`/api/Account/google-auth-url?redirectUri=${encoded}`, {
+	return request(`/Account/google-auth-url?redirectUri=${encoded}`, {
 		method: "GET",
 	});
 };
 
 export const getProfile = async (token: string): Promise<ServiceResponse> => {
-	return request("/api/Account/me", {
+	return request("/Account/me", {
 		method: "GET",
 		headers: {
 			Authorization: `Bearer ${token}`,
