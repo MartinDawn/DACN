@@ -48,11 +48,14 @@ export const authService = {
     },
 
     // NEW: Get Google auth URL (backend will return a redirect URL)
-    async getGoogleAuthUrl(returnUrl: string): Promise<ServiceResponse<{ url: string }>> {
+    async getGoogleAuthUrl(returnUrl?: string): Promise<ServiceResponse<{ url: string }>> {
         try {
+            // Only send returnUrl when explicitly provided by caller.
+            const config = returnUrl ? { params: { returnUrl } } : undefined;
+
             const response = await apiClient.get<any>(
                 '/Account/google-auth-url',
-                { params: { returnUrl } }
+                config
             );
 
             const payload = response.data;
@@ -94,9 +97,8 @@ export const authService = {
             if (finalUrl && finalUrl.startsWith('/')) {
                 const base = (apiClient && (apiClient as any).defaults && (apiClient as any).defaults.baseURL) || (typeof window !== 'undefined' ? window.location.origin : '');
                 if (base) {
-                    finalUrl = `${base.replace(/\/$/, '')}${finalUrl}`;
+                    finalUrl = `${String(base).replace(/\/$/, '')}${finalUrl}`;
                 } else {
-                    // as a last resort, prefix with current origin
                     finalUrl = (typeof window !== 'undefined' ? window.location.origin : '') + finalUrl;
                 }
             }
@@ -115,7 +117,6 @@ export const authService = {
                 message: 'Không tìm thấy đường dẫn Google từ server',
             };
         } catch (err: any) {
-            // normalize error
             const message = err?.response?.data?.message || err?.message || 'Lỗi khi lấy đường dẫn Google';
             return {
                 success: false,

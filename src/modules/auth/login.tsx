@@ -116,7 +116,7 @@ const LoginPage: React.FC = () => {
   // Thêm hàm xử lý Google auth
   const handleGoogleAuth = async () => {
     try {
-      const url = await getGoogleAuthUrl(window.location.origin + "/auth/google-callback");
+      const url = await getGoogleAuthUrl(); // service will build the correct redirect URI from apiClient.baseURL
       if (url) {
         window.location.href = url;
       } else {

@@ -2,6 +2,7 @@ import React from 'react';
 import LoginCard from './modules/auth/login';
 import RegisterPage from './modules/auth/register';
 import ForgetPasswordPage from './modules/auth/forgetpw';
+import GoogleCallbackPage from './modules/auth/google-callback';
 import Homepage from './modules/homepage/home';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import UserHome from './modules/user/home';
@@ -29,6 +30,7 @@ function App() {
         <Route path="/login" element={<LoginCard />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/forgot-password" element={<ForgetPasswordPage />} />
+        <Route path="/auth/google-callback" element={<GoogleCallbackPage />} />
         <Route path="/homepage" element={<Homepage />} />
         <Route path="/user/home" element={<UserHome />} />
         <Route path="/user/mycourses" element={<MyCourse />} />
