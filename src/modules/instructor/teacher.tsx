@@ -30,6 +30,8 @@ interface Course {
 //   name: string;
 // }
 
+const API_BASE_URL = "http://dacn.runasp.net";
+
 const InstructorDashboard: React.FC = () => {
   // Thêm state quản lý tab
   const [activeTab, setActiveTab] = useState<"overview" | "courses" | "analytics" | "activity">("overview");
@@ -40,8 +42,7 @@ const InstructorDashboard: React.FC = () => {
   const [courseImage, setCourseImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  // const [categoryId, setCategoryId] = useState(""); // State cho category
-  // const [categories, setCategories] = useState<Category[]>([]); // State cho danh sách category
+  // const [categoryId, setCategoryId] = useState("1"); // State cho category, tạm gán giá trị mặc định
   const navigate = useNavigate();
   const [courses, setCourses] = useState<Course[]>([]); // State để lưu danh sách khóa học
   const [isLoadingCourses, setIsLoadingCourses] = useState(true); // State cho trạng thái loading
@@ -51,7 +52,7 @@ const InstructorDashboard: React.FC = () => {
     if (!isBackground) setIsLoadingCourses(true);
     try {
       // Thay thế URL bằng API endpoint thực tế của bạn để lấy khóa học của giảng viên
-      const response = await fetch("http://localhost:5000/api/Course/my-courses", {
+      const response = await fetch(`${API_BASE_URL}/api/Course/my-courses`, {
         method: "GET",
         headers: {
           'Accept-Language': 'vi',
@@ -126,7 +127,7 @@ const InstructorDashboard: React.FC = () => {
     formData.append("Description", courseDescription);
     formData.append("Price", coursePrice.toString());
     formData.append("ImageFile", courseImage);
-    // formData.append("CategoryId", categoryId); // Add if needed
+    // formData.append("CategoryId", categoryId); // Add CategoryId
 
     try {
       // Sử dụng fetch trực tiếp để đảm bảo Token được gửi đúng
@@ -137,9 +138,10 @@ const InstructorDashboard: React.FC = () => {
         return;
       }
 
-      const response = await fetch("http://localhost:5000/api/Course/create", {
+      const response = await fetch(`${API_BASE_URL}/api/Course/create`, {
         method: "POST",
         headers: {
+          'Accept': 'application/json',
           'Authorization': `Bearer ${token}`
           // Không cần Content-Type, trình duyệt tự động set boundary cho FormData
         },
@@ -149,17 +151,22 @@ const InstructorDashboard: React.FC = () => {
       // Kiểm tra loại nội dung trả về để tránh lỗi parse JSON
       const contentType = response.headers.get("content-type");
       let data;
-      try {
-        if (contentType && contentType.indexOf("application/json") !== -1) {
-          data = await response.json();
-        } else {
-          // Nếu server trả về text/html lỗi
-          const text = await response.text();
-          data = { message: text }; 
+      if (response.ok) {
+        // Nếu request thành công (status 2xx), thì mới parse JSON
+        data = await response.json();
+      } else {
+        // Nếu request thất bại, đọc response dưới dạng text để tránh lỗi parse JSON
+        const errorText = await response.text();
+        console.error("Server error response:", errorText); // Log lỗi HTML/text để debug
+        try {
+          // Thử parse text đó xem có phải là JSON không
+          data = JSON.parse(errorText);
+        } catch (e) {
+          // Nếu không phải JSON, tạo một object lỗi với message là text đó
+          data = { message: errorText };
         }
-      } catch (err) {
-        data = null;
       }
+
 
       if (response.ok) {
         toast.success("Tạo khóa học thành công!");
