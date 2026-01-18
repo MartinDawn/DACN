@@ -16,11 +16,19 @@ export const instructorService = {
    * @param courseData - The FormData for the new course.
    */
   async createCourse(courseData: FormData): Promise<CreateCourseResponse> {
+    // For debugging: log FormData entries
+    for (let [key, value] of courseData.entries()) {
+      console.log(`${key}:`, value);
+    }
     const response = await apiClient.post<CreateCourseResponse>('/Course/create', courseData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
     });
+
+    // Debug: log HTTP status and payload returned by backend
+    console.log('createCourse http response:', response.status, response.data);
+
     return response.data;
   },
 

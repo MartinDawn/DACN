@@ -8,6 +8,7 @@ export interface InstructorCourse {
   studentCount: number;
   averageRating: number;
   ratingCount: number;
+  categoryId: string;
 }
 
 // Interface for the data returned by the create course API
@@ -16,6 +17,7 @@ export interface CreateCourseResponse {
   // Add other properties from your API response if they exist
   success: boolean;
   message: string;
+  errors?: { [key: string]: string[] };
 }
 
 // Interface for the data returned by the become instructor API

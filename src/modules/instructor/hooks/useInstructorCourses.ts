@@ -48,29 +48,93 @@ export const useInstructorCourses = () => {
     }
   }, []);
 
-  const createCourse = useCallback(async (courseData: FormData): Promise<InstructorCourse | null> => {
+  const createCourse = useCallback(async (courseData: FormData): Promise<InstructorCourse | null | { status: 'not-instructor' }> => {
     setIsSubmitting(true);
     setError(null);
     try {
       const response = await instructorService.createCourse(courseData);
-      if (response.success && response.data) {
-        toast.success('Course created successfully!');
-        // Add the new course to the start of the list
-        setCourses(prev => [response.data, ...prev]);
-        return response.data;
-      } else {
-        toast.error(response.message || 'Failed to create course.');
+
+      // Robust extraction: support multiple shapes returned by backend
+      const respAny: any = response ?? {};
+      // Common shapes: { success: true, data: { ...course } } OR { data: { ...course } } OR direct course object
+      let maybeData = respAny.data ?? respAny;
+      // handle double-nesting e.g. { data: { data: {...} } }
+      if (maybeData && maybeData.data) maybeData = maybeData.data;
+
+      if (maybeData && (maybeData as any).id) {
+        const createdCourse = maybeData as InstructorCourse;
+        setCourses(prev => {
+          if (prev.some(c => c.id === createdCourse.id)) return prev;
+          return [createdCourse, ...prev];
+        });
+        try { await fetchCourses(true); } catch (e) { /* ignore */ }
+        toast.success((respAny)?.message || 'Tạo khóa học thành công!', { duration: 2000 });
+        return createdCourse;
+      }
+
+      const maybeSuccess = !!(respAny && respAny.success === true);
+      if (maybeSuccess) {
+        const submittedName = (courseData.get('Name') as string) || (courseData.get('name') as string) || '';
+        try {
+          await fetchCourses(true); // silent refresh
+          if (submittedName) {
+            const resp = await instructorService.getMyCourses();
+            const list = (resp && (resp as any).data) ?? resp ?? [];
+            if (Array.isArray(list)) {
+              const found = list.find((c: any) =>
+                ((c.name || c.Name) || '').toString().trim().toLowerCase() === submittedName.toString().trim().toLowerCase()
+              ) ?? null;
+              if (found) {
+                setCourses(prev => [found, ...prev.filter((c: any) => c.id !== found.id)]);
+                toast.success('Tạo khóa học thành công!', { duration: 2000 });
+                return found as InstructorCourse;
+              }
+            }
+          }
+        } catch (e) {
+          console.warn('silent refresh after createCourse failed', e);
+        }
+        toast.success((respAny)?.message || 'Tạo khóa học thành công!', { duration: 2000 });
         return null;
       }
+
+      const errorMessage = (respAny)?.message || 'Tạo khóa học thất bại.';
+      toast.error(errorMessage);
+      setError(errorMessage);
+      return null;
     } catch (err: any) {
-      const errorMessage = err.response?.data?.message || err.message || 'An error occurred while creating the course.';
+      // Detect "not instructor" response from backend (403 or message mentioning instructor)
+      const status = err?.response?.status;
+      const serverMessage = err?.response?.data?.message || err?.message || '';
+      if (status === 403 || /instructor/i.test(serverMessage)) {
+        const msg = 'Bạn cần phải là giảng viên để tạo khóa học. Vui lòng đăng ký làm giảng viên trước.';
+        toast.error(msg);
+        setError(msg);
+        return { status: 'not-instructor' };
+      }
+
+      let errorMessage = 'Có lỗi xảy ra khi tạo khóa học.';
+      if (err.response?.data?.errors) {
+        const errors = err.response.data.errors;
+        const errorKey = Object.keys(errors)[0];
+        if (errorKey && errors[errorKey] && errors[errorKey].length > 0) {
+          errorMessage = errors[errorKey][0];
+        }
+      } else if (err.response?.data?.message) {
+        errorMessage = err.response.data.message;
+      } else if (err.response?.data?.title) {
+        errorMessage = err.response.data.title;
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+
       toast.error(errorMessage);
       setError(errorMessage);
       return null;
     } finally {
       setIsSubmitting(false);
     }
-  }, []);
+  }, [fetchCourses]); // <-- add fetchCourses to deps
 
   useEffect(() => {
     fetchCourses();
