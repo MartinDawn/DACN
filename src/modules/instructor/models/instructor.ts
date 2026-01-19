@@ -8,7 +8,7 @@ export interface InstructorCourse {
   studentCount: number;
   averageRating: number;
   ratingCount: number;
-  categoryId: string;
+  tagIds: string[];
 }
 
 // Interface for the data returned by the create course API

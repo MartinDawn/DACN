@@ -1,5 +1,5 @@
 import apiClient from "../../auth/services/apiClient";
-import type { ApiResponse } from "../../course/models/course";
+import type { ApiResponse, Tag } from "../../course/models/course";
 import type { InstructorCourse, CreateCourseResponse, BecomeInstructorResponse } from "../models/instructor";
 
 export const instructorService = {
@@ -8,6 +8,14 @@ export const instructorService = {
    */
   async getMyCourses(): Promise<ApiResponse<InstructorCourse[]>> {
     const response = await apiClient.get<ApiResponse<InstructorCourse[]>>('/Course/my-courses');
+    return response.data;
+  },
+
+  /**
+   * Fetches all available tags/categories.
+   */
+  async getAllTags(): Promise<ApiResponse<Tag[]>> {
+    const response = await apiClient.get<ApiResponse<Tag[]>>('/Tag/all-tags');
     return response.data;
   },
 

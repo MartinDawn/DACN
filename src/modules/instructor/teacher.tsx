@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import InstructorLayout from "../user/layout/layout";
-import { ArrowLeft, Book, Camera, FileText, Lightbulb, UploadCloud, X } from "lucide-react";
+import { ArrowLeft, Book, Camera, FileText, Lightbulb, UploadCloud, X, List } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { useInstructorCourses } from "./hooks/useInstructorCourses";
 import type { InstructorCourse } from "./models/instructor";
@@ -14,6 +14,7 @@ const InstructorDashboard: React.FC = () => {
   const [courseDescription, setCourseDescription] = useState("");
   const [courseImage, setCourseImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [selectedTagId, setSelectedTagId] = useState<string>(""); // State mới cho category
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -23,7 +24,9 @@ const InstructorDashboard: React.FC = () => {
     isSubmitting, 
     createCourse,
     setCourses,
-    becomeInstructor
+    becomeInstructor,
+    tags, // Lấy tags từ hook
+    tagsLoading, // Lấy trạng thái loading của tags
   } = useInstructorCourses();
 
   useEffect(() => {
@@ -37,13 +40,15 @@ const InstructorDashboard: React.FC = () => {
   }, [location, navigate]);
 
   // API yêu cầu một CategoryId khi tạo khóa học.
-  // Đây là ID của danh mục (ví dụ: Lập trình Web, Marketing).
   // TODO: Thay thế bằng danh sách danh mục thật từ API và cho người dùng chọn.
+  // BỎ MẢNG CỨNG NÀY
+  /*
   const categories = [
     { id: "3fa85f64-5717-4562-b3fc-2c963f66afa6", name: "Lập trình Web" },
     { id: "a1b2c3d4-e5f6-7890-1234-567890abcdef", name: "Lập trình di động" },
     { id: "b2c3d4e5-f6a7-8901-2345-67890abcdef0", name: "Khoa học dữ liệu" },
   ];
+  */
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -69,8 +74,8 @@ const InstructorDashboard: React.FC = () => {
       return;
     }
 
-    if (!courseName || !coursePrice || !courseDescription) {
-      toast.error("Vui lòng điền đầy đủ các trường bắt buộc.");
+    if (!courseName || !coursePrice || !courseDescription || !selectedTagId) { // Thêm kiểm tra selectedCategoryId
+      toast.error("Vui lòng điền đầy đủ các trường bắt buộc, bao gồm cả danh mục.");
       return;
     }
 
@@ -78,7 +83,7 @@ const InstructorDashboard: React.FC = () => {
     formData.append("Name", courseName);
     formData.append("Description", courseDescription);
     formData.append("Price", Number(coursePrice).toString());
-    formData.append("CategoryId", categories[0].id);
+    formData.append("TagIds", selectedTagId); // Sử dụng state
     if (courseImage) {
       formData.append("Image", courseImage);
     }
@@ -150,6 +155,29 @@ const InstructorDashboard: React.FC = () => {
                   />
                 </div>
 
+                {/* Danh mục Khóa Học */}
+                <div>
+                  <label htmlFor="category" className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                    <List size={16} /> Danh Mục Khóa Học <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    id="category"
+                    value={selectedTagId}
+                    onChange={(e) => setSelectedTagId(e.target.value)}
+                    className="mt-2 block w-full rounded-lg border-gray-200 bg-gray-50 p-3 text-sm focus:border-blue-500 focus:ring-blue-500"
+                    disabled={tagsLoading}
+                  >
+                    <option value="" disabled>
+                      {tagsLoading ? "Đang tải danh mục..." : "-- Chọn danh mục --"}
+                    </option>
+                    {!tagsLoading && tags.map((tag) => (
+                      <option key={tag.id} value={tag.id}>
+                        {tag.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
                 {/* Giá Khóa Học */}
                 <div>
                   <label htmlFor="price" className="flex items-center gap-2 text-sm font-medium text-gray-700">
@@ -159,9 +187,22 @@ const InstructorDashboard: React.FC = () => {
                     type="number"
                     id="price"
                     value={coursePrice}
-                    onChange={(e) => setCoursePrice(e.target.value)}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      // Chỉ cho phép số nguyên không âm
+                      if (value === "" || /^\d+$/.test(value)) {
+                        const num = parseInt(value, 10);
+                        if (!isNaN(num) && num >= 0) {
+                          setCoursePrice(num);
+                        } else if (value === "") {
+                          setCoursePrice("");
+                        }
+                      }
+                    }}
                     placeholder="Ví dụ: 1999000 (nhập 0 nếu miễn phí)"
                     className="mt-2 block w-full rounded-lg border-gray-200 bg-gray-50 p-3 text-sm focus:border-blue-500 focus:ring-blue-500"
+                    min="0"
+                    step="1"
                   />
                 </div>
 

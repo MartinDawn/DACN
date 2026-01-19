@@ -2,12 +2,17 @@ import { useState, useCallback, useEffect } from 'react';
 import { toast } from 'react-hot-toast';
 import { instructorService } from '../services/instructor.service';
 import type { InstructorCourse } from '../models/instructor';
+import type { Tag } from '../../course/models/course';
 
 export const useInstructorCourses = () => {
   const [courses, setCourses] = useState<InstructorCourse[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const [tags, setTags] = useState<Tag[]>([]);
+  const [tagsLoading, setTagsLoading] = useState(true);
+  const [tagsError, setTagsError] = useState<string | null>(null);
 
   const fetchCourses = useCallback(async (silent = false) => {
     if (!silent) setIsLoading(true);
@@ -23,6 +28,23 @@ export const useInstructorCourses = () => {
       setError(err.message || 'An error occurred while fetching courses.');
     } finally {
       if (!silent) setIsLoading(false);
+    }
+  }, []);
+
+  const fetchTags = useCallback(async () => {
+    setTagsLoading(true);
+    setTagsError(null);
+    try {
+      const response = await instructorService.getAllTags();
+      if (response.success) {
+        setTags(response.data);
+      } else {
+        setTagsError(response.message || 'Failed to fetch tags.');
+      }
+    } catch (err: any) {
+      setTagsError(err.message || 'An error occurred while fetching tags.');
+    } finally {
+      setTagsLoading(false);
     }
   }, []);
 
@@ -138,13 +160,17 @@ export const useInstructorCourses = () => {
 
   useEffect(() => {
     fetchCourses();
-  }, [fetchCourses]);
+    fetchTags();
+  }, [fetchCourses, fetchTags]);
 
   return {
     courses,
     isLoading,
     isSubmitting,
     error,
+    tags,
+    tagsLoading,
+    tagsError,
     fetchCourses,
     createCourse,
     setCourses,
