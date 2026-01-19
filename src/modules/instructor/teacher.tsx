@@ -14,7 +14,9 @@ const InstructorDashboard: React.FC = () => {
   const [courseDescription, setCourseDescription] = useState("");
   const [courseImage, setCourseImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [selectedTagId, setSelectedTagId] = useState<string>(""); // State mới cho category
+  // multi-select: selectedTagIds stores chosen ids, selectedTag is the transient select value
+  const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
+  const [selectedTag, setSelectedTag] = useState<string>("");
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -74,7 +76,7 @@ const InstructorDashboard: React.FC = () => {
       return;
     }
 
-    if (!courseName || !coursePrice || !courseDescription || !selectedTagId) { // Thêm kiểm tra selectedCategoryId
+    if (!courseName || !coursePrice || !courseDescription || selectedTagIds.length === 0) { // require at least one category
       toast.error("Vui lòng điền đầy đủ các trường bắt buộc, bao gồm cả danh mục.");
       return;
     }
@@ -83,7 +85,8 @@ const InstructorDashboard: React.FC = () => {
     formData.append("Name", courseName);
     formData.append("Description", courseDescription);
     formData.append("Price", Number(coursePrice).toString());
-    formData.append("TagIds", selectedTagId); // Sử dụng state
+    // Append each selected tag id as separate FormData entries (backend often accepts repeated keys)
+    selectedTagIds.forEach((id) => formData.append("TagIds", id));
     if (courseImage) {
       formData.append("Image", courseImage);
     }
@@ -160,21 +163,45 @@ const InstructorDashboard: React.FC = () => {
                   <label htmlFor="category" className="flex items-center gap-2 text-sm font-medium text-gray-700">
                     <List size={16} /> Danh Mục Khóa Học <span className="text-red-500">*</span>
                   </label>
+                  <div className="mt-2 mb-3 flex flex-wrap gap-2">
+                    {selectedTagIds.map((id) => {
+                      const t = tags.find((x) => x.id === id);
+                      return (
+                        <span key={id} className="inline-flex items-center gap-2 rounded-full bg-[#eef2ff] px-3 py-1 text-sm font-semibold text-[#2a1aef]">
+                          <span>{t?.name ?? id}</span>
+                          <button
+                            type="button"
+                            onClick={() => setSelectedTagIds((prev) => prev.filter((x) => x !== id))}
+                            className="text-xs font-bold text-[#5a2dff] opacity-80 hover:opacity-100"
+                            aria-label={`Xóa danh mục ${t?.name ?? id}`}
+                          >
+                            ×
+                          </button>
+                        </span>
+                      );
+                    })}
+                  </div>
                   <select
                     id="category"
-                    value={selectedTagId}
-                    onChange={(e) => setSelectedTagId(e.target.value)}
+                    value={selectedTag}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (!val) return;
+                      setSelectedTagIds((prev) => (prev.includes(val) ? prev : [...prev, val]));
+                      setSelectedTag("");
+                    }}
                     className="mt-2 block w-full rounded-lg border-gray-200 bg-gray-50 p-3 text-sm focus:border-blue-500 focus:ring-blue-500"
                     disabled={tagsLoading}
                   >
-                    <option value="" disabled>
-                      {tagsLoading ? "Đang tải danh mục..." : "-- Chọn danh mục --"}
-                    </option>
-                    {!tagsLoading && tags.map((tag) => (
-                      <option key={tag.id} value={tag.id}>
-                        {tag.name}
-                      </option>
-                    ))}
+                    <option value="">{tagsLoading ? "Đang tải danh mục..." : "-- Thêm danh mục --"}</option>
+                    {!tagsLoading &&
+                      tags
+                        .filter((tag) => !selectedTagIds.includes(tag.id))
+                        .map((tag) => (
+                          <option key={tag.id} value={tag.id}>
+                            {tag.name}
+                          </option>
+                        ))}
                   </select>
                 </div>
 

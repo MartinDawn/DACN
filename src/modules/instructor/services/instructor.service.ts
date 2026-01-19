@@ -1,6 +1,7 @@
 import apiClient from "../../auth/services/apiClient";
 import type { ApiResponse, Tag } from "../../course/models/course";
 import type { InstructorCourse, CreateCourseResponse, BecomeInstructorResponse } from "../models/instructor";
+import type { RequestInstructorPayload, RequestInstructorResponse } from "../models/instructor";
 
 export const instructorService = {
   /**
@@ -45,6 +46,28 @@ export const instructorService = {
    */
   async becomeInstructor(): Promise<BecomeInstructorResponse> {
     const response = await apiClient.post<BecomeInstructorResponse>('/User/become-instructor');
+    return response.data;
+  },
+
+  /**
+   * Sends a request to become an instructor with required fields.
+   * @param payload - { experience, expertise, certificate, introduction, socialLinks }
+   * @param lang - optional Accept-Language header (default 'vi')
+   */
+  async requestInstructor(
+    payload: RequestInstructorPayload,
+    lang = "vi"
+  ): Promise<RequestInstructorResponse> {
+    const response = await apiClient.post<RequestInstructorResponse>(
+      "/Account/request-instructor",
+      payload,
+      {
+        headers: {
+          "Accept-Language": lang,
+          "Content-Type": "application/json",
+        },
+      }
+    );
     return response.data;
   },
 };
