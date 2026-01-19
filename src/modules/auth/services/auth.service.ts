@@ -22,7 +22,12 @@ if (apiClient && (apiClient as any).defaults) {
 export const authService = {
     async login(data: LoginRequest): Promise<ApiResponse<LoginResponse>> {
         const response = await apiClient.post<ApiResponse<LoginResponse>>('/Account/login', data);
-        return response.data;
+        const result = response.data;
+        if (result.success && result.data?.accessToken) {
+            localStorage.setItem('accessToken', result.data.accessToken);
+            this.setAuthToken(result.data.accessToken);
+        }
+        return result;
     },
 
     async register(data: RegisterRequest): Promise<ApiResponse<RegisterResponse>> {
@@ -163,6 +168,8 @@ export const authService = {
             }
 
             if (accessToken) {
+                localStorage.setItem('accessToken', accessToken);
+                this.setAuthToken(accessToken);
                 return { success: true, message: payload?.message || null, data: { accessToken } };
             }
 
@@ -208,5 +215,15 @@ export const authService = {
     async resetPassword(data: ResetPasswordRequest): Promise<ApiResponse<null>> {
         const response = await apiClient.post<ApiResponse<null>>('/Account/reset-password', data);
         return response.data;
+    },
+
+    async refreshToken(): Promise<ApiResponse<{ accessToken: string }>> {
+        const response = await apiClient.post<ApiResponse<{ accessToken: string }>>('/Account/refresh-token');
+        const result = response.data;
+        if (result.success && result.data?.accessToken) {
+            localStorage.setItem('accessToken', result.data.accessToken);
+            this.setAuthToken(result.data.accessToken);
+        }
+        return result;
     }
 };

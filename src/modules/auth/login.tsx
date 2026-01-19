@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from "react"; // Thêm useEffect
 import { Link, useNavigate } from "react-router-dom";
 import { FcGoogle } from "react-icons/fc";
-import { FaFacebookF } from "react-icons/fa";
 import {
   HiOutlineEnvelope,
   HiOutlineLockClosed,
@@ -50,7 +49,6 @@ const LoginPage: React.FC = () => {
           localStorage.setItem("accessToken", accessToken);
           const profileRes = await getProfile(accessToken);
           if (profileRes?.success && profileRes.data) {
-            localStorage.setItem("user_data", JSON.stringify(profileRes.data));
             navigate("/user/home");
           } else {
             setNotification({
@@ -80,8 +78,6 @@ const LoginPage: React.FC = () => {
         } else {
           localStorage.removeItem('remember_username');
         }
-
-        localStorage.setItem('user_data', JSON.stringify(response.data));
 
         setNotification({
           show: true,
@@ -116,7 +112,7 @@ const LoginPage: React.FC = () => {
   // Thêm hàm xử lý Google auth
   const handleGoogleAuth = async () => {
     try {
-      const redirectUri = `${window.location.origin}/auth/google-callback`;
+      const redirectUri = `${window.location.origin}/login-success`;
       const url = await getGoogleAuthUrl(redirectUri);
       if (url) {
         window.location.href = url;

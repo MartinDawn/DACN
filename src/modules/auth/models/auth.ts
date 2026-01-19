@@ -26,6 +26,9 @@ export interface ApiResponse<T> {
 export interface LoginResponse {
     accessToken: string;
     role: string;
+    email?: string;
+    fullName?: string;
+    avatarUrl?: string;
 }
 
 export interface RegisterResponse {
@@ -36,6 +39,9 @@ export interface RegisterResponse {
 
 export interface User {
     role: string;
+    email?: string;
+    fullName?: string;
+    avatarUrl?: string;
 }
 
 export interface SendOTPRequest {

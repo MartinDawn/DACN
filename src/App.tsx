@@ -20,39 +20,45 @@ import SearchPage from './modules/course/searchCoursePage';
 import RegisterTeacherPage from './modules/instructor/register_teacher';
 import RegisterTeacherFormPage from './modules/instructor/register_teacher_form';
 import TeacherDashboard from './modules/instructor/teacher';
+import LoginSuccess from './modules/auth/login-success';
+import { ProtectedRoute, GuestRoute } from './modules/auth/components/AuthGuard';
+
 
 function App() {
   return (
     <Router>
       <Routes>
-        {/* auth */}
-        <Route path="/" element={<Homepage />} />
-        <Route path="/login" element={<LoginCard />} />
-        <Route path="/register" element={<RegisterPage />} />
-        <Route path="/forgot-password" element={<ForgetPasswordPage />} />
+        {/* auth - guest only */}
+        <Route path="/" element={<GuestRoute><Homepage /></GuestRoute>} />
+        <Route path="/homepage" element={<GuestRoute><Homepage /></GuestRoute>} />
+        <Route path="/login" element={<GuestRoute><LoginCard /></GuestRoute>} />
+        <Route path="/register" element={<GuestRoute><RegisterPage /></GuestRoute>} />
+        <Route path="/forgot-password" element={<GuestRoute><ForgetPasswordPage /></GuestRoute>} />
         <Route path="/auth/google-callback" element={<GoogleCallbackPage />} />
-        <Route path="/homepage" element={<Homepage />} />
-        <Route path="/user/home" element={<UserHome />} />
-        <Route path="/user/mycourses" element={<MyCourse />} />
-        <Route path="/user/cart" element={<MyCart />} />
-        <Route path="/user/checkout" element={<CheckoutPage />} />
+        <Route path="/login-success" element={<LoginSuccess />} />
+
+        {/* protected routes */}
+        <Route path="/user/home" element={<ProtectedRoute><UserHome /></ProtectedRoute>} />
+        <Route path="/user/mycourses" element={<ProtectedRoute><MyCourse /></ProtectedRoute>} />
+        <Route path="/user/cart" element={<ProtectedRoute><MyCart /></ProtectedRoute>} />
+        <Route path="/user/checkout" element={<ProtectedRoute><CheckoutPage /></ProtectedRoute>} />
         <Route path="/payment-success" element={<Navigate to="/user/mycourses" />} />
-        <Route path="/user/notifications" element={<NotificationPage />} />
-        <Route path="/courses" element={<ViewAllCourse />} />
-        <Route path="/courses/complete-react-developer-2024" element={<CourseDetail />} />
-        <Route path="/courses/:courseId" element={<CourseDetail />} />
-        <Route path="/user/profile" element={<MyInfo />} />
-        <Route path="/user/security" element={<ChangePasswordPage />} />
-        <Route path="/user/course-progress" element={<CourseProgressPage />} />
-        <Route path="/user/course-progress/:courseId" element={<CourseProgressPage />} />
-        <Route path="/user/course-progress/:courseId/lesson/:lessonId" element={<LessonContentPage />} />
-        <Route path="/search" element={<SearchPage />} />
-        <Route path="/register-teacher" element={<RegisterTeacherPage />} />
-        <Route path="/register-teacher/form" element={<RegisterTeacherFormPage />} />
-        <Route path="/instructor/register-teacher" element={<RegisterTeacherPage />} />
-        <Route path="/instructor/register-teacher/form" element={<RegisterTeacherFormPage />} />
-        <Route path="/instructor" element={<TeacherDashboard />} />
-        <Route path="/instructor/dashboard" element={<TeacherDashboard />} />
+        <Route path="/user/notifications" element={<ProtectedRoute><NotificationPage /></ProtectedRoute>} />
+        <Route path="/courses" element={<ProtectedRoute><ViewAllCourse /></ProtectedRoute>} />
+        <Route path="/courses/complete-react-developer-2024" element={<ProtectedRoute><CourseDetail /></ProtectedRoute>} />
+        <Route path="/courses/:courseId" element={<ProtectedRoute><CourseDetail /></ProtectedRoute>} />
+        <Route path="/user/profile" element={<ProtectedRoute><MyInfo /></ProtectedRoute>} />
+        <Route path="/user/security" element={<ProtectedRoute><ChangePasswordPage /></ProtectedRoute>} />
+        <Route path="/user/course-progress" element={<ProtectedRoute><CourseProgressPage /></ProtectedRoute>} />
+        <Route path="/user/course-progress/:courseId" element={<ProtectedRoute><CourseProgressPage /></ProtectedRoute>} />
+        <Route path="/user/course-progress/:courseId/lesson/:lessonId" element={<ProtectedRoute><LessonContentPage /></ProtectedRoute>} />
+        <Route path="/search" element={<ProtectedRoute><SearchPage /></ProtectedRoute>} />
+        <Route path="/register-teacher" element={<ProtectedRoute><RegisterTeacherPage /></ProtectedRoute>} />
+        <Route path="/register-teacher/form" element={<ProtectedRoute><RegisterTeacherFormPage /></ProtectedRoute>} />
+        <Route path="/instructor/register-teacher" element={<ProtectedRoute><RegisterTeacherPage /></ProtectedRoute>} />
+        <Route path="/instructor/register-teacher/form" element={<ProtectedRoute><RegisterTeacherFormPage /></ProtectedRoute>} />
+        <Route path="/instructor" element={<ProtectedRoute><TeacherDashboard /></ProtectedRoute>} />
+        <Route path="/instructor/dashboard" element={<ProtectedRoute><TeacherDashboard /></ProtectedRoute>} />
       </Routes>
     </Router>
   );

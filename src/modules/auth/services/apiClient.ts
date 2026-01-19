@@ -1,7 +1,7 @@
 import axios from 'axios';
 import type { AxiosError, AxiosRequestConfig, InternalAxiosRequestConfig } from 'axios';
 
-const API_URL = 'http://dacn.runasp.net/api';
+const API_URL = '/api';
 // const API_URL = 'http://localhost:5223/api';
 
 /**

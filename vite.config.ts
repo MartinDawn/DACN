@@ -11,7 +11,7 @@ export default defineConfig({
         target: 'http://dacn.runasp.net', // ĐIỀN URL BACKEND CỦA BẠN VÀO ĐÂY
         changeOrigin: true,
         secure: false, // Thêm dòng này nếu backend dùng https self-signed hoặc http thường để tránh lỗi SSL
-        rewrite: (path) => path.replace(/^\/api/, '') // Xóa tiền tố '/api' trước khi gửi đến Backend
+        rewrite: (path) => path.replace(/^\/api/, '/api') // Giữ nguyên '/api' trong path
       }
     }
   }

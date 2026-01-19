@@ -27,8 +27,12 @@ export const useAuth = () => {
         const token = localStorage.getItem('accessToken');
         if (token) {
             authService.setAuthToken(token);
+            // If we have token but no user, try to load profile
+            if (!user) {
+                getProfile(token).catch(err => console.error('Failed to load profile on mount:', err));
+            }
         }
-    }, []);
+    }, []); 
 
     const login = async (data: LoginRequest) => {
         try {
@@ -42,12 +46,16 @@ export const useAuth = () => {
             }
 
             if (response.data) {
-                const { accessToken, role } = response.data;
-                const userData: User = { role };
+                const userData: User = {
+                    role: response.data.role,
+                    email: response.data.email,
+                    fullName: response.data.fullName,
+                    avatarUrl: response.data.avatarUrl,
+                };
                 
-                localStorage.setItem('accessToken', accessToken);
+                localStorage.setItem('accessToken', response.data.accessToken);
                 localStorage.setItem('user', JSON.stringify(userData));
-                authService.setAuthToken(accessToken);
+                authService.setAuthToken(response.data.accessToken);
                 setUser(userData);
             }
             return response;
@@ -106,13 +114,30 @@ export const useAuth = () => {
     const logout = async () => {
         try {
             setLoading(true);
+            setError(null);
+            
+            // Call API to logout on server (remove refresh token from cookie)
             await authService.logout();
+            
+            // Clear client-side data
             setUser(null);
             localStorage.removeItem('accessToken');
+            localStorage.removeItem('user');
             authService.setAuthToken('');
+            
+            // Redirect to homepage (guest route)
+            window.location.href = '/homepage';
+            
         } catch (err) {
             const errorMessage = err instanceof Error ? err.message : 'An error occurred during logout';
             setError(errorMessage);
+            // Still clear client-side data even if API fails
+            setUser(null);
+            localStorage.removeItem('accessToken');
+            localStorage.removeItem('user');
+            authService.setAuthToken('');
+            // Redirect anyway
+            window.location.href = '/homepage';
             throw err;
         } finally {
             setLoading(false);
@@ -249,13 +274,16 @@ export const useAuth = () => {
 
             // If successful and contains user info, update local user state
             if (res?.success && res.data) {
-                // Try to derive user role if present
-                const role = (res.data && (res.data.role || (res.data.user && res.data.user.role))) || undefined;
-                const userData = role ? { role } : null;
-                if (userData) {
-                    try { localStorage.setItem('user', JSON.stringify(userData)); } catch (e) {}
-                    setUser(userData);
-                }
+                // Merge with existing user or create new
+                const existingUser = JSON.parse(localStorage.getItem('user') || '{}');
+                const userData: User = {
+                    role: res.data.role || existingUser.role || 'Student',
+                    email: res.data.email || existingUser.email,
+                    fullName: res.data.fullName || existingUser.fullName,
+                    avatarUrl: res.data.avatarUrl || existingUser.avatarUrl,
+                };
+                localStorage.setItem('user', JSON.stringify(userData));
+                setUser(userData);
             }
 
             return res;
