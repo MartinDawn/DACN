@@ -17,7 +17,7 @@ import { AuthNotification } from "./components/AuthNotification";
 
 const RegisterPage: React.FC = () => {
   const navigate = useNavigate();
-  const { register, loading, error } = useAuth();
+  const { register, loading, error, getGoogleAuthUrl } = useAuth();
   const [formData, setFormData] = useState<RegisterRequest>({
     userName: "",
     email: "",
@@ -71,14 +71,40 @@ const RegisterPage: React.FC = () => {
     }
   };
 
+  const handleGoogleAuth = async () => {
+    try {
+      const redirectUri = `${window.location.origin}/auth/google-callback`;
+      const url = await getGoogleAuthUrl(redirectUri);
+      if (url) {
+        window.location.href = url;
+      } else {
+        setNotification({
+          show: true,
+          type: "error",
+          message: "Không thể lấy đường dẫn Google. Vui lòng thử lại."
+        });
+      }
+    } catch (err) {
+      console.error("Google auth error:", err);
+      setNotification({
+        show: true,
+        type: "error",
+        message: (err instanceof Error && err.message) ? err.message : "Lỗi khi kết nối với Google."
+      });
+    }
+  };
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-100 px-4">
+    <div className="relative flex min-h-screen items-center justify-center bg-gray-100 px-4">
       <AuthNotification
         show={notification.show}
         type={notification.type}
         message={notification.message}
         onClose={() => setNotification(prev => ({ ...prev, show: false }))}
       />
+      <Link to="/" className="absolute left-4 top-4 z-10 inline-flex items-center gap-2 text-sm font-medium text-indigo-500 hover:text-indigo-400">
+        ← Trang chủ
+      </Link>
       <div className="w-full max-w-md rounded-3xl border border-gray-200 bg-white p-8 shadow-[0_24px_80px_rgba(15,23,42,0.08)]">
         <div className="space-y-2 text-center">
           <h1 className="text-3xl font-semibold text-gray-900">
@@ -92,18 +118,13 @@ const RegisterPage: React.FC = () => {
         <div className="mt-6 space-y-3">
           <button
             type="button"
+            onClick={handleGoogleAuth}
             className="flex h-12 w-full items-center justify-center gap-3 rounded-2xl border border-gray-200 bg-white text-sm font-medium text-gray-700 transition-colors hover:border-gray-300 hover:bg-gray-50"
           >
             <FcGoogle className="text-lg" />
             Đăng ký với Google
           </button>
-          <button
-            type="button"
-            className="flex h-12 w-full items-center justify-center gap-3 rounded-2xl border border-gray-200 bg-white text-sm font-medium text-gray-700 transition-colors hover:border-gray-300 hover:bg-gray-50"
-          >
-            <FaFacebookF className="text-lg text-[#1877f2]" />
-            Đăng ký với Facebook
-          </button>
+         
         </div>
 
         <div className="mt-6 flex items-center gap-4">

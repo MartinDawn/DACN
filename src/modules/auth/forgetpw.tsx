@@ -88,13 +88,16 @@ const ForgetPasswordPage: React.FC = () => {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
+    <div className="relative flex min-h-screen items-center justify-center bg-gray-50 px-4">
       <AuthNotification
         show={notification.show}
         type={notification.type}
         message={notification.message}
         onClose={() => setNotification(prev => ({ ...prev, show: false }))}
       />
+      <Link to="/" className="absolute left-4 top-4 z-10 inline-flex items-center gap-2 text-sm font-medium text-indigo-500 hover:text-indigo-400">
+        ← Trang chủ
+      </Link>
       <div className="w-full max-w-md rounded-3xl border border-gray-100 bg-white p-8 shadow-[0_24px_80px_rgba(15,23,42,0.08)]">
         <div className="space-y-2 text-center">
           <h1 className="text-2xl font-semibold text-gray-900">

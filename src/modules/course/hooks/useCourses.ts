@@ -51,7 +51,7 @@ export const useCourses = () => {
       try {
         const response = await courseService.getRecommendedCourses();
         if (response.success) {
-          setRecommendedCourses(response.data);
+          setRecommendedCourses(response.data || []);
         } else {
           setRecommendedError(response.message || 'Không thể tải khóa học đề xuất');
         }
@@ -71,7 +71,7 @@ export const useCourses = () => {
     try {
       const response = await courseService.getMyCourses();
       if (response.success) {
-        setMyCourses(response.data);
+        setMyCourses(response.data || []);
       } else {
         setMyCoursesError(response.message || 'Không thể tải khóa học của bạn');
       }
@@ -112,7 +112,7 @@ export const useCourses = () => {
     try {
       const response = await courseService.getCourseComments(courseId);
       if (response.success) {
-        setCourseComments(response.data);
+        setCourseComments(response.data || []);
       } else {
         setCommentsError(response.message || 'Không thể tải bình luận');
       }
