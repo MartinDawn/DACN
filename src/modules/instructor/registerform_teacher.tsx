@@ -66,7 +66,7 @@ export default function RegisterFormTeacher() {
 
 				<form onSubmit={handleSubmit} className="space-y-6">
 					{/* Personal information */}
-					<div>
+					{/* <div>
 						<h4 className="mb-2 flex items-center gap-2 text-lg font-semibold text-[#6a2cff]">
 							<span className="inline-block rounded-full bg-[#f3ebff] px-2 py-1 text-sm">👤</span> Thông tin cá nhân
 						</h4>
@@ -86,15 +86,15 @@ export default function RegisterFormTeacher() {
 								type="email"
 								className="h-11 w-full rounded-xl border border-gray-200 bg-gray-50 px-4 text-sm outline-none focus:border-[#5a2dff]"
 							/>
-							{/* <input
+							<input
 								name="phone"
 								value={form.phone}
 								onChange={handleChange}
 								placeholder="Số điện thoại"
 								className="col-span-2 h-11 w-full rounded-xl border border-gray-200 bg-gray-50 px-4 text-sm outline-none focus:border-[#5a2dff]"
-							/> */}
+							/>
 						</div>
-					</div>
+					</div> */}
 
 					{/* Professional information */}
 					<div>
