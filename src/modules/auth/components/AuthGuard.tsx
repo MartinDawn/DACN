@@ -29,3 +29,21 @@ export const GuestRoute: React.FC<GuestRouteProps> = ({ children }) => {
 
   return <>{children}</>;
 };
+
+interface InstructorRouteProps {
+  children: React.ReactNode;
+}
+
+export const InstructorRoute: React.FC<InstructorRouteProps> = ({ children }) => {
+  const { isAuthenticated, user } = useAuth();
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (!user?.role?.includes('Instructor')) {
+    return <Navigate to="/user/home" replace />;
+  }
+
+  return <>{children}</>;
+};

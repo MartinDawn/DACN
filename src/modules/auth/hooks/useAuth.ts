@@ -15,6 +15,18 @@ import type {
 import { authService } from '../services/auth.service';
 import axios from 'axios';
 
+// Function to decode JWT payload
+const decodeJWT = (token: string) => {
+    try {
+        const payload = token.split('.')[1];
+        const decoded = JSON.parse(atob(payload));
+        return decoded;
+    } catch (error) {
+        console.error('Failed to decode JWT:', error);
+        return null;
+    }
+};
+
 export const useAuth = () => {
     const [user, setUser] = useState<User | null>(() => {
         const savedUser = localStorage.getItem('user');
@@ -46,16 +58,19 @@ export const useAuth = () => {
             }
 
             if (response.data) {
+                const token = response.data.accessToken;
+                const decoded = decodeJWT(token);
+                
                 const userData: User = {
-                    role: response.data.role,
-                    email: response.data.email,
-                    fullName: response.data.fullName,
+                    role: decoded?.role || [],
+                    email: response.data.email || decoded?.email,
+                    fullName: response.data.fullName || decoded?.fullName,
                     avatarUrl: response.data.avatarUrl,
                 };
                 
-                localStorage.setItem('accessToken', response.data.accessToken);
+                localStorage.setItem('accessToken', token);
                 localStorage.setItem('user', JSON.stringify(userData));
-                authService.setAuthToken(response.data.accessToken);
+                authService.setAuthToken(token);
                 setUser(userData);
             }
             return response;
@@ -274,10 +289,14 @@ export const useAuth = () => {
 
             // If successful and contains user info, update local user state
             if (res?.success && res.data) {
+                // Decode JWT to get role if not in profile response
+                const tokenToDecode = token || localStorage.getItem('accessToken');
+                const decoded = tokenToDecode ? decodeJWT(tokenToDecode) : null;
+                
                 // Merge with existing user or create new
                 const existingUser = JSON.parse(localStorage.getItem('user') || '{}');
                 const userData: User = {
-                    role: res.data.role || existingUser.role || 'Student',
+                    role: Array.isArray(res.data.role) ? res.data.role : (decoded?.role || existingUser.role || []),
                     email: res.data.email || existingUser.email,
                     fullName: res.data.fullName || existingUser.fullName,
                     avatarUrl: res.data.avatarUrl || existingUser.avatarUrl,
@@ -317,8 +336,23 @@ export const useAuth = () => {
             try { localStorage.setItem('accessToken', token); } catch (e) {}
             authService.setAuthToken(token);
 
-            // fetch profile after exchange
+            // Decode JWT to get role
+            const decoded = decodeJWT(token);
+            const role = decoded?.role || [];
+
+            // fetch profile after exchange for additional info
             const profileRes = await getProfile(token);
+
+            // Set user data
+            const userData: User = {
+                role: role,
+                email: profileRes?.data?.email,
+                fullName: profileRes?.data?.fullName,
+                avatarUrl: profileRes?.data?.avatarUrl,
+            };
+            localStorage.setItem('user', JSON.stringify(userData));
+            setUser(userData);
+
             return { exchange: res, profile: profileRes };
         } catch (err) {
             const errorMessage = err instanceof Error ? err.message : 'Lỗi khi xử lý Google callback';
