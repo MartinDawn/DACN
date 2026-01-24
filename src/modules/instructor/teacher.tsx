@@ -1,7 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import InstructorLayout from "../user/layout/layout";
-import { ArrowLeft, Book, Camera, FileText, Lightbulb, UploadCloud, X, List } from "lucide-react";
+import { 
+  ArrowLeft, Book, Camera, FileText, Lightbulb, UploadCloud, X, List, 
+  LayoutDashboard, BarChart2, Activity, Users, DollarSign, Star, 
+  MessageSquare, PlusCircle, UserPlus, MessageCircle, Settings
+} from "lucide-react";
 import { toast } from "react-hot-toast";
 import { useInstructorCourses } from "./hooks/useInstructorCourses";
 import type { InstructorCourse } from "./models/instructor";
@@ -344,7 +348,8 @@ const InstructorDashboard: React.FC = () => {
         <div className="pt-2">
           <button 
             onClick={() => setShowCreateCourseForm(true)}
-            className="rounded-full bg-[#5a2dff] px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-[#5a2dff]/20 transition hover:-translate-y-0.5 hover:bg-[#4a21eb]">
+            className="flex items-center gap-2 rounded-full bg-[#5a2dff] px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-[#5a2dff]/20 transition hover:-translate-y-0.5 hover:bg-[#4a21eb]">
+            <PlusCircle size={18} />
             Tạo Khóa Học Mới
           </button>
         </div>
@@ -356,34 +361,38 @@ const InstructorDashboard: React.FC = () => {
         <div className="flex w-full max-w-2xl rounded-full bg-gray-100 p-1 mx-auto">
           <button
             onClick={() => setActiveTab("overview")}
-            className={`flex-1 rounded-full px-4 py-2 text-sm font-semibold transition ${
+            className={`flex-1 rounded-full px-4 py-2 text-sm font-semibold transition flex items-center justify-center gap-2 ${
               activeTab === "overview" ? "bg-white text-[#5a2dff] shadow" : "text-gray-500 hover:text-[#5a2dff]"
             }`}
           >
+            <LayoutDashboard size={16} />
             Tổng Quan
           </button>
           <button
             onClick={() => setActiveTab("courses")}
-            className={`flex-1 rounded-full px-4 py-2 text-sm font-semibold transition ${
+            className={`flex-1 rounded-full px-4 py-2 text-sm font-semibold transition flex items-center justify-center gap-2 ${
               activeTab === "courses" ? "bg-white text-[#5a2dff] shadow" : "text-gray-500 hover:text-[#5a2dff]"
             }`}
           >
+            <Book size={16} />
             Khóa Học
           </button>
           <button
             onClick={() => setActiveTab("analytics")}
-            className={`flex-1 rounded-full px-4 py-2 text-sm font-semibold transition ${
+            className={`flex-1 rounded-full px-4 py-2 text-sm font-semibold transition flex items-center justify-center gap-2 ${
               activeTab === "analytics" ? "bg-white text-[#5a2dff] shadow" : "text-gray-500 hover:text-[#5a2dff]"
             }`}
           >
+            <BarChart2 size={16} />
             Phân Tích
           </button>
           <button
             onClick={() => setActiveTab("activity")}
-            className={`flex-1 rounded-full px-4 py-2 text-sm font-semibold transition ${
+            className={`flex-1 rounded-full px-4 py-2 text-sm font-semibold transition flex items-center justify-center gap-2 ${
               activeTab === "activity" ? "bg-white text-[#5a2dff] shadow" : "text-gray-500 hover:text-[#5a2dff]"
             }`}
           >
+            <Activity size={16} />
             Hoạt Động
           </button>
         </div>
@@ -395,22 +404,34 @@ const InstructorDashboard: React.FC = () => {
           {/* Overview cards */}
           <section className="mb-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
             <div className="rounded-3xl bg-white p-6 shadow-lg shadow-slate-900/5">
-              <p className="text-sm font-semibold text-gray-500">Tổng Học Viên</p>
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-sm font-semibold text-gray-500">Tổng Học Viên</p>
+                <div className="p-2 bg-blue-50 rounded-lg text-blue-600"><Users size={20} /></div>
+              </div>
               <p className="mt-2 text-3xl font-bold text-gray-900">{courses.reduce((sum, c) => sum + (c.studentCount || 0), 0)}</p>
               <p className="mt-1 text-xs text-green-500">+12% so với tháng trước</p>
             </div>
             <div className="rounded-3xl bg-white p-6 shadow-lg shadow-slate-900/5">
-              <p className="text-sm font-semibold text-gray-500">Tổng Doanh Thu</p>
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-sm font-semibold text-gray-500">Tổng Doanh Thu</p>
+                <div className="p-2 bg-purple-50 rounded-lg text-purple-600"><DollarSign size={20} /></div>
+              </div>
               <p className="mt-2 text-3xl font-bold text-gray-900">{courses.reduce((sum, c) => sum + ((c.price || 0) * (c.studentCount || 0)), 0).toLocaleString()}đ</p>
               <p className="mt-1 text-xs text-green-500">+8% so với tháng trước</p>
             </div>
             <div className="rounded-3xl bg-white p-6 shadow-lg shadow-slate-900/5">
-              <p className="text-sm font-semibold text-gray-500">Đánh Giá TB</p>
-              <p className="mt-2 text-3xl font-bold text-gray-900">{courses.length > 0 ? (courses.reduce((sum, c) => sum + (c.averageRating || 0), 0) / courses.length).toFixed(1) : 0} ⭐</p>
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-sm font-semibold text-gray-500">Đánh Giá Trung Bình</p>
+                <div className="p-2 bg-amber-50 rounded-lg text-amber-500"><Star size={20} /></div>
+              </div>
+              <p className="mt-2 text-3xl font-bold text-gray-900">{courses.length > 0 ? (courses.reduce((sum, c) => sum + (c.averageRating || 0), 0) / courses.length).toFixed(1) : 0} </p>
               <p className="mt-1 text-xs text-green-500">+0.2 so với tháng trước</p>
             </div>
             <div className="rounded-3xl bg-white p-6 shadow-lg shadow-slate-900/5">
-              <p className="text-sm font-semibold text-gray-500">Khóa Học</p>
+               <div className="flex items-center justify-between mb-2">
+                <p className="text-sm font-semibold text-gray-500">Khóa Học</p>
+                <div className="p-2 bg-indigo-50 rounded-lg text-indigo-500"><Book size={20} /></div>
+              </div>
               <p className="mt-2 text-3xl font-bold text-gray-900">{courses.length}</p>
               <p className="mt-1 text-xs text-gray-500">+1 khóa học mới tháng này</p>
             </div>
@@ -423,14 +444,21 @@ const InstructorDashboard: React.FC = () => {
             <div className="mt-6 grid gap-4 sm:grid-cols-3">
               <button 
                 onClick={() => setShowCreateCourseForm(true)}
-                className="rounded-2xl border border-gray-200 bg-gray-50 p-6 text-center font-semibold text-gray-700 transition hover:border-[#5a2dff] hover:bg-white hover:text-[#5a2dff]">Tạo Khóa Học</button>
+                className="flex flex-col items-center gap-3 rounded-2xl border border-gray-200 bg-gray-50 p-6 text-center font-semibold text-gray-700 transition hover:border-[#5a2dff] hover:bg-white hover:text-[#5a2dff]">
+                <div className="rounded-full bg-white p-3 shadow-sm"><PlusCircle size={24} /></div>
+                Tạo Khóa Học
+              </button>
               <button 
                 onClick={handleBecomeInstructor}
                 disabled={isSubmitting}
-                className="rounded-2xl border border-gray-200 bg-gray-50 p-6 text-center font-semibold text-gray-700 transition hover:border-[#5a2dff] hover:bg-white hover:text-[#5a2dff] disabled:cursor-not-allowed disabled:opacity-50">
+                className="flex flex-col items-center gap-3 rounded-2xl border border-gray-200 bg-gray-50 p-6 text-center font-semibold text-gray-700 transition hover:border-[#5a2dff] hover:bg-white hover:text-[#5a2dff] disabled:cursor-not-allowed disabled:opacity-50">
+                <div className="rounded-full bg-white p-3 shadow-sm"><UserPlus size={24} /></div>
                   {isSubmitting ? "Đang xử lý..." : "Đăng ký làm giảng viên"}
               </button>
-              <button className="rounded-2xl border border-gray-200 bg-gray-50 p-6 text-center font-semibold text-gray-700 transition hover:border-[#5a2dff] hover:bg-white hover:text-[#5a2dff]">Kiểm Tra Tin Nhắn</button>
+              <button className="flex flex-col items-center gap-3 rounded-2xl border border-gray-200 bg-gray-50 p-6 text-center font-semibold text-gray-700 transition hover:border-[#5a2dff] hover:bg-white hover:text-[#5a2dff]">
+                <div className="rounded-full bg-white p-3 shadow-sm"><MessageSquare size={24} /></div>
+                Kiểm Tra Tin Nhắn
+              </button>
             </div>
           </section>
         </>
@@ -442,9 +470,18 @@ const InstructorDashboard: React.FC = () => {
             <h3 className="text-lg font-semibold">Hoạt Động Gần Đây</h3>
             <p className="mt-1 text-sm text-gray-500">Cập nhật hoạt động khóa học của bạn</p>
             <ul className="mt-4 space-y-3">
-              <li className="rounded-xl border border-gray-100 bg-gray-50/50 p-4 text-sm text-gray-700">⭐ Đánh giá 5 sao mới cho khóa học <span className="font-semibold">React Toàn Diện</span>. <span className="text-xs text-gray-400 block">2 giờ trước</span></li>
-              <li className="rounded-xl border border-gray-100 bg-gray-50/50 p-4 text-sm text-gray-700">👥 <span className="font-semibold">25 học viên mới</span> đã đăng ký hôm nay. <span className="text-xs text-gray-400 block">4 giờ trước</span></li>
-              <li className="rounded-xl border border-gray-100 bg-gray-50/50 p-4 text-sm text-gray-700">💬 Câu hỏi mới trong phần Q&A của khóa <span className="font-semibold">Thành Thạo JavaScript</span>. <span className="text-xs text-gray-400 block">6 giờ trước</span></li>
+              <li className="flex gap-3 rounded-xl border border-gray-100 bg-gray-50/50 p-4 text-sm text-gray-700">
+                <div className="mt-0.5"><Star className="h-5 w-5 text-yellow-500 fill-yellow-500" /></div>
+                <div>Đánh giá 5 sao mới cho khóa học <span className="font-semibold">React Toàn Diện</span>. <span className="text-xs text-gray-400 block mt-1">2 giờ trước</span></div>
+              </li>
+              <li className="flex gap-3 rounded-xl border border-gray-100 bg-gray-50/50 p-4 text-sm text-gray-700">
+                 <div className="mt-0.5"><UserPlus className="h-5 w-5 text-blue-500" /></div>
+                 <div><span className="font-semibold">25 học viên mới</span> đã đăng ký hôm nay. <span className="text-xs text-gray-400 block mt-1">4 giờ trước</span></div>
+              </li>
+              <li className="flex gap-3 rounded-xl border border-gray-100 bg-gray-50/50 p-4 text-sm text-gray-700">
+                 <div className="mt-0.5"><MessageCircle className="h-5 w-5 text-purple-500" /></div>
+                 <div>Câu hỏi mới trong phần Q&A của khóa <span className="font-semibold">Thành Thạo JavaScript</span>. <span className="text-xs text-gray-400 block mt-1">6 giờ trước</span></div>
+              </li>
             </ul>
           </div>
         </section>
@@ -461,37 +498,48 @@ const InstructorDashboard: React.FC = () => {
           ) : courses.length > 0 ? (
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {courses.map((course) => (
-                <div key={course.id} className="overflow-hidden rounded-3xl bg-white shadow-lg shadow-slate-900/5 transition hover:-translate-y-1">
-                  <img 
-                    src={course.imageUrl || "/placeholder.jpg"} 
-                    alt={course.name} 
-                    className="h-48 w-full object-cover"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).src = "/placeholder.jpg";
-                    }}
-                  />
+                <div key={course.id} className="group overflow-hidden rounded-3xl bg-white shadow-lg shadow-slate-900/5 transition hover:-translate-y-1 hover:shadow-xl ring-1 ring-slate-900/5">
+                  <div className="relative h-48 w-full overflow-hidden">
+                    <img 
+                      src={course.imageUrl || "/placeholder.jpg"} 
+                      alt={course.name} 
+                      className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = "/placeholder.jpg";
+                      }}
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 transition group-hover:opacity-100" />
+                  </div>
+                  
                   <div className="p-5">
-                    <h4 className="truncate text-base font-semibold" title={course.name}>{course.name}</h4>
-                    <p className="mt-1 line-clamp-2 text-sm text-gray-500">{course.description}</p>
-                    <div className="mt-3 flex items-center gap-2">
+                    <h4 className="truncate text-lg font-bold text-gray-900" title={course.name}>{course.name}</h4>
+                    <p className="mt-2 line-clamp-2 text-sm text-gray-500">{course.description}</p>
+                    
+                    <div className="mt-4 flex items-center gap-2">
                       {course.tags && course.tags.length > 0 && (
-                        <span className="rounded-full bg-purple-100 px-2 py-1 text-xs font-medium text-purple-700">
+                        <span className="inline-flex items-center rounded-md bg-purple-50 px-2.5 py-1 text-xs font-medium text-purple-700 ring-1 ring-inset ring-purple-700/10">
                           {course.tags[0].name}
                         </span>
                       )}
                     </div>
-                    <div className="mt-4 flex items-center justify-between text-sm">
-                      <div className="font-medium text-gray-600">
-                        {course.studentCount || 0} học viên
+
+                    <div className="mt-6 flex items-center justify-between border-t border-gray-100 pt-4">
+                      <div className="flex items-center gap-1.5 text-sm font-medium text-gray-500">
+                        <Users size={16} className="text-gray-400"/>
+                        <span>{course.studentCount || 0} học viên</span>
                       </div>
-                      <div className="font-semibold text-amber-500">
-                        ⭐ {course.averageRating?.toFixed(1) || "0.0"} ({course.ratingCount || 0})
+                      <div className="flex items-center gap-1 text-sm font-semibold text-amber-500">
+                        <Star size={16} className="fill-current" />
+                        <span>{course.averageRating?.toFixed(1) || "0.0"}</span>
+                        <span className="text-gray-400 font-normal">({course.ratingCount || 0})</span>
                       </div>
                     </div>
-                    <div className="mt-4 flex gap-3">
+                    
+                    <div className="mt-5">
                       <button 
                         onClick={() => navigate(`/instructor/courses/manage/${course.id}`)}
-                        className="flex-1 rounded-full bg-[#5a2dff] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#4a21eb]">
+                        className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#5a2dff] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#4a21eb] active:translate-y-0.5">
+                          <Settings size={18} />
                           Quản lý
                       </button>
                     </div>
