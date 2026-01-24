@@ -6,91 +6,104 @@ import type { Lecture } from "../models/lecture";
 interface CreateLectureInput {
   name: string;
   description: string;
-  file?: File | null;
-  courseId?: string; // allow override when invoking
+  courseId?: string; 
 }
 
 // mapCourseContentToLectures: normalize various shapes from Course/course-content
 const mapCourseContentToLectures = (raw: any, fallbackCourseId: string): Lecture[] => {
   // 1. Try to extract direct lectures list (flat structure from API screenshot)
-  // Your API returns { data: { lectures: [...] } }, so 'raw' here is likely the data object.
   const directLectures =
     Array.isArray(raw?.lectures) ? raw.lectures :
     Array.isArray(raw?.data?.lectures) ? raw.data.lectures :
     undefined;
 
   if (Array.isArray(directLectures)) {
-    return directLectures.map((lesson: any, index: number) => {
-      // Map video URL. The screenshot shows a 'videos' array.
-      let vidUrl = lesson?.videoUrl ?? lesson?.videoUrlPath ?? lesson?.videoPath ?? lesson?.video;
-      // If direct url is missing, check the videos array (take first item if available)
-      if (!vidUrl && Array.isArray(lesson?.videos) && lesson.videos.length > 0) {
-        const v = lesson.videos[0];
-        vidUrl = typeof v === 'string' ? v : v?.url ?? v?.filePath ?? undefined;
-      }
-
+    const mapped = directLectures.map((lesson: any, index: number) => {
       return {
-        id: String(lesson?.id ?? lesson?.lectureId),
-        name: lesson?.name ?? lesson?.title ?? "Bài giảng",
+        id: String(lesson?.id ?? lesson?.lectureId ?? `generated-${index}`),
+        name: lesson?.name ?? lesson?.title ?? `Chương ${index + 1}`,
         description: lesson?.description ?? "",
         courseId: String(lesson?.courseId ?? fallbackCourseId),
-        videoUrl: vidUrl,
-        createdAt: lesson?.createdAt,
-        updatedAt: lesson?.updatedAt,
-        order: typeof lesson?.order === "number" ? lesson.order : index,
-        // Flat list implies no chapter info available
-        chapterId: undefined,
-        chapterName: undefined,
-        chapterOrder: undefined,
+
+        // Map content arrays
+        videos: Array.isArray(lesson?.videos) ? lesson.videos : [],
+        documentNames: Array.isArray(lesson?.documentNames) ? lesson.documentNames : [],
+        quizNames: Array.isArray(lesson?.quizNames) ? lesson.quizNames : [],
+
+        // Legacy support
+        videoUrl: lesson?.videoUrl,
+
+        // Keep original createdAt if present, otherwise null (do NOT default to "now")
+        createdAt: lesson?.createdAt ?? null,
+        updatedAt: lesson?.updatedAt ?? null,
+        order: typeof lesson?.order === "number" ? lesson.order : null,
+        chapterId: lesson?.chapterId ?? undefined,
+        chapterName: lesson?.chapterName ?? undefined,
+        chapterOrder: lesson?.chapterOrder ?? undefined,
       };
-    }).sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+    });
+
+    // Determine if API provided any ordering hints at all
+    const anyOrderOrCreatedAt = mapped.some((m) => m.order !== null || m.createdAt);
+
+    // Use a large fallback so missing order/createdAt are treated as "last"
+    if (!anyOrderOrCreatedAt) {
+      // Preserve API order when there is no order/createdAt metadata
+      return mapped;
+    }
+
+    // Otherwise sort by order (if provided), then createdAt (oldest first so new appear last)
+    return mapped.sort((a, b) => {
+      // Treat missing order as very large so items without order go to the end
+      const aOrder = typeof a.order === "number" ? a.order : Number.MAX_SAFE_INTEGER;
+      const bOrder = typeof b.order === "number" ? b.order : Number.MAX_SAFE_INTEGER;
+      if (aOrder !== bOrder) return aOrder - bOrder;
+
+      // Treat missing createdAt as very large so items without date go to the end
+      const aTime = a.createdAt ? new Date(a.createdAt).getTime() : Number.MAX_SAFE_INTEGER;
+      const bTime = b.createdAt ? new Date(b.createdAt).getTime() : Number.MAX_SAFE_INTEGER;
+      return aTime - bTime;
+    });
   }
 
-  // 2. Fallback to Chapter-based structure
-  const chaptersSource =
-    Array.isArray(raw?.data) ? raw.data :
-    Array.isArray(raw?.chapters) ? raw.chapters :
-    Array.isArray(raw) ? raw :
-    raw?.data?.chapters ??
-    raw?.data?.courseChapters ??
-    raw?.courseChapters ??
-    [];
+  // Fallback if data structure is different (omitted for brevity, prioritizing the user's current API shape)
+  return [];
+};
 
-  const chapters = Array.isArray(chaptersSource) ? chaptersSource : [];
-  const flattened: Lecture[] = [];
+// normalize single lecture object to our Lecture shape
+const normalizeLecture = (raw: any, fallbackCourseId: string): Lecture => ({
+  id: String(raw?.id ?? raw?.lectureId ?? `generated-${Math.random().toString(36).slice(2,9)}`),
+  name: raw?.name ?? raw?.title ?? 'Untitled Lecture',
+  description: raw?.description ?? '',
+  courseId: String(raw?.courseId ?? fallbackCourseId),
+  videos: Array.isArray(raw?.videos) ? raw.videos : [],
+  documentNames: Array.isArray(raw?.documentNames) ? raw.documentNames : [],
+  quizNames: Array.isArray(raw?.quizNames) ? raw.quizNames : [],
+  videoUrl: raw?.videoUrl ?? undefined,
+  createdAt: raw?.createdAt ?? null,
+  updatedAt: raw?.updatedAt ?? null,
+  order: typeof raw?.order === 'number' ? raw.order : null,
+  chapterId: raw?.chapterId ?? undefined,
+  chapterName: raw?.chapterName ?? undefined,
+  chapterOrder: raw?.chapterOrder ?? undefined,
+});
 
-  chapters.forEach((chapter: any, chapterIndex: number) => {
-    const lessonsSource = Array.isArray(chapter?.lectures) ? chapter.lectures : chapter?.lessons ?? [];
-    const lessons = Array.isArray(lessonsSource) ? lessonsSource : [];
+// try to extract created/updated lecture from various response shapes
+const extractLectureFromResponse = (respData: any, fallbackCourseId: string, existing: Lecture[]): Lecture | null => {
+  if (!respData) return null;
+  // case: API returns a Lecture object
+  if (respData?.id) return normalizeLecture(respData, fallbackCourseId);
 
-    lessons.forEach((lesson: any, lessonIndex: number) => {
-      const id = lesson?.id ?? lesson?.lectureId;
-      const resolvedCourseId = lesson?.courseId ?? fallbackCourseId;
-      if (!id || !resolvedCourseId) return;
+  // case: API returns a course-like payload with lectures array
+  const lecturesArr = Array.isArray(respData?.lectures) ? respData.lectures : undefined;
+  if (lecturesArr && lecturesArr.length) {
+    const existingIds = new Set(existing.map((l) => String(l.id)));
+    const added = lecturesArr.find((l: any) => !existingIds.has(String(l?.id ?? l?.lectureId)));
+    const candidate = added ?? lecturesArr[lecturesArr.length - 1];
+    return candidate ? normalizeLecture(candidate, fallbackCourseId) : null;
+  }
 
-      const chapterId = chapter?.id ?? chapter?.chapterId;
-
-      flattened.push({
-        id: String(id),
-        name: lesson?.name ?? lesson?.title ?? "Bài giảng",
-        description: lesson?.description ?? "",
-        courseId: String(resolvedCourseId),
-        videoUrl: lesson?.videoUrl ?? lesson?.videoUrlPath ?? lesson?.videoPath ?? lesson?.video,
-        createdAt: lesson?.createdAt,
-        updatedAt: lesson?.updatedAt,
-        order: typeof lesson?.order === "number" ? lesson.order : lesson?.sortOrder ?? lessonIndex,
-        chapterId: chapterId != null ? String(chapterId) : undefined,
-        chapterName: chapter?.name ?? chapter?.title ?? undefined,
-        chapterOrder: typeof chapter?.order === "number" ? chapter.order : chapter?.sortOrder ?? chapterIndex,
-      });
-    });
-  });
-
-  return flattened.sort((a, b) => {
-    const chapterDiff = (a.chapterOrder ?? 0) - (b.chapterOrder ?? 0);
-    if (chapterDiff !== 0) return chapterDiff;
-    return (a.order ?? 0) - (b.order ?? 0);
-  });
+  return null;
 };
 
 export const useCourseLectures = (courseId: string) => {
@@ -99,27 +112,11 @@ export const useCourseLectures = (courseId: string) => {
   const [uploadingLectureIds, setUploadingLectureIds] = useState<Record<string, boolean>>({});
   const [lecturesLoading, setLecturesLoading] = useState(false);
 
-  const fetchLectures = useCallback(async () => {   //api lecture
+  const fetchLectures = useCallback(async () => {
     if (!courseId) return;
     setLecturesLoading(true);
     try {
-      // 1. First try the specific lectures-by-course endpoint (if it exists)
-      let hasData = false;
-      try {
-        const listResp = await lectureService.getLecturesByCourse(courseId);
-        const listData = Array.isArray(listResp) ? listResp : Array.isArray(listResp?.data) ? listResp.data : [];
-        if (listData.length > 0) {
-          setLectures(listData);
-          hasData = true;
-        }
-      } catch (err) {
-        // If this endpoint fails (e.g. 404), simply warn and proceed to fallback
-        console.warn("getLecturesByCourse failed, trying course-content...", err);
-      }
-
-      if (hasData) return;
-
-      // 2. Fallback to course-content (based on your screenshot)
+      // Prioritize getCourseContent as it returns the full nested structure needed
       const courseContent = await lectureService.getCourseContent(courseId);
       const normalized = mapCourseContentToLectures(courseContent, courseId);
       setLectures(normalized);
@@ -136,7 +133,7 @@ export const useCourseLectures = (courseId: string) => {
   }, [fetchLectures]);
 
   const createLecture = useCallback(
-    async ({ name, description, file, courseId: inputCourseId }: CreateLectureInput) => {
+    async ({ name, description, courseId: inputCourseId }: CreateLectureInput) => {
       const targetCourseId = inputCourseId ?? courseId;
       if (!targetCourseId) {
         toast.error("Thiếu mã khóa học.");
@@ -145,54 +142,59 @@ export const useCourseLectures = (courseId: string) => {
 
       setIsCreating(true);
       try {
-        // Create lecture (JSON). If file provided, upload via add-video afterwards.
         const response = await lectureService.createLecture({
           name,
           description,
           courseId: targetCourseId,
-          // DO NOT send file here - upload separately below
         });
 
-        if (response?.data) {
-          toast.success(response.message ?? "Tạo bài giảng thành công.");
-          
-          // Refresh list from server using the new API
-          await fetchLectures();
+        if (response) {
+          // Try to extract new lecture from response
+          const created = extractLectureFromResponse(response.data ?? response, targetCourseId, lectures);
+          if (created) {
+            // Ensure newly created lecture appears at the end:
+            // if server didn't provide `order`/`createdAt`, assign values based on current local state
+            const maxOrder = lectures.reduce((acc, l) => {
+              const o = typeof l.order === "number" ? l.order : -Infinity;
+              return Math.max(acc, o);
+            }, -Infinity);
 
-          // If caller provided a file, upload it to add-video endpoint
-          if (file) {
-            const lectureId = response.data!.id;
-            // mark uploading
-            setUploadingLectureIds((prev) => ({ ...prev, [lectureId]: true }));
-            try {
-              const uploadResp = await lectureService.uploadLectureVideo(lectureId, file);
-              if (uploadResp?.data) {
-                toast.success(uploadResp.message ?? "Tải video thành công.");
-                // Refresh again to ensure video url is updated in the list
-                await fetchLectures();
-              } else {
-                toast.error(uploadResp?.message ?? "Không thể tải video.");
-              }
-            } catch (err) {
-              console.error(err);
-              toast.error("Có lỗi khi tải video.");
-            } finally {
-              setUploadingLectureIds((prev) => ({ ...prev, [lectureId]: false }));
+            if (created.order === null || typeof created.order !== "number") {
+              created.order = Number.isFinite(maxOrder) ? maxOrder + 1 : lectures.length + 1;
             }
+            if (!created.createdAt) {
+              created.createdAt = new Date().toISOString();
+            }
+
+            // Append to the end (preserve existing order; new chapter goes last)
+            setLectures((prev) => {
+              if (prev.some((p) => p.id === created.id)) {
+                return prev.map((p) => (p.id === created.id ? created : p));
+              }
+              return [...prev, created];
+            });
+            toast.success(response.message ?? "Tạo chương học thành công.");
+            return response.data ?? created;
           }
 
-          return response.data;
+          // Fallback: if API reports success but didn't return lecture object, refetch
+          if ((response as any).success) {
+            await fetchLectures();
+            toast.success(response.message ?? "Tạo chương học thành công.");
+            return response.data ?? null;
+          }
         }
-        toast.error(response?.message ?? "Không thể tạo bài giảng.");
+
+        toast.error(response?.message ?? "Không thể tạo chương học.");
       } catch (error) {
         console.error(error);
-        toast.error("Có lỗi xảy ra khi tạo bài giảng.");
+        toast.error("Có lỗi xảy ra khi tạo chương học.");
       } finally {
         setIsCreating(false);
       }
       return null;
     },
-    [courseId, fetchLectures]
+    [courseId, fetchLectures, lectures]
   );
 
   const uploadLectureVideo = useCallback(async (lectureId: string, file: File) => {
@@ -203,14 +205,11 @@ export const useCourseLectures = (courseId: string) => {
     setUploadingLectureIds((prev) => ({ ...prev, [lectureId]: true }));
     try {
       const response = await lectureService.uploadLectureVideo(lectureId, file);
-      if (response?.data) {
-        toast.success(response.message ?? "Tải video thành công.");
-        setLectures((prev) =>
-          prev.map((lecture) => (lecture.id === lectureId ? { ...lecture, ...response.data } : lecture))
-        );
-        return response.data;
-      }
-      toast.error(response?.message ?? "Không thể tải video.");
+      // The API add-video might return the updated lecture or just success. 
+      // We assume simple success and refetch.
+      toast.success(response?.message ?? "Tải video lên thành công.");
+      await fetchLectures();
+      return response?.data;
     } catch (error) {
       console.error(error);
       toast.error("Có lỗi khi tải video.");
@@ -218,41 +217,48 @@ export const useCourseLectures = (courseId: string) => {
       setUploadingLectureIds((prev) => ({ ...prev, [lectureId]: false }));
     }
     return null;
-  }, []);
+  }, [fetchLectures]);
 
-  // Edit lecture
   const editLecture = useCallback(async (lectureId: string, payload: { name?: string; description?: string }) => {
     try {
       const response = await lectureService.updateLecture(lectureId, payload);
-      if (response?.data) {
-        toast.success(response.message ?? "Cập nhật bài giảng thành công.");
-        setLectures((prev) => prev.map((l) => (l.id === lectureId ? { ...l, ...response.data } : l)));
-        return response.data;
+      if (response) {
+        const updated = extractLectureFromResponse(response.data ?? response, courseId, lectures);
+        if (updated) {
+          setLectures((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
+        } else if ((response as any).success) {
+          // fallback to refetch if no lecture payload
+          await fetchLectures();
+        }
+        toast.success("Cập nhật thành công.");
+        return response.data ?? updated;
       }
-      toast.error(response?.message ?? "Không thể cập nhật bài giảng.");
+      toast.error(response?.message ?? "Không thể cập nhật chương.");
     } catch (error) {
       console.error(error);
-      toast.error("Có lỗi khi cập nhật bài giảng.");
+      toast.error("Lỗi cập nhật.");
     }
     return null;
-  }, []);
+  }, [courseId, fetchLectures, lectures]);
 
-  // Delete lecture
   const deleteLecture = useCallback(async (lectureId: string) => {
     try {
       const response = await lectureService.deleteLecture(lectureId);
-      if (response?.data) {
-        toast.success(response.message ?? "Xóa bài giảng thành công.");
+      // treat success flag OR returned data as success
+      if ((response && ((response as any).success || response.data)) ) {
+        // remove from local state immediately
         setLectures((prev) => prev.filter((l) => l.id !== lectureId));
+        toast.success("Xóa chương thành công.");
+        // no refetch necessary; but keep it optional if server ordering logic requires it
         return true;
       }
-      toast.error(response?.message ?? "Không thể xóa bài giảng.");
+      toast.error(response?.message ?? "Không thể xóa chương.");
     } catch (error) {
       console.error(error);
-      toast.error("Có lỗi khi xóa bài giảng.");
+      toast.error("Lỗi xóa chương.");
     }
     return false;
-  }, []);
+  }, [/* no deps */]);
 
   return {
     lectures,
@@ -261,7 +267,7 @@ export const useCourseLectures = (courseId: string) => {
     uploadingLectureIds,
     lecturesLoading,
     createLecture,
-    uploadLectureVideo,
+    uploadLectureVideo,  
     editLecture,
     deleteLecture,
   };

@@ -48,17 +48,39 @@ export const lectureService = {
     return response.data;
   },
 
-  async uploadLectureVideo(lectureId: string, file: File, lang = "vi"): Promise<UploadLectureVideoResponse> {
+  async uploadLectureVideo(
+    lectureId: string,
+    file: File,
+    lang = "vi",
+    onProgress?: (progressEvent: ProgressEvent) => void
+  ): Promise<UploadLectureVideoResponse> {
     const formData = new FormData();
+    // Key must match Swagger parameter 'videoFile'
     formData.append("videoFile", file);
+
     const response = await apiClient.post<UploadLectureVideoResponse>(
       `/Lecture/add-video/${lectureId}`,
       formData,
       {
         headers: {
           "Accept-Language": lang,
-          // Let axios set Content-Type (multipart boundary)
+          // intentionally DO NOT set Content-Type here; ensure apiClient doesn't force JSON
         },
+        // If apiClient/axios instance or interceptors add a Content-Type,
+        // remove it here so the browser can set the proper multipart boundary.
+        transformRequest: [
+          (data: any, headers: any) => {
+            try {
+              if (headers && headers["Content-Type"]) {
+                delete headers["Content-Type"];
+              }
+            } catch (e) {
+              // ignore
+            }
+            return data;
+          },
+        ],
+        onUploadProgress: onProgress,
       }
     );
     return response.data;

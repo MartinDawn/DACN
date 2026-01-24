@@ -1,11 +1,15 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
-import { ArrowLeft, PlusCircle, Video, UploadCloud, Loader2, X, Trash, Edit2, LayoutList } from "lucide-react";
+import { 
+  ArrowLeft, PlusCircle, Video, UploadCloud, Loader2, X, Trash, Edit2, 
+  LayoutList, FileText, HelpCircle, ChevronDown, ChevronUp 
+} from "lucide-react";
 import { toast } from "react-hot-toast";
 import InstructorLayout from "../user/layout/layout";
 import { useCourseLectures } from "./hooks/useCourseLectures";
 import { instructorService } from "./services/instructor.service";
 import type { InstructorCourse } from "./models/instructor";
+import { Confirm } from "react-confirm-box"; // optional - if not available fallback to window.confirm (see usage)
 
 const ManageCoursePage: React.FC = () => {
   const params = useParams();
@@ -17,23 +21,21 @@ const ManageCoursePage: React.FC = () => {
   const [course, setCourse] = useState<InstructorCourse | null>(stateCourse ?? null);
   const [loadingCourse, setLoadingCourse] = useState(true);
 
-  // --- Lecture States ---
+  // --- Modal States ---
   const [showLectureModal, setShowLectureModal] = useState(false);
-
   const [lectureName, setLectureName] = useState("");
-  const [lectureType, setLectureType] = useState("Video");
-  const [lectureDuration, setLectureDuration] = useState("");
   const [lectureDescription, setLectureDescription] = useState("");
   
-  // existing editing states
-  const [editingLectureId, setEditingLectureId] = useState<string | null>(null);
-  const [editingName, setEditingName] = useState("");
-  const [editingDescription, setEditingDescription] = useState("");
+  // --- Video/Content Modal States ---
+  const [showVideoModal, setShowVideoModal] = useState(false);
+  const [currentLectureId, setCurrentLectureId] = useState<string | null>(null);
+  const [videoTitle, setVideoTitle] = useState("");
+  const [videoFile, setVideoFile] = useState<File | null>(null);
+  
+  // UI States for Expansion
+  const [expandedLectures, setExpandedLectures] = useState<Record<string, boolean>>({});
 
-  // per-lecture selected video files
-  const [videoFiles, setVideoFiles] = useState<Record<string, File | null>>({});
-
-  const { lectures, fetchLectures, isCreating, uploadingLectureIds, createLecture, uploadLectureVideo, editLecture, deleteLecture, lecturesLoading } =
+  const { lectures, fetchLectures, isCreating, uploadingLectureIds, createLecture, uploadLectureVideo, deleteLecture, lecturesLoading, editLecture } =
     useCourseLectures(courseId ?? "");
 
   useEffect(() => {
@@ -47,104 +49,135 @@ const ManageCoursePage: React.FC = () => {
       return;
     }
     const loadCourse = async () => {
-      try {
+       try {
         const response = await instructorService.getCourseById(courseId);
-        if (response?.data) {
-          setCourse(response.data);
-        } else {
-          toast.error(response?.message ?? "Không tìm thấy khóa học.");
-        }
-      } catch (error) {
-        console.error(error);
-        toast.error("Có lỗi khi tải khóa học.");
-      } finally {
-        setLoadingCourse(false);
-      }
+        if (response?.data) setCourse(response.data);
+       } catch (e) {} finally { setLoadingCourse(false); }
     };
     loadCourse();
   }, [courseId, stateCourse]);
   
   const handleManageCourse = () => {
-    fetchLectures(); // Fetch lectures when managing the course
+    fetchLectures();
     navigate("/instructor?tab=courses");
   };
 
-  // --- Handlers ---
+  const toggleExpand = (id: string) => {
+    setExpandedLectures(prev => ({...prev, [id]: !prev[id]}));
+  };
 
   const handleCreateLecture = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!lectureName.trim()) {
-      toast.error("Vui lòng nhập tên bài giảng.");
+      toast.error("Vui lòng nhập tên chương.");
       return;
     }
     
-    const lecture = await createLecture({
+    // API create-lecture: Creates a container (Chapter)
+    const result = await createLecture({
       name: lectureName.trim(),
       description: lectureDescription.trim(),
-      file: undefined,
       courseId: courseId ?? undefined,
     });
 
-    if (lecture) {
-      toast.success("Thêm bài giảng thành công! Hãy tải video lên.");
+    if (result) {
       setLectureName("");
       setLectureDescription("");
       setShowLectureModal(false);
-      handleManageCourse();
+      // Auto expand the new lecture (optional)
+      setExpandedLectures(prev => ({...prev, [result.id]: true}));
     }
   };
 
-  const handleVideoChange = (lectureId: string, file: File | null) => {
-    setVideoFiles((prev) => ({ ...prev, [lectureId]: file }));
+  const openVideoModal = (lectureId: string) => {
+    setCurrentLectureId(lectureId);
+    setVideoTitle("");
+    setVideoFile(null);
+    setShowVideoModal(true);
   };
 
-  const handleUploadVideo = async (lectureId: string) => {
-    const file = videoFiles[lectureId];
-    if (!file) {
-      toast.error("Vui lòng chọn video trước khi tải lên.");
+  const handleUploadVideo = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!currentLectureId) return;
+    if (!videoFile) {
+      toast.error("Vui lòng chọn file video.");
       return;
     }
-    await uploadLectureVideo(lectureId, file);
-    setVideoFiles((prev) => ({ ...prev, [lectureId]: null }));
+
+    // Nếu người dùng nhập tên video, ta đổi tên file trước khi gửi (Tip để backend nhận được tên mong muốn nếu backend dùng filename)
+    let fileToSend = videoFile;
+    if (videoTitle.trim()) {
+       // Lấy extension cũ
+       const ext = videoFile.name.split('.').pop();
+       const newName = `${videoTitle.trim()}.${ext}`;
+       fileToSend = new File([videoFile], newName, { type: videoFile.type });
+    }
+
+    const result = await uploadLectureVideo(currentLectureId, fileToSend);
+    if (result || result === undefined) { // result check logic from hook
+       setShowVideoModal(false);
+       setVideoTitle("");
+       setVideoFile(null);
+    }
   };
 
-  const handleStartEdit = (lectureId: string) => {
-    const l = lectures.find((x) => x.id === lectureId);
-    if (!l) return;
-    setEditingLectureId(lectureId);
-    setEditingName(l.name);
-    setEditingDescription(l.description);
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+       const file = e.target.files[0];
+       setVideoFile(file);
+       // Auto fill title if empty
+       if (!videoTitle) {
+          setVideoTitle(file.name.replace(/\.[^/.]+$/, ""));
+       }
+    }
   };
 
-  const handleCancelEdit = () => {
-    setEditingLectureId(null);
-    setEditingName("");
-    setEditingDescription("");
+  const handleDeleteLecture = async (id: string) => {
+    const ok = window.confirm("Bạn có chắc muốn xóa chương này? Hành động không thể hoàn tác.");
+    if (!ok) return;
+    const success = await deleteLecture(id);
+    if (success) {
+      // optional visual feedback already handled in hook via toast
+      setExpandedLectures((prev) => {
+        const copy = { ...prev };
+        delete copy[id];
+        return copy;
+      });
+    }
   };
 
-  const handleSaveEdit = async (lectureId: string) => {
-    if (!editingName.trim() || !editingDescription.trim()) {
-      toast.error("Vui lòng nhập đầy đủ thông tin bài giảng.");
+  const openEditModal = (lecture: any) => {
+    setEditLectureId(lecture.id);
+    setEditLectureName(lecture.name ?? "");
+    setEditLectureDescription(lecture.description ?? "");
+    setShowEditModal(true);
+  };
+
+  const handleEditLectureSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editLectureId) return;
+    if (!editLectureName.trim()) {
+      toast.error("Tên chương không được để trống.");
       return;
     }
-    const updated = await editLecture(lectureId, { name: editingName.trim(), description: editingDescription.trim() });
+    const updated = await editLecture(editLectureId, {
+      name: editLectureName.trim(),
+      description: editLectureDescription.trim(),
+    });
     if (updated) {
-      handleCancelEdit();
+      setShowEditModal(false);
+      // ensure UI reflects change (hook already refetched)
+      setExpandedLectures((prev) => ({ ...prev, [editLectureId]: true }));
     }
   };
 
-  const handleDeleteLecture = async (lectureId: string) => {
-    if (!confirm("Bạn có chắc muốn xóa bài giảng này?")) return;
-    await deleteLecture(lectureId);
-  };
+  // --- Edit Modal States ---
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editLectureId, setEditLectureId] = useState<string | null>(null);
+  const [editLectureName, setEditLectureName] = useState("");
+  const [editLectureDescription, setEditLectureDescription] = useState("");
 
-  if (loadingCourse) {
-    return <InstructorLayout><div className="flex justify-center py-20"><Loader2 className="animate-spin text-[#5a2dff]" /></div></InstructorLayout>;
-  }
-
-  if (!courseId || !course) {
-    return <InstructorLayout><div>Không tìm thấy khóa học</div></InstructorLayout>;
-  }
+  if (loadingCourse) return <InstructorLayout><div className="flex justify-center py-20"><Loader2 className="animate-spin text-[#5a2dff]" /></div></InstructorLayout>
 
   return (
     <InstructorLayout>
@@ -155,16 +188,16 @@ const ManageCoursePage: React.FC = () => {
               <ArrowLeft size={16} /> Quay lại khóa học
             </button>
             <h1 className="text-2xl font-bold text-gray-900">{course?.name}</h1>
+            <p className="text-sm text-gray-500">Quản lý nội dung chương trình học</p>
           </div>
           <button
             onClick={() => setShowLectureModal(true)}
             className="flex items-center gap-2 rounded-lg bg-[#5a2dff] px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-[#4b24cc]"
           >
-            <PlusCircle size={18} /> Thêm Bài Giảng
+            <PlusCircle size={18} /> Thêm Chương Học
           </button>
         </div>
 
-        {/* Content Area: List of Lectures */}
         <div className="space-y-6">
             {lecturesLoading ? (
               <div className="flex justify-center py-12">
@@ -173,136 +206,229 @@ const ManageCoursePage: React.FC = () => {
             ) : lectures.length === 0 ? (
                 <div className="flex flex-col items-center justify-center rounded-xl border border-gray-200 bg-white py-12 text-center">
                     <LayoutList className="mb-4 h-12 w-12 text-gray-300" />
-                    <p className="text-gray-500">Chưa có nội dung. Hãy thêm bài giảng đầu tiên.</p>
+                    <p className="text-gray-500">Chưa có nội dung. Hãy thêm chương học đầu tiên (Lecture).</p>
                 </div>
             ) : (
-              <div className="rounded-xl border border-gray-200 bg-white shadow-sm p-4">
-                     <h3 className="text-lg font-semibold text-gray-900 mb-4 px-2">Danh sách bài giảng</h3>
-                     <ul className="space-y-3">
-                        {lectures.map((lecture, index) => {
-                            const isUploading = Boolean(uploadingLectureIds[lecture.id]);
-                            const selectedFile = videoFiles[lecture.id];
-                            const isEditing = editingLectureId === lecture.id;
+             <div className="space-y-4">
+               {lectures.map((lecture, index) => {
+                 const isExpanded = expandedLectures[lecture.id] ?? true; // default expand
+                 const isUploading = uploadingLectureIds[lecture.id];
+                 
+                 return (
+                   <div key={lecture.id} className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm transition hover:shadow-md">
+                     {/* Lecture Header (Chapter) */}
+                     <div className="flex items-center justify-between bg-gray-50 px-6 py-4">
+                        <div className="flex items-center gap-3 cursor-pointer" onClick={() => toggleExpand(lecture.id)}>
+                           <div className="font-bold text-gray-400">CHƯƠNG {index + 1}</div>
+                           <h3 className="font-bold text-gray-900">{lecture.name}</h3>
+                           {isExpanded ? <ChevronUp size={16} className="text-gray-400"/> : <ChevronDown size={16} className="text-gray-400"/>}
+                        </div>
+                        <div className="flex items-center gap-2">
+                           <button onClick={() => openEditModal(lecture)} className="p-2 text-gray-400 hover:text-indigo-600" title="Chỉnh sửa"><Edit2 size={16}/></button>
+                           <button onClick={() => handleDeleteLecture(lecture.id)} className="p-2 text-gray-400 hover:text-red-500" title="Xóa"><Trash size={16}/></button>
+                        </div>
+                     </div>
+                     
+                     {/* Lecture Content */}
+                     {isExpanded && (
+                       <div className="p-6">
+                          <p className="text-sm text-gray-500 mb-4">{lecture.description}</p>
+                          
+                          {/* List: Videos / Content */}
+                          <div className="space-y-2 mb-6">
+                             {/* Videos */}
+                             {lecture.videos && lecture.videos.length > 0 ? (
+                               lecture.videos.map((vid: any, vidIdx: number) => {
+                                 // Handle if video is object or string
+                                 const vidName = typeof vid === 'string' ? vid : (vid.name || vid.title || `Video ${vidIdx+1}`);
+                                 return (
+                                   <div key={vidIdx} className="flex items-center gap-3 rounded-lg border border-gray-100 bg-gray-50 p-3">
+                                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-100 text-indigo-600">
+                                        <Video size={14} />
+                                      </div>
+                                      <span className="flex-1 text-sm font-medium text-gray-700">{vidName}</span>
+                                      <span className="text-xs text-green-600 bg-green-50 px-2 py-1 rounded">Video</span>
+                                   </div>
+                                 );
+                               })
+                             ) : (
+                               <div className="text-sm text-gray-400 italic pl-2">Chưa có video bài giảng nào.</div>
+                             )}
 
-                            return (
-                                <li key={lecture.id} className="flex flex-col gap-4 rounded-lg border border-gray-100 bg-white p-4 hover:shadow-md md:flex-row md:items-center">
-                                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-gray-100 text-gray-500">
-                                        <Video size={20} />
-                                    </div>
-                                    <div className="flex-1 space-y-1">
-                                        {isEditing ? (
-                                            <div className="flex gap-2 items-center">
-                                                <input value={editingName} onChange={e => setEditingName(e.target.value)} className="flex-1 text-sm border rounded px-2 py-1" placeholder="Tên bài giảng"/>
-                                                <input value={editingDescription} onChange={e => setEditingDescription(e.target.value)} className="flex-1 text-sm border rounded px-2 py-1" placeholder="Mô tả"/>
-                                                <button onClick={() => handleSaveEdit(lecture.id)} className="bg-blue-600 text-white text-xs px-3 py-1.5 rounded">Lưu</button>
-                                                <button onClick={handleCancelEdit} className="border text-xs px-3 py-1.5 rounded">Hủy</button>
-                                            </div>
-                                        ) : (
-                                            <>
-                                                <div className="flex items-center gap-2">
-                                                    {lecture.chapterName && (
-                                                        <span className="rounded-full bg-indigo-50 px-2 py-0.5 text-xs font-semibold text-indigo-600">
-                                                            {lecture.chapterName}
-                                                        </span>
-                                                    )}
-                                                    <span className="text-sm font-medium">Bài {index + 1}: {lecture.name}</span>
-                                                </div>
-                                                <div className="flex items-center gap-3 text-xs text-gray-500">
-                                                    {lecture.videoUrl ? (
-                                                        <span className="text-green-600 flex items-center gap-1 font-semibold"><UploadCloud size={12}/> Đã có Video</span>
-                                                    ) : (
-                                                        <span className="text-amber-600">Chưa có video</span>
-                                                    )}
-                                                    {lecture.description && <span>• {lecture.description}</span>}
-                                                </div>
-                                            </>
-                                        )}
-                                    </div>
+                             {/* Documents / Quizzes Placeholders */}
+                             {lecture.documentNames?.map((doc, i) => (
+                               <div key={`d-${i}`} className="flex items-center gap-3 rounded-lg border border-gray-100 bg-gray-50 p-3">
+                                  <FileText size={16} className="text-orange-500"/>
+                                  <span className="flex-1 text-sm">{doc}</span>
+                               </div>
+                             ))}
+                             {lecture.quizNames?.map((quiz, i) => (
+                               <div key={`q-${i}`} className="flex items-center gap-3 rounded-lg border border-gray-100 bg-gray-50 p-3">
+                                  <HelpCircle size={16} className="text-purple-500"/>
+                                  <span className="flex-1 text-sm">{quiz}</span>
+                               </div>
+                             ))}
+                          </div>
 
-                                    {/* Upload & Actions */}
-                                    <div className="flex items-center gap-3">
-                                        <div className="flex items-center gap-2 rounded-md bg-gray-50 px-2 py-1 ring-1 ring-gray-100">
-                                            {selectedFile ? (
-                                                <>
-                                                    <span className="max-w-[100px] truncate text-xs text-gray-700">{selectedFile.name}</span>
-                                                    <button onClick={() => handleUploadVideo(lecture.id)} className="text-xs font-bold text-[#5a2dff] hover:underline" disabled={isUploading}>
-                                                        {isUploading ? <Loader2 className="animate-spin h-3 w-3"/> : "Upload"}
-                                                    </button>
-                                                    <button onClick={() => handleVideoChange(lecture.id, null)}><X size={12}/></button>
-                                                </>
-                                            ) : (
-                                                <label className="cursor-pointer text-xs font-medium text-gray-500 hover:text-[#5a2dff] flex items-center gap-1">
-                                                    {lecture.videoUrl ? "Đổi Video" : "Tải Video Lên"}
-                                                    <input type="file" accept="video/*" className="hidden" onChange={(e) => handleVideoChange(lecture.id, e.target.files?.[0] ?? null)} />
-                                                </label>
-                                            )}
-                                        </div>
-                                        
-
-                                        <div className="flex gap-1 border-l pl-2 ml-2">
-                                            <button onClick={() => handleStartEdit(lecture.id)} className="p-1.5 text-gray-400 hover:text-blue-600"><Edit2 size={14}/></button>
-                                            <button onClick={() => handleDeleteLecture(lecture.id)} className="p-1.5 text-gray-400 hover:text-red-500"><Trash size={14}/></button>
-                                        </div>
-                                    </div>
-                                </li>
-                            );
-                        })}
-                     </ul>
-                </div>
+                          {/* Actions: Add Content */}
+                          <div className="flex flex-wrap gap-3 border-t pt-4">
+                             <button 
+                               onClick={() => openVideoModal(lecture.id)}
+                               disabled={isUploading}
+                               className="flex items-center gap-2 rounded-md bg-indigo-50 px-3 py-2 text-sm font-medium text-indigo-700 hover:bg-indigo-100 disabled:opacity-50"
+                             >
+                                {isUploading ? <Loader2 className="animate-spin h-4 w-4"/> : <UploadCloud size={16} />}
+                                Thêm Video
+                             </button>
+                             
+                             <button disabled className="flex items-center gap-2 rounded-md bg-gray-50 px-3 py-2 text-sm font-medium text-gray-400 cursor-not-allowed" title="Tính năng đang cập nhật">
+                                <HelpCircle size={16} /> Thêm Quiz (Sắp có)
+                             </button>
+                             <button disabled className="flex items-center gap-2 rounded-md bg-gray-50 px-3 py-2 text-sm font-medium text-gray-400 cursor-not-allowed" title="Tính năng đang cập nhật">
+                                <FileText size={16} /> Thêm Tài Liệu (Sắp có)
+                             </button>
+                          </div>
+                       </div>
+                     )}
+                   </div>
+                 );
+               })}
+             </div>
             )}
         </div>
       </div>
 
-      {/* --- MODAL: Add Lesson (Used to be Add Chapter) --- */}
+      {/* --- ADD CHAPTER MODAL --- */}
       {showLectureModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
            <div className="w-full max-w-lg rounded-xl bg-white shadow-xl animate-in fade-in zoom-in-95">
               <div className="border-b px-6 py-4 flex justify-between items-center">
-                 <h3 className="font-bold text-gray-900">Thêm Bài Giảng Mới</h3>
+                 <h3 className="font-bold text-gray-900">Thêm Chương Mới (Lecture)</h3>
                  <button onClick={() => setShowLectureModal(false)}><X className="text-gray-400"/></button>
               </div>
               <form onSubmit={handleCreateLecture} className="p-6 space-y-5">
                  <div>
-                    <label className="mb-1 block text-sm font-semibold text-gray-700">Tiêu đề bài giảng</label>
+                    <label className="mb-1 block text-sm font-semibold text-gray-700">Tên chương <span className="text-red-500">*</span></label>
                     <input autoFocus value={lectureName} onChange={e => setLectureName(e.target.value)} 
-                           className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#5a2dff] focus:ring-1 focus:ring-[#5a2dff]" placeholder="Tên bài giảng..."/>
+                           className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#5a2dff] focus:ring-1 focus:ring-[#5a2dff]" 
+                           placeholder="Ví dụ: Chương 1: Giới thiệu..."/>
                  </div>
-                 <div className="grid grid-cols-2 gap-4">
-                     <div>
-                        <label className="mb-1 block text-sm font-semibold text-gray-700">Loại bài học</label>
-                        <select value={lectureType} onChange={e => setLectureType(e.target.value)} 
-                                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#5a2dff]">
-                            <option value="Video">Video</option>
-                            <option value="Quiz">Bài tập</option>
-                            <option value="Doc">Tài liệu</option>
-                        </select>
-                     </div>
-                     <div>
-                        <label className="mb-1 block text-sm font-semibold text-gray-700">Thời lượng (dự kiến)</label>
-                        <input value={lectureDuration} onChange={e => setLectureDuration(e.target.value)} 
-                               className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#5a2dff]" placeholder="VD: 10:00"/>
-                     </div>
-                 </div>
+                 
                  <div>
                     <label className="mb-1 block text-sm font-semibold text-gray-700">Mô tả (tùy chọn)</label>
                     <textarea value={lectureDescription} onChange={e => setLectureDescription(e.target.value)} rows={3}
-                           className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#5a2dff] focus:ring-1 focus:ring-[#5a2dff]" placeholder="Mô tả nội dung bài học"/>
+                           className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#5a2dff] focus:ring-1 focus:ring-[#5a2dff]" 
+                           placeholder="Mô tả ngắn về nội dung chương này..."/>
                  </div>
                  
                  <div className="rounded-lg bg-blue-50 p-3 text-xs text-blue-700">
-                    <p>💡 Sau khi tạo bài giảng, bạn có thể tải video lên trong danh sách bài giảng.</p>
+                    <p>💡 Sau khi tạo chương, bạn có thể thêm nhiều video, bài tập và tài liệu vào chương đó.</p>
                  </div>
 
                  <div className="flex justify-end gap-2 pt-2 border-t mt-2">
                     <button type="button" onClick={() => setShowLectureModal(false)} className="rounded-lg border px-4 py-2 text-sm font-medium hover:bg-gray-50">Hủy</button>
                     <button type="submit" disabled={isCreating} className="flex items-center gap-2 rounded-lg bg-[#5a2dff] px-4 py-2 text-sm font-medium text-white hover:bg-[#4b24cc]">
-                        {isCreating && <Loader2 className="h-4 w-4 animate-spin"/>} Lưu bài giảng
+                        {isCreating ? "Đang tạo..." : "Tạo Chương"}
                     </button>
                  </div>
               </form>
            </div>
         </div>
       )}
+
+      {/* --- ADD VIDEO MODAL --- */}
+      {showVideoModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+           <div className="w-full max-w-lg rounded-xl bg-white shadow-xl animate-in fade-in zoom-in-95">
+              <div className="border-b px-6 py-4 flex justify-between items-center">
+                 <h3 className="font-bold text-gray-900">Thêm Video Bài Giảng</h3>
+                 <button onClick={() => setShowVideoModal(false)}><X className="text-gray-400"/></button>
+              </div>
+              <form onSubmit={handleUploadVideo} className="p-6 space-y-5">
+                 <div>
+                    <label className="mb-1 block text-sm font-semibold text-gray-700">Tiêu đề video (Tùy chọn)</label>
+                    <input 
+                       value={videoTitle} 
+                       onChange={e => setVideoTitle(e.target.value)} 
+                       className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#5a2dff] focus:ring-1 focus:ring-[#5a2dff]" 
+                       placeholder="Nhập tên video hiển thị... (Mặc định lấy tên file)"
+                    />
+                 </div>
+                 
+                 <div>
+                    <label className="mb-1 block text-sm font-semibold text-gray-700">File Video <span className="text-red-500">*</span></label>
+                    <div className="flex items-center justify-center w-full">
+                        <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
+                            <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                                {videoFile ? (
+                                    <>
+                                        <Video className="w-8 h-8 mb-2 text-indigo-500" />
+                                        <p className="mb-2 text-sm text-gray-700 font-semibold">{videoFile.name}</p>
+                                        <p className="text-xs text-gray-500">{(videoFile.size / (1024*1024)).toFixed(2)} MB</p>
+                                    </>
+                                ) : (
+                                    <>
+                                        <UploadCloud className="w-8 h-8 mb-4 text-gray-500" />
+                                        <p className="mb-2 text-sm text-gray-500"><span className="font-semibold">Click để tải lên</span> hoặc kéo thả</p>
+                                        <p className="text-xs text-gray-500">MP4, WebM (Max 50MB)</p>
+                                    </>
+                                )}
+                            </div>
+                            <input type="file" className="hidden" accept="video/*" onChange={handleFileChange} />
+                        </label>
+                    </div> 
+                 </div>
+
+                 <div className="flex justify-end gap-2 pt-4 border-t">
+                    <button type="button" onClick={() => setShowVideoModal(false)} className="rounded-lg border px-4 py-2 text-sm font-medium hover:bg-gray-50">Hủy</button>
+                    <button 
+                      type="submit" 
+                      disabled={!videoFile || uploadingLectureIds[currentLectureId || '']} 
+                      className="flex items-center gap-2 rounded-lg bg-[#5a2dff] px-4 py-2 text-sm font-medium text-white hover:bg-[#4b24cc] disabled:opacity-50"
+                    >
+                        {uploadingLectureIds[currentLectureId || ''] ? <Loader2 className="animate-spin h-4 w-4"/> : <UploadCloud size={16} />}
+                        Tải Lên
+                    </button>
+                 </div>
+              </form>
+           </div>
+        </div>
+      )}
+
+      {/* --- EDIT CHAPTER MODAL --- */}
+      {showEditModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+           <div className="w-full max-w-lg rounded-xl bg-white shadow-xl animate-in fade-in zoom-in-95">
+              <div className="border-b px-6 py-4 flex justify-between items-center">
+                 <h3 className="font-bold text-gray-900">Chỉnh sửa Chương</h3>
+                 <button onClick={() => setShowEditModal(false)}><X className="text-gray-400"/></button>
+              </div>
+              <form onSubmit={handleEditLectureSubmit} className="p-6 space-y-5">
+                 <div>
+                    <label className="mb-1 block text-sm font-semibold text-gray-700">Tên chương <span className="text-red-500">*</span></label>
+                    <input autoFocus value={editLectureName} onChange={e => setEditLectureName(e.target.value)} 
+                           className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#5a2dff] focus:ring-1 focus:ring-[#5a2dff]" 
+                           placeholder="Ví dụ: Chương 1: Giới thiệu..."/>
+                 </div>
+                 
+                 <div>
+                    <label className="mb-1 block text-sm font-semibold text-gray-700">Mô tả (tùy chọn)</label>
+                    <textarea value={editLectureDescription} onChange={e => setEditLectureDescription(e.target.value)} rows={3}
+                           className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#5a2dff] focus:ring-1 focus:ring-[#5a2dff]" 
+                           placeholder="Mô tả ngắn về nội dung chương này..."/>
+                 </div>
+
+                 <div className="flex justify-end gap-2 pt-2 border-t mt-2">
+                    <button type="button" onClick={() => setShowEditModal(false)} className="rounded-lg border px-4 py-2 text-sm font-medium hover:bg-gray-50">Hủy</button>
+                    <button type="submit" className="flex items-center gap-2 rounded-lg bg-[#5a2dff] px-4 py-2 text-sm font-medium text-white hover:bg-[#4b24cc]">
+                        Lưu thay đổi
+                    </button>
+                 </div>
+              </form>
+           </div>
+        </div>
+      )}
+
     </InstructorLayout>
   );
 };

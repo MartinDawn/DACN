@@ -3,7 +3,15 @@ export interface Lecture {
   name: string;
   description: string;
   courseId: string;
-  videoUrl?: string;
+  
+  // Updated to reflect "Lecture as Chapter" grouping
+  // These arrays contain the content of the lecture
+  videos: any[]; // Can be strings or objects depending on API
+  documentNames: string[];
+  quizNames: string[];
+  
+  // Legacy or simplified properties
+  videoUrl?: string; // Optional, mostly for backward compatibility or single-video view
   createdAt?: string;
   updatedAt?: string;
   order?: number;
@@ -16,7 +24,7 @@ export interface CreateLecturePayload {
   name: string;
   description: string;
   courseId: string;
-  file?: File | null; // <-- allow optional file when creating lecture
+  // file removed from payload type here as it is handled separately now
 }
 
 interface LectureResponseBase {
