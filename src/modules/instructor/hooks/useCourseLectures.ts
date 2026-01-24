@@ -10,10 +10,81 @@ interface CreateLectureInput {
   courseId?: string; // allow override when invoking
 }
 
+// mapCourseContentToLectures: normalize various shapes from Course/course-content
+const mapCourseContentToLectures = (raw: any, fallbackCourseId: string): Lecture[] => {
+  const chaptersSource =
+    Array.isArray(raw?.data) ? raw.data :
+    Array.isArray(raw?.chapters) ? raw.chapters :
+    Array.isArray(raw) ? raw :
+    raw?.data?.chapters ??
+    raw?.data?.courseChapters ??
+    raw?.courseChapters ??
+    [];
+
+  const chapters = Array.isArray(chaptersSource) ? chaptersSource : [];
+  const flattened: Lecture[] = [];
+
+  chapters.forEach((chapter: any, chapterIndex: number) => {
+    const lessonsSource = Array.isArray(chapter?.lectures) ? chapter.lectures : chapter?.lessons ?? [];
+    const lessons = Array.isArray(lessonsSource) ? lessonsSource : [];
+
+    lessons.forEach((lesson: any, lessonIndex: number) => {
+      const id = lesson?.id ?? lesson?.lectureId;
+      const resolvedCourseId = lesson?.courseId ?? fallbackCourseId;
+      if (!id || !resolvedCourseId) return;
+
+      const chapterId = chapter?.id ?? chapter?.chapterId;
+
+      flattened.push({
+        id: String(id),
+        name: lesson?.name ?? lesson?.title ?? "Bài giảng",
+        description: lesson?.description ?? "",
+        courseId: String(resolvedCourseId),
+        videoUrl: lesson?.videoUrl ?? lesson?.videoUrlPath ?? lesson?.videoPath ?? lesson?.video,
+        createdAt: lesson?.createdAt,
+        updatedAt: lesson?.updatedAt,
+        order: typeof lesson?.order === "number" ? lesson.order : lesson?.sortOrder ?? lessonIndex,
+        chapterId: chapterId != null ? String(chapterId) : undefined,
+        chapterName: chapter?.name ?? chapter?.title ?? undefined,
+        chapterOrder: typeof chapter?.order === "number" ? chapter.order : chapter?.sortOrder ?? chapterIndex,
+      });
+    });
+  });
+
+  return flattened.sort((a, b) => {
+    const chapterDiff = (a.chapterOrder ?? 0) - (b.chapterOrder ?? 0);
+    if (chapterDiff !== 0) return chapterDiff;
+    return (a.order ?? 0) - (b.order ?? 0);
+  });
+};
+
 export const useCourseLectures = (courseId: string) => {
   const [lectures, setLectures] = useState<Lecture[]>([]);
   const [isCreating, setIsCreating] = useState(false);
   const [uploadingLectureIds, setUploadingLectureIds] = useState<Record<string, boolean>>({});
+  const [lecturesLoading, setLecturesLoading] = useState(false);
+
+  const fetchLectures = useCallback(async () => {
+    if (!courseId) return;
+    setLecturesLoading(true);
+    try {
+      const courseContent = await lectureService.getCourseContent(courseId);
+      const normalized = mapCourseContentToLectures(courseContent, courseId);
+      if (normalized.length) {
+        setLectures(normalized);
+        return;
+      }
+
+      const fallback = await lectureService.getLecturesByCourse(courseId);
+      const fallbackData = Array.isArray(fallback) ? fallback : fallback?.data;
+      setLectures(Array.isArray(fallbackData) ? fallbackData : []);
+    } catch (error) {
+      console.error(error);
+      setLectures([]);
+    } finally {
+      setLecturesLoading(false);
+    }
+  }, [courseId]);
 
   const createLecture = useCallback(
     async ({ name, description, file, courseId: inputCourseId }: CreateLectureInput) => {
@@ -35,7 +106,9 @@ export const useCourseLectures = (courseId: string) => {
 
         if (response?.data) {
           toast.success(response.message ?? "Tạo bài giảng thành công.");
-          setLectures((prev) => [response.data!, ...prev]);
+          
+          // Refresh list from server using the new API
+          await fetchLectures();
 
           // If caller provided a file, upload it to add-video endpoint
           if (file) {
@@ -46,7 +119,8 @@ export const useCourseLectures = (courseId: string) => {
               const uploadResp = await lectureService.uploadLectureVideo(lectureId, file);
               if (uploadResp?.data) {
                 toast.success(uploadResp.message ?? "Tải video thành công.");
-                setLectures((prev) => prev.map((l) => (l.id === lectureId ? { ...l, ...uploadResp.data } : l)));
+                // Refresh again to ensure video url is updated in the list
+                await fetchLectures();
               } else {
                 toast.error(uploadResp?.message ?? "Không thể tải video.");
               }
@@ -69,7 +143,7 @@ export const useCourseLectures = (courseId: string) => {
       }
       return null;
     },
-    [courseId]
+    [courseId, fetchLectures]
   );
 
   const uploadLectureVideo = useCallback(async (lectureId: string, file: File) => {
@@ -134,8 +208,10 @@ export const useCourseLectures = (courseId: string) => {
   return {
     lectures,
     setLectures: setLectures as Dispatch<SetStateAction<Lecture[]>>,
+    fetchLectures,
     isCreating,
     uploadingLectureIds,
+    lecturesLoading,
     createLecture,
     uploadLectureVideo,
     editLecture,

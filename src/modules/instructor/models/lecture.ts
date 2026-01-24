@@ -6,6 +6,10 @@ export interface Lecture {
   videoUrl?: string;
   createdAt?: string;
   updatedAt?: string;
+  order?: number;
+  chapterId?: string;
+  chapterName?: string;
+  chapterOrder?: number;
 }
 
 export interface CreateLecturePayload {

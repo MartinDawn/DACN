@@ -95,13 +95,17 @@ const InstructorDashboard: React.FC = () => {
     }
 
     const formData = new FormData();
-    // SỬA LỖI: Chuyển các key sang camelCase để khớp với backend (name, description, price...)
+    // SỬA LỖI: Sử dụng camelCase (chữ thường đầu) bởi vì Backend thường map theo camelCase hoặc case-insensitive
+    // Lỗi "The name field is required" gợi ý backend đang tìm key "name"
     formData.append("name", courseName);
     formData.append("description", courseDescription);
     formData.append("price", Number(coursePrice).toString());
-    // Append each selected tag id as separate FormData entries
+    
+    // Gửi danh sách tagIds 
     selectedTagIds.forEach((id) => formData.append("tagIds", id));
+    
     if (courseImage) {
+      // Backend thường yêu cầu tên trường file là image (lowercase)
       formData.append("image", courseImage);
     }
 

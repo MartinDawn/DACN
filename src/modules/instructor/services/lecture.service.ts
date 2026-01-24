@@ -12,13 +12,26 @@ import type {
 } from "../models/lecture";
 
 export const lectureService = {
-  async getLecturesByCourse(courseId: string, lang = "vi"): Promise<ApiResponse<Lecture[]>> {
-    const response = await apiClient.get<ApiResponse<Lecture[]>>(`/Lecture/by-course/${courseId}`, {
+  async getLecturesByCourse(courseId: string, lang = "vi"): Promise<any> {
+    const response = await apiClient.get<any>(`/Lecture/by-course/${courseId}`, {
       headers: {
         "Accept-Language": lang,
       },
     });
-    return response.data;
+    // normalize common wrappers: return inner .data when present, otherwise return body
+    const body = response.data;
+    return body?.data ?? body;
+  },
+
+  // Get full course content (Chapters/Lectures)
+  async getCourseContent(courseId: string, lang = "vi"): Promise<any> {
+    const response = await apiClient.get<any>(`/Course/course-content/${courseId}`, {
+      headers: {
+        "Accept-Language": lang,
+      },
+    });
+    const body = response.data;
+    return body?.data ?? body;
   },
 
   // NOTE: create-lecture expects JSON (swagger). We create the lecture first,

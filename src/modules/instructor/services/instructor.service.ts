@@ -38,10 +38,11 @@ export const instructorService = {
     for (let [key, value] of courseData.entries()) {
       console.log(`${key}:`, value);
     }
+
+    // SỬA LỖI: Thêm headers multipart/form-data để đảm bảo apiClient không override thành application/json
     const response = await apiClient.post<CreateCourseResponse>('/Course/create', courseData, {
       headers: {
-        // Let axios set Content-Type for FormData (boundary)
-        // 'Content-Type': 'multipart/form-data',
+        "Content-Type": "multipart/form-data",
       },
     });
 
