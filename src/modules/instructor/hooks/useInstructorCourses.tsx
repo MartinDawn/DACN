@@ -454,39 +454,18 @@ const InstructorDashboard: React.FC = () => {
         <section>
           <h3 className="mb-4 text-2xl font-bold">Khóa Học Của Tôi</h3>
           {isLoadingCourses ? (
-            <div className="py-20 text-center">
-              <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-[#5a2dff] border-r-transparent"></div>
-              <p className="mt-4 text-gray-500">Đang tải danh sách khóa học...</p>
-            </div>
+            <p>Đang tải danh sách khóa học...</p>
           ) : courses.length > 0 ? (
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {courses.map((course) => (
                 <div key={course.id} className="overflow-hidden rounded-3xl bg-white shadow-lg shadow-slate-900/5 transition hover:-translate-y-1">
-                  <img 
-                    src={course.imageUrl || "/placeholder.jpg"} 
-                    alt={course.name} 
-                    className="h-48 w-full object-cover"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).src = "/placeholder.jpg";
-                    }}
-                  />
+                  <img src={course.imageUrl || "/placeholder.jpg"} alt={course.name} className="h-48 w-full rounded-t-2xl object-cover" />
                   <div className="p-5">
                     <h4 className="truncate text-base font-semibold" title={course.name}>{course.name}</h4>
                     <p className="mt-1 line-clamp-2 text-sm text-gray-500">{course.description}</p>
-                    <div className="mt-3 flex items-center gap-2">
-                      {course.tags && course.tags.length > 0 && (
-                        <span className="rounded-full bg-purple-100 px-2 py-1 text-xs font-medium text-purple-700">
-                          {course.tags[0].name}
-                        </span>
-                      )}
-                    </div>
-                    <div className="mt-4 flex items-center justify-between text-sm">
-                      <div className="font-medium text-gray-600">
-                        {course.studentCount || 0} học viên
-                      </div>
-                      <div className="font-semibold text-amber-500">
-                        ⭐ {course.averageRating?.toFixed(1) || "0.0"} ({course.ratingCount || 0})
-                      </div>
+                    <div className="mt-4 flex items-center justify-between text-sm text-gray-600">
+                      <div className="font-medium">{course.studentCount || 0} học viên</div>
+                      <div className="font-semibold text-amber-500">⭐ {course.averageRating || 0} ({course.ratingCount || 0})</div>
                     </div>
                     <div className="mt-4 flex gap-3">
                       <button 
@@ -494,23 +473,19 @@ const InstructorDashboard: React.FC = () => {
                         className="flex-1 rounded-full bg-[#5a2dff] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#4a21eb]">
                           Quản lý
                       </button>
+                      <button className="rounded-full border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-600 transition hover:bg-gray-100">Sửa</button>
                     </div>
                   </div>
                 </div>
               ))}
             </div>
           ) : (
-            <div className="rounded-3xl bg-white p-12 text-center shadow-lg">
-              <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-purple-100">
-                <Book className="h-8 w-8 text-purple-600" />
-              </div>
-              <h4 className="mb-2 text-lg font-semibold text-gray-900">Bạn chưa có khóa học nào</h4>
-              <p className="mb-6 text-sm text-gray-500">Hãy tạo khóa học đầu tiên để bắt đầu chia sẻ kiến thức của bạn</p>
+            <div className="py-20 text-center">
+              <p className="mb-4 text-gray-500">Bạn chưa có khóa học nào.</p>
               <button
                 onClick={() => setShowCreateCourseForm(true)}
-                className="inline-flex items-center gap-2 rounded-lg bg-[#5a2dff] px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#4a21eb]"
+                className="rounded-lg bg-[#5a2dff] px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#4a21eb]"
               >
-                <Book size={16} />
                 Tạo khóa học đầu tiên
               </button>
             </div>

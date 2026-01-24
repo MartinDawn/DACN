@@ -3,6 +3,7 @@ import { toast } from 'react-hot-toast';
 import { instructorService } from '../services/instructor.service';
 import type { InstructorCourse } from '../models/instructor';
 import type { Tag } from '../../course/models/course';
+import { API_CONFIG } from '../../../config/api.config';
 
 export const useInstructorCourses = () => {
   const [courses, setCourses] = useState<InstructorCourse[]>([]);
@@ -15,19 +16,75 @@ export const useInstructorCourses = () => {
   const [tagsError, setTagsError] = useState<string | null>(null);
 
   const fetchCourses = useCallback(async (silent = false) => {
-    if (!silent) setIsLoading(true);
-    setError(null);
     try {
-      const response = await instructorService.getMyCourses();
-      if (response.success) {
-        setCourses(response.data);
-      } else {
-        setError(response.message || 'Failed to fetch courses.');
+      setIsLoading(true);
+      const token = localStorage.getItem("accessToken");
+      
+      if (!token) {
+        if (!silent) toast.error("Vui lòng đăng nhập để xem khóa học");
+        setCourses([]);
+        return;
       }
-    } catch (err: any) {
-      setError(err.message || 'An error occurred while fetching courses.');
+
+      const response = await fetch(
+        `${API_CONFIG.baseURL}/api/Course/instructor-courses`,
+        {
+          method: "GET",
+          headers: {
+            "Accept-Language": "vi",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        if (response.status === 403) {
+          if (!silent) toast.error("Bạn chưa đăng ký làm giảng viên");
+          setCourses([]);
+          return;
+        }
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      
+      // Handle various response patterns (direct array or wrapped in data/result)
+      // lấy api list course của instructor
+      let rawCourses: any[] = [];
+      if (Array.isArray(data)) {
+        rawCourses = data;
+      } else if (data && typeof data === 'object') {
+        if (Array.isArray(data.data)) {
+          rawCourses = data.data;
+        } else if (Array.isArray(data.result)) {
+          rawCourses = data.result;
+        }
+      }
+
+      // Normalize keys to camelCase to ensure UI renders correctly regardless of API casing
+      const normalizedCourses = rawCourses.map((item: any) => ({
+        ...item,
+        id: item.id || item.Id,
+        name: item.name || item.Name,
+        description: item.description || item.Description,
+        imageUrl: item.imageUrl || item.ImageUrl || item.image || item.Image,
+        price: item.price ?? item.Price,
+        studentCount: item.studentCount ?? item.StudentCount,
+        averageRating: item.averageRating ?? item.AverageRating,
+        ratingCount: item.ratingCount ?? item.RatingCount,
+        tags: Array.isArray(item.tags || item.Tags) 
+            ? (item.tags || item.Tags).map((t: any) => ({ id: t.id || t.Id, name: t.name || t.Name })) 
+            : []
+      }));
+
+      setCourses(normalizedCourses);
+
+    } catch (error) {
+      console.error("Error fetching instructor courses:", error);
+      if (!silent) toast.error("Không thể tải danh sách khóa học");
+      setCourses([]);
     } finally {
-      if (!silent) setIsLoading(false);
+      setIsLoading(false);
     }
   }, []);
 
@@ -76,11 +133,8 @@ export const useInstructorCourses = () => {
     try {
       const response = await instructorService.createCourse(courseData);
 
-      // Robust extraction: support multiple shapes returned by backend
       const respAny: any = response ?? {};
-      // Common shapes: { success: true, data: { ...course } } OR { data: { ...course } } OR direct course object
       let maybeData = respAny.data ?? respAny;
-      // handle double-nesting e.g. { data: { data: {...} } }
       if (maybeData && maybeData.data) maybeData = maybeData.data;
 
       if (maybeData && (maybeData as any).id) {
@@ -98,7 +152,7 @@ export const useInstructorCourses = () => {
       if (maybeSuccess) {
         const submittedName = (courseData.get('Name') as string) || (courseData.get('name') as string) || '';
         try {
-          await fetchCourses(true); // silent refresh
+          await fetchCourses(true);
           if (submittedName) {
             const resp = await instructorService.getMyCourses();
             const list = (resp && (resp as any).data) ?? resp ?? [];
@@ -125,7 +179,6 @@ export const useInstructorCourses = () => {
       setError(errorMessage);
       return null;
     } catch (err: any) {
-      // Detect "not instructor" response from backend (403 or message mentioning instructor)
       const status = err?.response?.status;
       const serverMessage = err?.response?.data?.message || err?.message || '';
       if (status === 403 || /instructor/i.test(serverMessage)) {
@@ -156,7 +209,7 @@ export const useInstructorCourses = () => {
     } finally {
       setIsSubmitting(false);
     }
-  }, [fetchCourses]); // <-- add fetchCourses to deps
+  }, [fetchCourses]);
 
   useEffect(() => {
     fetchCourses();
