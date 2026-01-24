@@ -25,3 +25,17 @@ export interface BecomeInstructorResponse {
   success: boolean;
   message: string;
 }
+
+export interface RequestInstructorPayload {
+  experience: string;
+  expertise: string;
+  certificate: string;
+  introduction: string;
+  socialLinks: string;
+}
+
+export interface RequestInstructorResponse {
+  success: boolean;
+  message?: string;
+  // ...thêm trường nếu backend trả về thêm dữ liệu...
+}

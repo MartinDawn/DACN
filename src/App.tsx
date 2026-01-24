@@ -21,7 +21,7 @@ import RegisterTeacherPage from './modules/instructor/register_teacher';
 import RegisterTeacherFormPage from './modules/instructor/register_teacher_form';
 import TeacherDashboard from './modules/instructor/teacher';
 import LoginSuccess from './modules/auth/login-success';
-import { ProtectedRoute, GuestRoute } from './modules/auth/components/AuthGuard';
+import { ProtectedRoute, GuestRoute, InstructorRoute } from './modules/auth/components/AuthGuard';
 
 
 function App() {
@@ -57,8 +57,8 @@ function App() {
         <Route path="/register-teacher/form" element={<ProtectedRoute><RegisterTeacherFormPage /></ProtectedRoute>} />
         <Route path="/instructor/register-teacher" element={<ProtectedRoute><RegisterTeacherPage /></ProtectedRoute>} />
         <Route path="/instructor/register-teacher/form" element={<ProtectedRoute><RegisterTeacherFormPage /></ProtectedRoute>} />
-        <Route path="/instructor" element={<ProtectedRoute><TeacherDashboard /></ProtectedRoute>} />
-        <Route path="/instructor/dashboard" element={<ProtectedRoute><TeacherDashboard /></ProtectedRoute>} />
+        <Route path="/instructor" element={<InstructorRoute><TeacherDashboard /></InstructorRoute>} />
+        <Route path="/instructor/dashboard" element={<InstructorRoute><TeacherDashboard /></InstructorRoute>} />
       </Routes>
     </Router>
   );

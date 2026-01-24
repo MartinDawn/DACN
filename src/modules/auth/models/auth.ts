@@ -38,7 +38,7 @@ export interface RegisterResponse {
 }
 
 export interface User {
-    role: string;
+    role: string[];
     email?: string;
     fullName?: string;
     avatarUrl?: string;
