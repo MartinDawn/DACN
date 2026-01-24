@@ -22,7 +22,7 @@ import RegisterTeacherFormPage from './modules/instructor/register_teacher_form'
 import TeacherDashboard from './modules/instructor/teacher';
 import LoginSuccess from './modules/auth/login-success';
 import { ProtectedRoute, GuestRoute, InstructorRoute } from './modules/auth/components/AuthGuard';
-
+import ManageCoursePage from './modules/instructor/manage-course';
 
 function App() {
   return (
@@ -59,6 +59,7 @@ function App() {
         <Route path="/instructor/register-teacher/form" element={<ProtectedRoute><RegisterTeacherFormPage /></ProtectedRoute>} />
         <Route path="/instructor" element={<InstructorRoute><TeacherDashboard /></InstructorRoute>} />
         <Route path="/instructor/dashboard" element={<InstructorRoute><TeacherDashboard /></InstructorRoute>} />
+        <Route path="/instructor/courses/manage/:courseId" element={<InstructorRoute><ManageCoursePage /></InstructorRoute>} />
       </Routes>
     </Router>
   );

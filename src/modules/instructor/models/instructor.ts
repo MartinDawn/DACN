@@ -1,3 +1,5 @@
+import type { Tag } from "../../course/models/course";
+
 export interface InstructorCourse {
   id: string;
   name: string;
@@ -9,6 +11,7 @@ export interface InstructorCourse {
   averageRating: number;
   ratingCount: number;
   tagIds: string[];
+  tags?: Tag[];
 }
 
 // Interface for the data returned by the create course API

@@ -118,7 +118,7 @@ const InstructorDashboard: React.FC = () => {
         if (prev.some((c) => c.id === createdCourse.id)) return prev;
         return [createdCourse, ...prev];
       });
-      navigate(`/instructor/courses/manage/${createdCourse.id}`);
+      navigate(`/instructor/courses/manage/${createdCourse.id}`, { state: { course: createdCourse } });
       setShowCreateCourseForm(false);
       return;
     }
@@ -537,7 +537,7 @@ const InstructorDashboard: React.FC = () => {
                     
                     <div className="mt-5">
                       <button 
-                        onClick={() => navigate(`/instructor/courses/manage/${course.id}`)}
+                        onClick={() => navigate(`/instructor/courses/manage/${course.id}`, { state: { course } })}
                         className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#5a2dff] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#4a21eb] active:translate-y-0.5">
                           <Settings size={18} />
                           Quản lý
