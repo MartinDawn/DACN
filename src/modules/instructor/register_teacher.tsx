@@ -1,7 +1,18 @@
 import React from "react";
 import { useNavigate, Link } from "react-router-dom";
 import UserLayout from "../user/layout/layout";
-import { ArrowLeftIcon } from "@heroicons/react/24/outline";
+import { 
+	ArrowLeft, 
+	Users, 
+	BookOpen, 
+	DollarSign, 
+	Globe, 
+	TrendingUp, 
+	Clock, 
+	Target, 
+	Zap, 
+	Handshake 
+} from "lucide-react";
 
 export default function RegisterTeacherPage() {
 	const navigate = useNavigate();
@@ -17,7 +28,7 @@ export default function RegisterTeacherPage() {
 					to="/user/home"
 					className="inline-flex items-center gap-2 text-sm font-semibold text-[#5a2dff] transition hover:text-[#3c1cd6]"
 				>
-					<ArrowLeftIcon className="h-4 w-4" />
+					<ArrowLeft className="h-4 w-4" />
 					Quay lại trang chủ
 				</Link>
 				{/* Hero */}
@@ -52,28 +63,28 @@ export default function RegisterTeacherPage() {
 					<div className="mx-auto -mt-12 flex max-w-5xl items-stretch justify-between gap-6 px-4">
 						<div className="flex-1 rounded-2xl bg-white p-6 text-center shadow-lg">
 							<div className="mx-auto mb-2 inline-flex h-12 w-12 items-center justify-center rounded-full bg-[#f3ebff] text-[#6e3bff]">
-								👥
+								<Users className="h-6 w-6" />
 							</div>
 							<div className="text-2xl font-semibold">1.2M+</div>
 							<p className="mt-1 text-sm text-gray-500">Học viên đang học</p>
 						</div>
 						<div className="flex-1 rounded-2xl bg-white p-6 text-center shadow-lg">
 							<div className="mx-auto mb-2 inline-flex h-12 w-12 items-center justify-center rounded-full bg-[#eef7ff] text-[#3b6eff]">
-								📚
+								<BookOpen className="h-6 w-6" />
 							</div>
 							<div className="text-2xl font-semibold">10,000+</div>
 							<p className="mt-1 text-sm text-gray-500">Khóa học đa dạng</p>
 						</div>
 						<div className="flex-1 rounded-2xl bg-white p-6 text-center shadow-lg">
 							<div className="mx-auto mb-2 inline-flex h-12 w-12 items-center justify-center rounded-full bg-[#eafff1] text-[#12a65b]">
-								💵
+								<DollarSign className="h-6 w-6" />
 							</div>
 							<div className="text-2xl font-semibold">$50M+</div>
 							<p className="mt-1 text-sm text-gray-500">Thu nhập giảng viên</p>
 						</div>
 						<div className="flex-1 rounded-2xl bg-white p-6 text-center shadow-lg">
 							<div className="mx-auto mb-2 inline-flex h-12 w-12 items-center justify-center rounded-full bg-[#fff5ea] text-[#ff9a3a]">
-								🌍
+								<Globe className="h-6 w-6" />
 							</div>
 							<div className="text-2xl font-semibold">180+</div>
 							<p className="mt-1 text-sm text-gray-500">Quốc gia</p>
@@ -136,16 +147,16 @@ export default function RegisterTeacherPage() {
 
 					<div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
 						{[
-							{ emoji: "📈", title: "Thu nhập hấp dẫn", desc: "Nhận tới 70% doanh thu từ mỗi khóa học bán được. Càng nhiều học viên, thu nhập càng cao." },
-							{ emoji: "⏰", title: "Linh hoạt thời gian", desc: "Tự do sắp xếp lịch trình giảng dạy. Làm việc từ xa, bất cứ lúc nào bạn muốn." },
-							{ emoji: "🌐", title: "Tiếp cận toàn cầu", desc: "Chia sẻ kiến thức với hàng triệu học viên trên toàn thế giới." },
-							{ emoji: "🎯", title: "Hỗ trợ chuyên nghiệp", desc: "Đội ngũ chuyên gia hỗ trợ 24/7, hướng dẫn tạo nội dung chất lượng và marketing." },
-							{ emoji: "⚡", title: "Công cụ mạnh mẽ", desc: "Nền tảng hiện đại với đầy đủ công cụ quản lý học viên và phân tích dữ liệu." },
-							{ emoji: "🤝", title: "Cộng đồng năng động", desc: "Kết nối với hàng ngàn giảng viên khác để học hỏi và hợp tác." },
+							{ icon: <TrendingUp className="h-6 w-6" />, title: "Thu nhập hấp dẫn", desc: "Nhận tới 70% doanh thu từ mỗi khóa học bán được. Càng nhiều học viên, thu nhập càng cao." },
+							{ icon: <Clock className="h-6 w-6" />, title: "Linh hoạt thời gian", desc: "Tự do sắp xếp lịch trình giảng dạy. Làm việc từ xa, bất cứ lúc nào bạn muốn." },
+							{ icon: <Globe className="h-6 w-6" />, title: "Tiếp cận toàn cầu", desc: "Chia sẻ kiến thức với hàng triệu học viên trên toàn thế giới." },
+							{ icon: <Target className="h-6 w-6" />, title: "Hỗ trợ chuyên nghiệp", desc: "Đội ngũ chuyên gia hỗ trợ 24/7, hướng dẫn tạo nội dung chất lượng và marketing." },
+							{ icon: <Zap className="h-6 w-6" />, title: "Công cụ mạnh mẽ", desc: "Nền tảng hiện đại với đầy đủ công cụ quản lý học viên và phân tích dữ liệu." },
+							{ icon: <Handshake className="h-6 w-6" />, title: "Cộng đồng năng động", desc: "Kết nối với hàng ngàn giảng viên khác để học hỏi và hợp tác." },
 						].map((item) => (
 							<div key={item.title} className="rounded-2xl border border-gray-100 bg-white p-6 shadow-[0_12px_24px_rgba(15,23,42,0.04)]">
-								<div className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-gray-50 text-2xl">
-									{item.emoji}
+								<div className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-gray-50 text-[#5a2dff]">
+									{item.icon}
 								</div>
 								<h3 className="mt-4 text-lg font-semibold text-gray-900">{item.title}</h3>
 								<p className="mt-2 text-sm text-gray-500">{item.desc}</p>
