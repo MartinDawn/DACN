@@ -1,4 +1,4 @@
-import { useState, useCallback, Dispatch, SetStateAction } from "react";
+import { useState, useCallback, Dispatch, SetStateAction, useEffect } from "react";
 import { toast } from "react-hot-toast";
 import { lectureService } from "../services/lecture.service";
 import type { Lecture } from "../models/lecture";
@@ -12,6 +12,41 @@ interface CreateLectureInput {
 
 // mapCourseContentToLectures: normalize various shapes from Course/course-content
 const mapCourseContentToLectures = (raw: any, fallbackCourseId: string): Lecture[] => {
+  // 1. Try to extract direct lectures list (flat structure from API screenshot)
+  // Your API returns { data: { lectures: [...] } }, so 'raw' here is likely the data object.
+  const directLectures =
+    Array.isArray(raw?.lectures) ? raw.lectures :
+    Array.isArray(raw?.data?.lectures) ? raw.data.lectures :
+    undefined;
+
+  if (Array.isArray(directLectures)) {
+    return directLectures.map((lesson: any, index: number) => {
+      // Map video URL. The screenshot shows a 'videos' array.
+      let vidUrl = lesson?.videoUrl ?? lesson?.videoUrlPath ?? lesson?.videoPath ?? lesson?.video;
+      // If direct url is missing, check the videos array (take first item if available)
+      if (!vidUrl && Array.isArray(lesson?.videos) && lesson.videos.length > 0) {
+        const v = lesson.videos[0];
+        vidUrl = typeof v === 'string' ? v : v?.url ?? v?.filePath ?? undefined;
+      }
+
+      return {
+        id: String(lesson?.id ?? lesson?.lectureId),
+        name: lesson?.name ?? lesson?.title ?? "Bài giảng",
+        description: lesson?.description ?? "",
+        courseId: String(lesson?.courseId ?? fallbackCourseId),
+        videoUrl: vidUrl,
+        createdAt: lesson?.createdAt,
+        updatedAt: lesson?.updatedAt,
+        order: typeof lesson?.order === "number" ? lesson.order : index,
+        // Flat list implies no chapter info available
+        chapterId: undefined,
+        chapterName: undefined,
+        chapterOrder: undefined,
+      };
+    }).sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+  }
+
+  // 2. Fallback to Chapter-based structure
   const chaptersSource =
     Array.isArray(raw?.data) ? raw.data :
     Array.isArray(raw?.chapters) ? raw.chapters :
@@ -64,20 +99,30 @@ export const useCourseLectures = (courseId: string) => {
   const [uploadingLectureIds, setUploadingLectureIds] = useState<Record<string, boolean>>({});
   const [lecturesLoading, setLecturesLoading] = useState(false);
 
-  const fetchLectures = useCallback(async () => {
+  const fetchLectures = useCallback(async () => {   //api lecture
     if (!courseId) return;
     setLecturesLoading(true);
     try {
-      const courseContent = await lectureService.getCourseContent(courseId);
-      const normalized = mapCourseContentToLectures(courseContent, courseId);
-      if (normalized.length) {
-        setLectures(normalized);
-        return;
+      // 1. First try the specific lectures-by-course endpoint (if it exists)
+      let hasData = false;
+      try {
+        const listResp = await lectureService.getLecturesByCourse(courseId);
+        const listData = Array.isArray(listResp) ? listResp : Array.isArray(listResp?.data) ? listResp.data : [];
+        if (listData.length > 0) {
+          setLectures(listData);
+          hasData = true;
+        }
+      } catch (err) {
+        // If this endpoint fails (e.g. 404), simply warn and proceed to fallback
+        console.warn("getLecturesByCourse failed, trying course-content...", err);
       }
 
-      const fallback = await lectureService.getLecturesByCourse(courseId);
-      const fallbackData = Array.isArray(fallback) ? fallback : fallback?.data;
-      setLectures(Array.isArray(fallbackData) ? fallbackData : []);
+      if (hasData) return;
+
+      // 2. Fallback to course-content (based on your screenshot)
+      const courseContent = await lectureService.getCourseContent(courseId);
+      const normalized = mapCourseContentToLectures(courseContent, courseId);
+      setLectures(normalized);
     } catch (error) {
       console.error(error);
       setLectures([]);
@@ -85,6 +130,10 @@ export const useCourseLectures = (courseId: string) => {
       setLecturesLoading(false);
     }
   }, [courseId]);
+
+  useEffect(() => {
+    fetchLectures();
+  }, [fetchLectures]);
 
   const createLecture = useCallback(
     async ({ name, description, file, courseId: inputCourseId }: CreateLectureInput) => {
@@ -207,7 +256,6 @@ export const useCourseLectures = (courseId: string) => {
 
   return {
     lectures,
-    setLectures: setLectures as Dispatch<SetStateAction<Lecture[]>>,
     fetchLectures,
     isCreating,
     uploadingLectureIds,

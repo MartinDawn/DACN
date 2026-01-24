@@ -63,12 +63,11 @@ const ManageCoursePage: React.FC = () => {
     };
     loadCourse();
   }, [courseId, stateCourse]);
-
-  useEffect(() => {
-    if (!courseId) return;
-    // Load lectures directly from API
-    fetchLectures();
-  }, [courseId, fetchLectures]);
+  
+  const handleManageCourse = () => {
+    fetchLectures(); // Fetch lectures when managing the course
+    navigate("/instructor?tab=courses");
+  };
 
   // --- Handlers ---
 
@@ -91,6 +90,7 @@ const ManageCoursePage: React.FC = () => {
       setLectureName("");
       setLectureDescription("");
       setShowLectureModal(false);
+      handleManageCourse();
     }
   };
 
@@ -151,7 +151,7 @@ const ManageCoursePage: React.FC = () => {
       <div className="mx-auto max-w-5xl space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <button onClick={() => navigate("/instructor?tab=courses")} className="mb-2 flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-gray-700">
+            <button onClick={handleManageCourse} className="mb-2 flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-gray-700">
               <ArrowLeft size={16} /> Quay lại khóa học
             </button>
             <h1 className="text-2xl font-bold text-gray-900">{course?.name}</h1>

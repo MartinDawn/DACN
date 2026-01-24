@@ -12,15 +12,11 @@ import type {
 } from "../models/lecture";
 
 export const lectureService = {
-  async getLecturesByCourse(courseId: string, lang = "vi"): Promise<any> {
-    const response = await apiClient.get<any>(`/Lecture/by-course/${courseId}`, {
-      headers: {
-        "Accept-Language": lang,
-      },
+  async getLecturesByCourse(courseId: string, lang = "vi"): Promise<LectureListResponse> {
+    const response = await apiClient.get<LectureListResponse>(`/Lecture/by-course/${courseId}`, {
+      headers: { "Accept-Language": lang },
     });
-    // normalize common wrappers: return inner .data when present, otherwise return body
-    const body = response.data;
-    return body?.data ?? body;
+    return response.data;
   },
 
   // Get full course content (Chapters/Lectures)
