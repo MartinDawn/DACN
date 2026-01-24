@@ -133,10 +133,16 @@ export const useInstructorCourses = () => {
     try {
       const response = await instructorService.createCourse(courseData);
 
+      // Robustly extract data from various response structures
       const respAny: any = response ?? {};
       let maybeData = respAny.data ?? respAny;
-      if (maybeData && maybeData.data) maybeData = maybeData.data;
+      
+      // If data is still wrapped (common in some API frameworks)
+      if (maybeData && typeof maybeData === 'object' && 'data' in maybeData) {
+        maybeData = maybeData.data;
+      }
 
+      // Check if we have a valid course object with an ID
       if (maybeData && (maybeData as any).id) {
         const createdCourse = maybeData as InstructorCourse;
         setCourses(prev => {
@@ -144,11 +150,11 @@ export const useInstructorCourses = () => {
           return [createdCourse, ...prev];
         });
         try { await fetchCourses(true); } catch (e) { /* ignore */ }
-        toast.success((respAny)?.message || 'Tạo khóa học thành công!', { duration: 2000 });
+        toast.success('Tạo khóa học thành công!', { duration: 2000 });
         return createdCourse;
       }
 
-      const maybeSuccess = !!(respAny && respAny.success === true);
+      const maybeSuccess = !!(respAny && (respAny.success === true || respAny.status === 200 || respAny.status === 201));
       if (maybeSuccess) {
         const submittedName = (courseData.get('Name') as string) || (courseData.get('name') as string) || '';
         try {
@@ -170,7 +176,7 @@ export const useInstructorCourses = () => {
         } catch (e) {
           console.warn('silent refresh after createCourse failed', e);
         }
-        toast.success((respAny)?.message || 'Tạo khóa học thành công!', { duration: 2000 });
+        toast.success('Tạo khóa học thành công!', { duration: 2000 });
         return null;
       }
 
