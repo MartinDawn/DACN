@@ -181,7 +181,8 @@ export const lectureService = {
     }
 
     if (payload.videoFile) {
-       formData.append("VideoFile", payload.videoFile);
+       // FIX: Đổi key từ "VideoFile" thành "File" dựa trên ảnh Swagger/Curl
+       formData.append("File", payload.videoFile);
     }
 
     // Ensure we handle FormData correctly for PUT like we do for POST

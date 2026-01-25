@@ -428,11 +428,15 @@ const ManageCoursePage: React.FC = () => {
         return;
     }
     
-    await editVideo(editingVideoLectureId, editingVideoId, { 
+    // FIX: Thêm biến receive success để chỉ tắt modal khi thành công
+    const success = await editVideo(editingVideoLectureId, editingVideoId, { 
       title: editVideoTitle.trim(),
       videoFile: editVideoFile || undefined
     });
-    setShowEditVideoModal(false);
+    
+    if (success) {
+      setShowEditVideoModal(false);
+    }
   };
 
   const openEditModal = (lecture: any) => {
