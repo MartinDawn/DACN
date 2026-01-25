@@ -76,7 +76,10 @@ const mapCourseContentToLectures = (raw: any, fallbackCourseId: string): Lecture
 
         // Map content arrays
         videos: mappedVideos,
-        documentNames: Array.isArray(lesson?.documentNames) ? lesson.documentNames : [],
+        documents: Array.isArray(lesson?.documents) ? lesson.documents : [],
+        documentNames: Array.isArray(lesson?.documentNames) 
+            ? lesson.documentNames 
+            : (Array.isArray(lesson?.documents) ? lesson.documents.map((d: any) => d.name || d.fileName || d) : []),
         quizNames: Array.isArray(lesson?.quizNames) ? lesson.quizNames : [],
 
         // Legacy support
@@ -142,6 +145,7 @@ const normalizeLecture = (raw: any, fallbackCourseId: string): Lecture => {
     courseId: String(raw?.courseId ?? fallbackCourseId),
     // Also map videos in normalizeLecture to ensure consistency if this function is used for state updates
     videos: mappedVideos,
+    documents: Array.isArray(raw?.documents) ? raw.documents : [],
     documentNames: Array.isArray(raw?.documentNames) ? raw.documentNames : [],
     quizNames: Array.isArray(raw?.quizNames) ? raw.quizNames : [],
     videoUrl: raw?.videoUrl ?? undefined,
@@ -187,6 +191,9 @@ export const useCourseLectures = (courseId: string) => {
   const [isCreating, setIsCreating] = useState(false);
   const [uploadingLectureIds, setUploadingLectureIds] = useState<Record<string, boolean>>({});
   const [lecturesLoading, setLecturesLoading] = useState(false);
+  
+  // State for document uploading
+  const [uploadingDocLectureIds, setUploadingDocLectureIds] = useState<Record<string, boolean>>({});
 
   const fetchLectures = useCallback(async () => {
     if (!courseId) return;
@@ -296,6 +303,26 @@ export const useCourseLectures = (courseId: string) => {
       toast.error("Có lỗi khi tải video.");
     } finally {
       setUploadingLectureIds((prev) => ({ ...prev, [lectureId]: false }));
+    }
+    return null;
+  }, [fetchLectures]);
+
+  const uploadLectureDocument = useCallback(async (lectureId: string, file: File) => {
+    if (!file) {
+      toast.error("Vui lòng chọn tài liệu.");
+      return null;
+    }
+    setUploadingDocLectureIds((prev) => ({ ...prev, [lectureId]: true }));
+    try {
+      const response = await lectureService.addDocument(lectureId, file);
+      toast.success(response?.message ?? "Tải tài liệu lên thành công.");
+      await fetchLectures();
+      return response?.data;
+    } catch (error) {
+      console.error(error);
+      toast.error("Có lỗi khi tải tài liệu.");
+    } finally {
+      setUploadingDocLectureIds((prev) => ({ ...prev, [lectureId]: false }));
     }
     return null;
   }, [fetchLectures]);
@@ -422,6 +449,8 @@ export const useCourseLectures = (courseId: string) => {
     deleteLecture,
     editVideo,
     deleteVideo,
-    getVideo
+    getVideo,
+    uploadLectureDocument,
+    uploadingDocLectureIds
   };
 };

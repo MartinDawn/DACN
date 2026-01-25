@@ -42,11 +42,18 @@ const ManageCoursePage: React.FC = () => {
   // --- Video Preview State ---
   const [previewVideo, setPreviewVideo] = useState<{ url: string; title: string } | null>(null);
 
+  // --- Document Modal States ---
+  const [showDocumentModal, setShowDocumentModal] = useState(false);
+  const [docFile, setDocFile] = useState<File | null>(null);
+
   // UI States for Expansion
   const [expandedLectures, setExpandedLectures] = useState<Record<string, boolean>>({});
 
-  const { lectures, fetchLectures, isCreating, uploadingLectureIds, createLecture, uploadLectureVideo, deleteLecture, lecturesLoading, editLecture, editVideo, deleteVideo, getVideo } =
-    useCourseLectures(courseId ?? "");
+  const { 
+    lectures, fetchLectures, isCreating, uploadingLectureIds, createLecture, 
+    uploadLectureVideo, deleteLecture, lecturesLoading, editLecture, editVideo, deleteVideo, getVideo,
+    uploadLectureDocument, uploadingDocLectureIds // Import new items
+  } = useCourseLectures(courseId ?? "");
 
   useEffect(() => {
     if (!courseId) {
@@ -134,6 +141,32 @@ const ManageCoursePage: React.FC = () => {
        setShowVideoModal(false);
        setVideoTitle("");
        setVideoFile(null);
+    }
+  };
+
+  const openDocumentModal = (lectureId: string) => {
+    setCurrentLectureId(lectureId);
+    setDocFile(null);
+    setShowDocumentModal(true);
+  };
+
+  const handleUploadDocument = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!currentLectureId) return;
+    if (!docFile) {
+      toast.error("Vui lòng chọn file tài liệu.");
+      return;
+    }
+    const result = await uploadLectureDocument(currentLectureId, docFile);
+    if (result || result === undefined) {
+       setShowDocumentModal(false);
+       setDocFile(null);
+    }
+  };
+  
+  const handleDocFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+       setDocFile(e.target.files[0]);
     }
   };
 
@@ -351,6 +384,7 @@ const ManageCoursePage: React.FC = () => {
         if (showDeleteLectureModal) { setShowDeleteLectureModal(false); return; }
         if (showEditVideoModal) { setShowEditVideoModal(false); return; }
         if (showVideoModal) { setShowVideoModal(false); return; }
+        if (showDocumentModal) { setShowDocumentModal(false); return; }
         if (showEditModal) { setShowEditModal(false); return; }
         if (showLectureModal) { setShowLectureModal(false); return; }
       }
@@ -358,7 +392,7 @@ const ManageCoursePage: React.FC = () => {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [previewVideo, showDeleteVideoModal, showDeleteLectureModal, showEditVideoModal, showVideoModal, showEditModal, showLectureModal]);
+  }, [previewVideo, showDeleteVideoModal, showDeleteLectureModal, showEditVideoModal, showVideoModal, showDocumentModal, showEditModal, showLectureModal]);
 
   if (loadingCourse) return <InstructorLayout><div className="flex justify-center py-20"><Loader2 className="animate-spin text-[#5a2dff]" /></div></InstructorLayout>
 
@@ -407,7 +441,7 @@ const ManageCoursePage: React.FC = () => {
                            {isExpanded ? <ChevronUp size={16} className="text-gray-400"/> : <ChevronDown size={16} className="text-gray-400"/>}
                         </div>
                         <div className="flex items-center gap-2">
-                           <button onClick={() => openEditModal(lecture)} className="p-2 text-gray-400 hover:text-indigo-600" title="Chỉnh sửa"><Edit2 size={16}/></button>
+                           <button onClick={() => openEditModal(lecture)} className="p-2 text-gray-400 hover:text-[#5a2dff]" title="Chỉnh sửa"><Edit2 size={16}/></button>
                            <button onClick={() => handleDeleteLecture(lecture.id)} className="p-2 text-gray-400 hover:text-red-500" title="Xóa"><Trash size={16}/></button>
                         </div>
                      </div>
@@ -431,8 +465,8 @@ const ManageCoursePage: React.FC = () => {
                                  const hasUrl = vid.url || vid.filePath || vid.videoUrl; // Check if URL exists
 
                                  return (
-                                   <div key={vidIdx} className="flex items-center gap-3 rounded-lg border border-gray-100 bg-gray-50 p-3 group hover:border-indigo-200 transition-colors">
-                                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-100 text-indigo-600">
+                                   <div key={vidIdx} className="flex items-center gap-3 rounded-lg border border-gray-100 bg-gray-50 p-3 group hover:border-[#5a2dff]/30 transition-colors">
+                                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#5a2dff]/10 text-[#5a2dff]">
                                         <Video size={14} />
                                       </div>
                                       <span className="flex-1 text-sm font-medium text-gray-700">{vidName}</span>
@@ -442,7 +476,7 @@ const ManageCoursePage: React.FC = () => {
                                         <button 
                                             type="button" 
                                             onClick={() => handlePreviewVideo(vid)}
-                                            className="p-1.5 text-gray-500 hover:text-indigo-600 hover:bg-white rounded transition-colors"
+                                            className="p-1.5 text-gray-500 hover:text-[#5a2dff] hover:bg-white rounded transition-colors"
                                             title="Xem video"
                                         >
                                             <PlayCircle size={15} />
@@ -455,7 +489,7 @@ const ManageCoursePage: React.FC = () => {
                                            <button 
                                               type="button" 
                                               onClick={() => openEditVideo(lecture.id, vid)}
-                                              className="p-1.5 text-gray-500 hover:text-indigo-600 hover:bg-white rounded transition-colors"
+                                              className="p-1.5 text-gray-500 hover:text-[#5a2dff] hover:bg-white rounded transition-colors"
                                               title="Sửa tên video"
                                            >
                                               <Edit2 size={15} />
@@ -471,7 +505,7 @@ const ManageCoursePage: React.FC = () => {
                                         </div>
                                       )}
 
-                                      <span className="text-xs text-green-600 bg-green-50 px-2 py-1 rounded border border-green-100">Video</span>
+                                      <span className="text-xs text-[#5a2dff] bg-[#5a2dff]/10 px-2 py-1 rounded border border-[#5a2dff]/20">Video</span>
                                    </div>
                                  );
                                })
@@ -480,15 +514,25 @@ const ManageCoursePage: React.FC = () => {
                              )}
 
                              {/* Documents / Quizzes Placeholders */}
-                             {lecture.documentNames?.map((doc, i) => (
+                             {/* Display Documents - Prefer 'documents' array of objects if available, fallback to names */}
+                             {(lecture.documents && lecture.documents.length > 0 ? lecture.documents : lecture.documentNames)?.map((doc: any, i: number) => {
+                               const docName = typeof doc === 'string' ? doc : (doc.name || doc.fileName || `Tài liệu ${i+1}`);
+                               const docUrl = typeof doc === 'object' ? (doc.url || doc.filePath) : null;
+                               return (
                                <div key={`d-${i}`} className="flex items-center gap-3 rounded-lg border border-gray-100 bg-gray-50 p-3">
-                                  <FileText size={16} className="text-orange-500"/>
-                                  <span className="flex-1 text-sm">{doc}</span>
+                                  <FileText size={16} className="text-[#5a2dff]"/>
+                                  {docUrl ? (
+                                    <a href={docUrl} target="_blank" rel="noreferrer" className="flex-1 text-sm hover:underline hover:text-[#4b24cc]">{docName}</a>
+                                  ) : (
+                                    <span className="flex-1 text-sm">{docName}</span>
+                                  )}
                                </div>
-                             ))}
+                               );
+                             })}
+
                              {lecture.quizNames?.map((quiz, i) => (
                                <div key={`q-${i}`} className="flex items-center gap-3 rounded-lg border border-gray-100 bg-gray-50 p-3">
-                                  <HelpCircle size={16} className="text-purple-500"/>
+                                  <HelpCircle size={16} className="text-[#5a2dff]"/>
                                   <span className="flex-1 text-sm">{quiz}</span>
                                </div>
                              ))}
@@ -499,7 +543,7 @@ const ManageCoursePage: React.FC = () => {
                              <button 
                                onClick={() => openVideoModal(lecture.id)}
                                disabled={isUploading}
-                               className="flex items-center gap-2 rounded-md bg-indigo-50 px-3 py-2 text-sm font-medium text-indigo-700 hover:bg-indigo-100 disabled:opacity-50"
+                               className="flex items-center gap-2 rounded-md bg-[#5a2dff]/10 px-3 py-2 text-sm font-medium text-[#5a2dff] hover:bg-[#5a2dff]/20 disabled:opacity-50"
                              >
                                 {isUploading ? <Loader2 className="animate-spin h-4 w-4"/> : <UploadCloud size={16} />}
                                 Thêm Video
@@ -508,8 +552,14 @@ const ManageCoursePage: React.FC = () => {
                              <button disabled className="flex items-center gap-2 rounded-md bg-gray-50 px-3 py-2 text-sm font-medium text-gray-400 cursor-not-allowed" title="Tính năng đang cập nhật">
                                 <HelpCircle size={16} /> Thêm Quiz (Sắp có)
                              </button>
-                             <button disabled className="flex items-center gap-2 rounded-md bg-gray-50 px-3 py-2 text-sm font-medium text-gray-400 cursor-not-allowed" title="Tính năng đang cập nhật">
-                                <FileText size={16} /> Thêm Tài Liệu (Sắp có)
+                             
+                             <button 
+                               onClick={() => openDocumentModal(lecture.id)}
+                               disabled={uploadingDocLectureIds?.[lecture.id]} 
+                               className="flex items-center gap-2 rounded-md bg-[#5a2dff]/10 px-3 py-2 text-sm font-medium text-[#5a2dff] hover:bg-[#5a2dff]/20 disabled:opacity-50"
+                             >
+                                {uploadingDocLectureIds?.[lecture.id] ? <Loader2 className="animate-spin h-4 w-4"/> : <FileText size={16} />} 
+                                Thêm Tài Liệu
                              </button>
                           </div>
                        </div>
@@ -625,7 +675,7 @@ const ManageCoursePage: React.FC = () => {
                             <div className="flex flex-col items-center justify-center pt-5 pb-6">
                                 {videoFile ? (
                                     <>
-                                        <Video className="w-8 h-8 mb-2 text-indigo-500" />
+                                        <Video className="w-8 h-8 mb-2 text-[#5a2dff]" />
                                         <p className="mb-2 text-sm text-gray-700 font-semibold">{videoFile.name}</p>
                                         <p className="text-xs text-gray-500">{(videoFile.size / (1024*1024)).toFixed(2)} MB</p>
                                     </>
@@ -650,6 +700,55 @@ const ManageCoursePage: React.FC = () => {
                       className="flex items-center gap-2 rounded-lg bg-[#5a2dff] px-4 py-2 text-sm font-medium text-white hover:bg-[#4b24cc] disabled:opacity-50"
                     >
                         {uploadingLectureIds[currentLectureId || ''] ? <Loader2 className="animate-spin h-4 w-4"/> : <UploadCloud size={16} />}
+                        Tải Lên
+                    </button>
+                 </div>
+              </form>
+           </div>
+        </div>
+      )}
+
+      {/* --- ADD DOCUMENT MODAL --- */}
+      {showDocumentModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+           <div className="w-full max-w-lg rounded-xl bg-white shadow-xl animate-in fade-in zoom-in-95">
+              <div className="border-b px-6 py-4 flex justify-between items-center">
+                 <h3 className="font-bold text-gray-900">Thêm Tài Liệu</h3>
+                 <button onClick={() => setShowDocumentModal(false)}><X className="text-gray-400"/></button>
+              </div>
+              <form onSubmit={handleUploadDocument} className="p-6 space-y-5">
+                 <div>
+                    <label className="mb-1 block text-sm font-semibold text-gray-700">File Tài Liệu <span className="text-red-500">*</span></label>
+                    <div className="flex items-center justify-center w-full">
+                        <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
+                            <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                                {docFile ? (
+                                    <>
+                                        <FileText className="w-8 h-8 mb-2 text-[#5a2dff]" />
+                                        <p className="mb-2 text-sm text-gray-700 font-semibold">{docFile.name}</p>
+                                        <p className="text-xs text-gray-500">{(docFile.size / (1024*1024)).toFixed(2)} MB</p>
+                                    </>
+                                ) : (
+                                    <>
+                                        <UploadCloud className="w-8 h-8 mb-4 text-gray-500" />
+                                        <p className="mb-2 text-sm text-gray-500"><span className="font-semibold">Click để tải lên</span> hoặc kéo thả</p>
+                                        <p className="text-xs text-gray-500">PDF, DOCX, XLSX...</p>
+                                    </>
+                                )}
+                            </div>
+                            <input type="file" className="hidden" onChange={handleDocFileChange} />
+                        </label>
+                    </div> 
+                 </div>
+
+                 <div className="flex justify-end gap-2 pt-4 border-t">
+                    <button type="button" onClick={() => setShowDocumentModal(false)} className="rounded-lg border px-4 py-2 text-sm font-medium hover:bg-gray-50">Hủy</button>
+                    <button 
+                      type="submit" 
+                      disabled={!docFile || uploadingDocLectureIds?.[currentLectureId || '']} 
+                      className="flex items-center gap-2 rounded-lg bg-[#5a2dff] px-4 py-2 text-sm font-medium text-white hover:bg-[#4b24cc] disabled:opacity-50"
+                    >
+                        {uploadingDocLectureIds?.[currentLectureId || ''] ? <Loader2 className="animate-spin h-4 w-4"/> : <UploadCloud size={16} />}
                         Tải Lên
                     </button>
                  </div>
@@ -725,7 +824,7 @@ const ManageCoursePage: React.FC = () => {
                            <div className="flex flex-col items-center justify-center text-center">
                               {editVideoFile ? (
                                  <>
-                                    <Video className="mb-1 h-6 w-6 text-indigo-500" />
+                                    <Video className="mb-1 h-6 w-6 text-[#5a2dff]" />
                                     <p className="text-sm font-medium text-gray-700">{editVideoFile.name}</p>
                                     <p className="text-xs text-gray-500">{(editVideoFile.size / (1024*1024)).toFixed(2)} MB</p>
                                  </>
@@ -762,7 +861,7 @@ const ManageCoursePage: React.FC = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
            <div className="w-full max-w-sm rounded-xl bg-white shadow-xl animate-in fade-in zoom-in-95">
               <div className="p-6 text-center">
-                 <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-indigo-50">
+                 <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-[#5a2dff]/10">
                     <Trash className="h-6 w-6 text-[#5a2dff]" />
                  </div>
                  <h3 className="mt-4 text-lg font-semibold text-gray-900">Xóa Chương Học?</h3>
@@ -794,7 +893,7 @@ const ManageCoursePage: React.FC = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
            <div className="w-full max-w-sm rounded-xl bg-white shadow-xl animate-in fade-in zoom-in-95">
               <div className="p-6 text-center">
-                 <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-indigo-50">
+                 <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-[#5a2dff]/10">
                     <Video className="h-6 w-6 text-[#5a2dff]" />
                  </div>
                  <h3 className="mt-4 text-lg font-semibold text-gray-900">Xóa Video?</h3>

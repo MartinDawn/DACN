@@ -91,6 +91,25 @@ export const lectureService = {
     return response.data;
   },
 
+  // Add Document
+  async addDocument(lectureId: string, file: File, lang = "vi"): Promise<any> {
+    const formData = new FormData();
+    formData.append("documentFile", file);
+
+    const response = await apiClient.post<any>(`/Lecture/add-document/${lectureId}`, formData, {
+      headers: {
+        "Accept-Language": lang,
+      },
+      transformRequest: [
+        (data: any, headers: any) => {
+          if (headers && headers["Content-Type"]) delete headers["Content-Type"];
+          return data;
+        },
+      ],
+    });
+    return response.data;
+  },
+
   // Update lecture (name/description)
   async updateLecture(lectureId: string, payload: UpdateLecturePayload, lang = "vi"): Promise<UpdateLectureResponse> {
     const formData = new FormData();
