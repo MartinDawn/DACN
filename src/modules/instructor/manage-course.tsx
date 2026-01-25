@@ -35,7 +35,7 @@ const ManageCoursePage: React.FC = () => {
   // UI States for Expansion
   const [expandedLectures, setExpandedLectures] = useState<Record<string, boolean>>({});
 
-  const { lectures, fetchLectures, isCreating, uploadingLectureIds, createLecture, uploadLectureVideo, deleteLecture, lecturesLoading, editLecture } =
+  const { lectures, fetchLectures, isCreating, uploadingLectureIds, createLecture, uploadLectureVideo, deleteLecture, lecturesLoading, editLecture, editVideo, deleteVideo } =
     useCourseLectures(courseId ?? "");
 
   useEffect(() => {
@@ -152,10 +152,41 @@ const ManageCoursePage: React.FC = () => {
     }
   };
 
+  // --- Video Actions ---
+  const handleDeleteVideo = async (lectureId: string, videoId: string) => {
+    const ok = window.confirm("Xóa video này?");
+    if (ok) {
+        await deleteVideo(lectureId, videoId);
+    }
+  };
+
+  const [showEditVideoModal, setShowEditVideoModal] = useState(false);
+  const [editingVideoId, setEditingVideoId] = useState<string | null>(null);
+  const [editingVideoLectureId, setEditingVideoLectureId] = useState<string | null>(null);
+  const [editVideoTitle, setEditVideoTitle] = useState("");
+
+  const openEditVideo = (lectureId: string, video: any) => {
+    setEditingVideoLectureId(lectureId);
+    setEditingVideoId(video.id);
+    const currTitle = typeof video === 'string' ? video : (video.title ?? video.name ?? "");
+    setEditVideoTitle(currTitle);
+    setShowEditVideoModal(true);
+  }
+
+  const handleEditVideoSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingVideoId || !editingVideoLectureId) return;
+    
+    await editVideo(editingVideoLectureId, editingVideoId, { title: editVideoTitle });
+    setShowEditVideoModal(false);
+  };
+
   const openEditModal = (lecture: any) => {
     setEditLectureId(lecture.id);
     setEditLectureName(lecture.name ?? "");
     setEditLectureDescription(lecture.description ?? "");
+    // Default to 0 if undefined
+    setEditLectureOrder(lecture.displayOrder ?? lecture.order ?? 0);
     setShowEditModal(true);
   };
 
@@ -169,6 +200,7 @@ const ManageCoursePage: React.FC = () => {
     const updated = await editLecture(editLectureId, {
       name: editLectureName.trim(),
       description: editLectureDescription.trim(),
+      displayOrder: Number(editLectureOrder),
     });
     if (updated) {
       setShowEditModal(false);
@@ -182,6 +214,7 @@ const ManageCoursePage: React.FC = () => {
   const [editLectureId, setEditLectureId] = useState<string | null>(null);
   const [editLectureName, setEditLectureName] = useState("");
   const [editLectureDescription, setEditLectureDescription] = useState("");
+  const [editLectureOrder, setEditLectureOrder] = useState<number | string>(0);
 
   if (loadingCourse) return <InstructorLayout><div className="flex justify-center py-20"><Loader2 className="animate-spin text-[#5a2dff]" /></div></InstructorLayout>
 
@@ -247,12 +280,36 @@ const ManageCoursePage: React.FC = () => {
                                lecture.videos.map((vid: any, vidIdx: number) => {
                                  // Handle if video is object or string
                                  const vidName = typeof vid === 'string' ? vid : (vid.name || vid.title || `Video ${vidIdx+1}`);
+                                 const vidId = vid?.id; // Assuming object has ID
                                  return (
-                                   <div key={vidIdx} className="flex items-center gap-3 rounded-lg border border-gray-100 bg-gray-50 p-3">
+                                   <div key={vidIdx} className="flex items-center gap-3 rounded-lg border border-gray-100 bg-gray-50 p-3 group">
                                       <div className="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-100 text-indigo-600">
                                         <Video size={14} />
                                       </div>
                                       <span className="flex-1 text-sm font-medium text-gray-700">{vidName}</span>
+                                      
+                                      {/* Action buttons only if we have an ID */}
+                                      {vidId && (
+                                        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                           <button 
+                                              type="button" 
+                                              onClick={() => openEditVideo(lecture.id, vid)}
+                                              className="p-1.5 text-gray-400 hover:text-indigo-600 rounded hover:bg-white"
+                                              title="Sửa tên video"
+                                           >
+                                              <Edit2 size={14} />
+                                           </button>
+                                           <button 
+                                              type="button" 
+                                              onClick={() => handleDeleteVideo(lecture.id, vidId)}
+                                              className="p-1.5 text-gray-400 hover:text-red-600 rounded hover:bg-white"
+                                              title="Xóa video"
+                                           >
+                                              <Trash size={14} />
+                                           </button>
+                                        </div>
+                                      )}
+
                                       <span className="text-xs text-green-600 bg-green-50 px-2 py-1 rounded">Video</span>
                                    </div>
                                  );
@@ -418,6 +475,12 @@ const ManageCoursePage: React.FC = () => {
                  </div>
                  
                  <div>
+                    <label className="mb-1 block text-sm font-semibold text-gray-700">Thứ tự hiển thị</label>
+                    <input type="number" value={editLectureOrder} onChange={e => setEditLectureOrder(e.target.value)} 
+                           className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#5a2dff] focus:ring-1 focus:ring-[#5a2dff]" />
+                 </div>
+                 
+                 <div>
                     <label className="mb-1 block text-sm font-semibold text-gray-700">Mô tả (tùy chọn)</label>
                     <textarea value={editLectureDescription} onChange={e => setEditLectureDescription(e.target.value)} rows={3}
                            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#5a2dff] focus:ring-1 focus:ring-[#5a2dff]" 
@@ -433,6 +496,32 @@ const ManageCoursePage: React.FC = () => {
               </form>
            </div>
         </div>
+      )}
+
+      {/* --- EDIT VIDEO MODAL --- */}
+      {showEditVideoModal && (
+         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+            <div className="w-full max-w-lg rounded-xl bg-white shadow-xl animate-in fade-in zoom-in-95">
+               <div className="border-b px-6 py-4 flex justify-between items-center">
+                  <h3 className="font-bold text-gray-900">Đổi tên Video</h3>
+                  <button onClick={() => setShowEditVideoModal(false)}><X className="text-gray-400"/></button>
+               </div>
+               <form onSubmit={handleEditVideoSubmit} className="p-6 space-y-5">
+                  <div>
+                     <label className="mb-1 block text-sm font-semibold text-gray-700">Tiêu đề mới <span className="text-red-500">*</span></label>
+                     <input autoFocus value={editVideoTitle} onChange={e => setEditVideoTitle(e.target.value)} 
+                            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#5a2dff] focus:ring-1 focus:ring-[#5a2dff]" />
+                  </div>
+
+                  <div className="flex justify-end gap-2 pt-2 border-t mt-2">
+                     <button type="button" onClick={() => setShowEditVideoModal(false)} className="rounded-lg border px-4 py-2 text-sm font-medium hover:bg-gray-50">Hủy</button>
+                     <button type="submit" className="flex items-center gap-2 rounded-lg bg-[#5a2dff] px-4 py-2 text-sm font-medium text-white hover:bg-[#4b24cc]">
+                         Lưu thay đổi
+                     </button>
+                  </div>
+               </form>
+            </div>
+         </div>
       )}
 
     </InstructorLayout>

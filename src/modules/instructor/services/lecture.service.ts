@@ -40,6 +40,9 @@ export const lectureService = {
     if (payload.courseId) {
       formData.append("courseId", payload.courseId);
     }
+    if (payload.displayOrder !== undefined) {
+      formData.append("displayOrder", payload.displayOrder.toString());
+    }
 
     const response = await apiClient.post<CreateLectureResponse>("/Lecture/create-lecture", formData, {
       headers: {
@@ -93,8 +96,12 @@ export const lectureService = {
     const formData = new FormData();
     if (payload.name) formData.append("name", payload.name);
     if (payload.description) formData.append("description", payload.description);
+    if (payload.displayOrder !== undefined) {
+      formData.append("displayOrder", payload.displayOrder.toString());
+    }
 
-    const response = await apiClient.put<UpdateLectureResponse>(`/Lecture/update/${lectureId}`, formData, {
+    // Updated endpoint to match screenshot
+    const response = await apiClient.put<UpdateLectureResponse>(`/Lecture/update-lecture/${lectureId}`, formData, {
       headers: {
         "Accept-Language": lang,
       },
@@ -104,10 +111,33 @@ export const lectureService = {
 
   // Delete lecture
   async deleteLecture(lectureId: string, lang = "vi"): Promise<DeleteLectureResponse> {
-    const response = await apiClient.delete<DeleteLectureResponse>(`/Lecture/delete/${lectureId}`, {
+    // Updated endpoint to match screenshot
+    const response = await apiClient.delete<DeleteLectureResponse>(`/Lecture/delete-lecture/${lectureId}`, {
       headers: {
         "Accept-Language": lang,
       },
+    });
+    return response.data;
+  },
+
+  // Update video details (e.g. title)
+  async updateVideo(videoId: string, payload: { title?: string }, lang = "vi"): Promise<any> {
+    const formData = new FormData();
+    if (payload.title) {
+      // Key "title" or "name" depends on backend DTO. Assuming "title" based on context.
+      formData.append("title", payload.title);
+    }
+
+    const response = await apiClient.put<any>(`/Lecture/update-video/${videoId}`, formData, {
+      headers: { "Accept-Language": lang },
+    });
+    return response.data;
+  },
+
+  // Delete video
+  async deleteVideo(videoId: string, lang = "vi"): Promise<any> {
+    const response = await apiClient.delete<any>(`/Lecture/delete-video/${videoId}`, {
+      headers: { "Accept-Language": lang },
     });
     return response.data;
   },

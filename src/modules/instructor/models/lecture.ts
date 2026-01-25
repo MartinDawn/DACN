@@ -4,6 +4,8 @@ export interface Lecture {
   description: string;
   courseId: string;
   
+  displayOrder?: number;
+
   // Updated to reflect "Lecture as Chapter" grouping
   // These arrays contain the content of the lecture
   videos: any[]; // Can be strings or objects depending on API
@@ -24,6 +26,7 @@ export interface CreateLecturePayload {
   name: string;
   description: string;
   courseId: string;
+  displayOrder?: number;
   // file removed from payload type here as it is handled separately now
 }
 
@@ -49,6 +52,7 @@ export interface LectureListResponse extends LectureResponseBase {
 export interface UpdateLecturePayload {
   name?: string;
   description?: string;
+  displayOrder?: number;
 }
 
 export interface UpdateLectureResponse extends LectureResponseBase {
@@ -57,4 +61,8 @@ export interface UpdateLectureResponse extends LectureResponseBase {
 
 export interface DeleteLectureResponse extends LectureResponseBase {
   data?: { id: string } | null;
+}
+
+export interface UpdateVideoPayload {
+  title?: string;
 }

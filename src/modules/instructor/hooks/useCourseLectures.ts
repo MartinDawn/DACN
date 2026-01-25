@@ -37,6 +37,7 @@ const mapCourseContentToLectures = (raw: any, fallbackCourseId: string): Lecture
         createdAt: lesson?.createdAt ?? null,
         updatedAt: lesson?.updatedAt ?? null,
         order: typeof lesson?.order === "number" ? lesson.order : null,
+        displayOrder: typeof lesson?.displayOrder === "number" ? lesson.displayOrder : (typeof lesson?.order === "number" ? lesson.order : null),
         chapterId: lesson?.chapterId ?? undefined,
         chapterName: lesson?.chapterName ?? undefined,
         chapterOrder: lesson?.chapterOrder ?? undefined,
@@ -54,10 +55,10 @@ const mapCourseContentToLectures = (raw: any, fallbackCourseId: string): Lecture
 
     // Otherwise sort by order (if provided), then createdAt (oldest first so new appear last)
     return mapped.sort((a, b) => {
-      // Treat missing order as very large so items without order go to the end
-      const aOrder = typeof a.order === "number" ? a.order : Number.MAX_SAFE_INTEGER;
-      const bOrder = typeof b.order === "number" ? b.order : Number.MAX_SAFE_INTEGER;
-      if (aOrder !== bOrder) return aOrder - bOrder;
+      // Prioritize displayOrder, then fallback to order
+      const aOrd = typeof a.displayOrder === "number" ? a.displayOrder : (typeof a.order === "number" ? a.order : Number.MAX_SAFE_INTEGER);
+      const bOrd = typeof b.displayOrder === "number" ? b.displayOrder : (typeof b.order === "number" ? b.order : Number.MAX_SAFE_INTEGER);
+      if (aOrd !== bOrd) return aOrd - bOrd;
 
       // Treat missing createdAt as very large so items without date go to the end
       const aTime = a.createdAt ? new Date(a.createdAt).getTime() : Number.MAX_SAFE_INTEGER;
@@ -83,6 +84,7 @@ const normalizeLecture = (raw: any, fallbackCourseId: string): Lecture => ({
   createdAt: raw?.createdAt ?? null,
   updatedAt: raw?.updatedAt ?? null,
   order: typeof raw?.order === 'number' ? raw.order : null,
+  displayOrder: typeof raw?.displayOrder === 'number' ? raw.displayOrder : (typeof raw?.order === 'number' ? raw.order : null),
   chapterId: raw?.chapterId ?? undefined,
   chapterName: raw?.chapterName ?? undefined,
   chapterOrder: raw?.chapterOrder ?? undefined,
@@ -149,12 +151,20 @@ export const useCourseLectures = (courseId: string) => {
         return null;
       }
 
+      // Calculate next Order = max(current) + 1
+      const maxOrder = lectures.reduce((acc, l) => {
+        const o = typeof l.displayOrder === "number" ? l.displayOrder : 0;
+        return Math.max(acc, o);
+      }, 0);
+      const nextOrder = maxOrder + 1;
+
       setIsCreating(true);
       try {
         const response = await lectureService.createLecture({
           name,
           description,
           courseId: targetCourseId,
+          displayOrder: nextOrder,
         });
 
         if (response) {
@@ -162,14 +172,11 @@ export const useCourseLectures = (courseId: string) => {
           const created = extractLectureFromResponse(response.data ?? response, targetCourseId, lectures);
           if (created) {
             // Ensure newly created lecture appears at the end:
-            // if server didn't provide `order`/`createdAt`, assign values based on current local state
-            const maxOrder = lectures.reduce((acc, l) => {
-              const o = typeof l.order === "number" ? l.order : -Infinity;
-              return Math.max(acc, o);
-            }, -Infinity);
-
+            if (created.displayOrder === null || typeof created.displayOrder !== "number") {
+                created.displayOrder = nextOrder;
+            }
             if (created.order === null || typeof created.order !== "number") {
-              created.order = Number.isFinite(maxOrder) ? maxOrder + 1 : lectures.length + 1;
+              created.order = nextOrder;
             }
             if (!created.createdAt) {
               created.createdAt = new Date().toISOString();
@@ -228,7 +235,7 @@ export const useCourseLectures = (courseId: string) => {
     return null;
   }, [fetchLectures]);
 
-  const editLecture = useCallback(async (lectureId: string, payload: { name?: string; description?: string }) => {
+  const editLecture = useCallback(async (lectureId: string, payload: { name?: string; description?: string; displayOrder?: number }) => {
     try {
       const response = await lectureService.updateLecture(lectureId, payload);
       if (response) {
@@ -258,7 +265,6 @@ export const useCourseLectures = (courseId: string) => {
         // remove from local state immediately
         setLectures((prev) => prev.filter((l) => l.id !== lectureId));
         toast.success("Xóa chương thành công.");
-        // no refetch necessary; but keep it optional if server ordering logic requires it
         return true;
       }
       toast.error(response?.message ?? "Không thể xóa chương.");
@@ -267,7 +273,49 @@ export const useCourseLectures = (courseId: string) => {
       toast.error("Lỗi xóa chương.");
     }
     return false;
-  }, [/* no deps */]);
+  }, []); // removed deps
+
+  const editVideo = useCallback(async (lectureId: string, videoId: string, payload: { title: string }) => {
+    try {
+      const response = await lectureService.updateVideo(videoId, payload);
+      // Assumption: API returns success or updated data.
+      // Optimistically update local state for smoother UI
+      setLectures((prev) => prev.map((l) => {
+          if (l.id !== lectureId) return l;
+          return {
+            ...l,
+            videos: l.videos.map((v) => (String(v.id) === String(videoId) ? { ...v, name: payload.title, title: payload.title } : v))
+          };
+      }));
+      
+      toast.success("Cập nhật video thành công.");
+      return true;
+    } catch (error) {
+      console.error(error);
+      toast.error("Lỗi cập nhật video.");
+      return false;
+    }
+  }, []);
+
+  const deleteVideo = useCallback(async (lectureId: string, videoId: string) => {
+    try {
+      await lectureService.deleteVideo(videoId);
+      // Remove from local state
+      setLectures((prev) => prev.map((l) => {
+          if (l.id !== lectureId) return l;
+          return {
+            ...l,
+            videos: l.videos.filter((v) => String(v.id) !== String(videoId))
+          };
+      }));
+      toast.success("Xóa video thành công.");
+      return true;
+    } catch (error) {
+      console.error(error);
+      toast.error("Lỗi xóa video.");
+      return false;
+    }
+  }, []);
 
   return {
     lectures,
@@ -279,5 +327,7 @@ export const useCourseLectures = (courseId: string) => {
     uploadLectureVideo,  
     editLecture,
     deleteLecture,
+    editVideo,
+    deleteVideo
   };
 };
