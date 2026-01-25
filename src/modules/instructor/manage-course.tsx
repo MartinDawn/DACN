@@ -258,61 +258,73 @@ const ManageCoursePage: React.FC = () => {
   };
 
   const handlePreviewVideo = async (video: any) => {
-    // 1. Kiểm tra nếu video đã có sẵn URL trực tiếp (fallback)
+    // 1. Tìm ID để fetch từ API 
+    // Dữ liệu từ useCourseLectures đã được chuẩn hóa ID vào trường 'id'
+    const vidId = video?.id || video?.videoId || video?.Id || video?.ID;
+    
+    // Tên video 
+    const vidName = typeof video === 'string' ? video : (video.name || video.title || video.fileName || "video.mp4");
+
+    // Nếu video là object Blob preview local (vừa upload chưa refresh) thì dùng luôn URL local
     const directUrl = video?.url || video?.videoUrl || video?.filePath;
-    if (directUrl && typeof directUrl === 'string' && (directUrl.startsWith('http') || directUrl.startsWith('blob'))) {
+    if (directUrl && typeof directUrl === 'string' && directUrl.startsWith('blob:')) {
         setPreviewVideo({
             url: directUrl,
-            title: typeof video === 'string' ? video : (video.name || video.title || "Video Preview")
+            title: vidName
         });
         return;
     }
 
-    // 2. Tìm ID để fetch từ API (Dùng video.id vì đã được normalize trong hook)
-    const vidId = video?.id || video?.videoId || video?.Id;
     if (!vidId) {
-      toast.error("Không tìm thấy ID video. Hãy thử tải lại trang.");
-      return;
+       // Fallback: Chỉ dùng URL http có sẵn nếu không có ID
+       if (directUrl && typeof directUrl === 'string' && (directUrl.startsWith('http') || directUrl.startsWith('/'))) {
+          setPreviewVideo({
+            url: directUrl,
+            title: vidName
+          });
+          return;
+       }
+       toast.error("Không tìm thấy ID video để phát. Hãy thử tải lại trang.");
+       return;
     }
 
-    const toastId = toast.loading("Đang tải video preview...");
+    const toastId = toast.loading("Đang lấy đường dẫn video...");
     try {
-      // Fetch video as Blob from API
-      const blob = await getVideo(String(vidId));
+      // Get video info from API (Return JSON object with URL)
+      const data = await getVideo(String(vidId));
       
-      if (!blob || !(blob instanceof Blob)) {
-        throw new Error("Dữ liệu nhận được không phải là video.");
+      if (!data) {
+        throw new Error("Không nhận được dữ liệu từ server.");
       }
 
-      // Kiểm tra nếu server trả về JSON lỗi thay vì Blob (xảy ra khi backend bắt lỗi và trả về JSON)
-      if (blob.type.includes("application/json") || blob.type.includes("text/plain")) {
-         const text = await blob.text();
-         try {
-             const data = JSON.parse(text);
-             toast.error(data.message || "Lỗi: Server không trả về file video.");
-         } catch {
-             toast.error("Format video không hợp lệ.");
-         }
-         toast.dismiss(toastId);
-         return;
+      // FIX: Cập nhật logic lấy URL từ response: 
+      // API Return: { success: true, data: { videoUrl: "https://..." } }
+      const remoteUrl = typeof data === 'string' 
+          ? data 
+          : (
+              // 1. Ưu tiên lấy từ data.data.videoUrl (Theo Format API)
+              (data.data && data.data.videoUrl) || 
+              (data.data && data.data.url) ||
+              // 2. Fallback các trường hợp object phẳng
+              data.videoUrl || 
+              data.url || 
+              data.link || 
+              data.filePath
+            );
+
+      if (remoteUrl) {
+         setPreviewVideo({
+             url: remoteUrl,
+             title: vidName
+         });
+         return; 
       }
 
-      // Tạo Blob URL
-      // Gán type video/mp4 nếu blob là octet-stream chung chung để browser hiểu
-      const mimeType = (!blob.type || blob.type === "application/octet-stream") ? "video/mp4" : blob.type;
-      
-      const safeBlob = new Blob([blob], { type: mimeType });
-      const videoUrl = URL.createObjectURL(safeBlob);
-      
-      setPreviewVideo({
-        url: videoUrl,
-        title: typeof video === 'string' ? video : (video.name || video.title || "Video Preview")
-      });
-      
-      toast.success("Đã tải xong video!");
+      toast.error("Không tìm thấy đường dẫn video hợp lệ trong phản hồi.");
+    
     } catch (error) {
       console.error("Error loading video:", error);
-      toast.error("Lỗi khi kết nối lấy video.");
+      toast.error("Không thể lấy thông tin video. Vui lòng kiểm tra lại kết nối.");
     } finally {
       toast.dismiss(toastId);
     }
@@ -416,11 +428,15 @@ const ManageCoursePage: React.FC = () => {
         return;
     }
     
-    await editVideo(editingVideoLectureId, editingVideoId, { 
+    // FIX: Thêm biến receive success để chỉ tắt modal khi thành công
+    const success = await editVideo(editingVideoLectureId, editingVideoId, { 
       title: editVideoTitle.trim(),
       videoFile: editVideoFile || undefined
     });
-    setShowEditVideoModal(false);
+    
+    if (success) {
+      setShowEditVideoModal(false);
+    }
   };
 
   const openEditModal = (lecture: any) => {
