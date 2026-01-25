@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { 
   ArrowLeft, PlusCircle, Video, UploadCloud, Loader2, X, Trash, Edit2, 
-  LayoutList, FileText, HelpCircle, ChevronDown, ChevronUp 
+  LayoutList, FileText, HelpCircle, ChevronDown, ChevronUp, PlayCircle // Ensure PlayCircle is imported
 } from "lucide-react";
 import { toast } from "react-hot-toast";
 import InstructorLayout from "../user/layout/layout";
@@ -32,11 +32,38 @@ const ManageCoursePage: React.FC = () => {
   const [videoTitle, setVideoTitle] = useState("");
   const [videoFile, setVideoFile] = useState<File | null>(null);
   
+  // --- Delete Confirmation States ---
+  const [showDeleteLectureModal, setShowDeleteLectureModal] = useState(false);
+  const [lectureToDeleteId, setLectureToDeleteId] = useState<string | null>(null);
+
+  const [showDeleteVideoModal, setShowDeleteVideoModal] = useState(false);
+  const [videoToDelete, setVideoToDelete] = useState<{ lectureId: string; videoId: string } | null>(null);
+
+  // --- Video Preview State ---
+  const [previewVideo, setPreviewVideo] = useState<{ url: string; title: string } | null>(null);
+
+  // --- Document Modal States ---
+  const [showDocumentModal, setShowDocumentModal] = useState(false);
+  const [docFile, setDocFile] = useState<File | null>(null);
+
+  // --- Document Edit/Delete States ---
+  const [showEditDocumentModal, setShowEditDocumentModal] = useState(false);
+  const [editingDocumentId, setEditingDocumentId] = useState<string | null>(null);
+  const [editingDocLectureId, setEditingDocLectureId] = useState<string | null>(null);
+  const [editDocName, setEditDocName] = useState("");
+  const [editDocFile, setEditDocFile] = useState<File | null>(null);
+
+  const [showDeleteDocumentModal, setShowDeleteDocumentModal] = useState(false);
+  const [docToDelete, setDocToDelete] = useState<{ lectureId: string; documentId: string } | null>(null);
+
   // UI States for Expansion
   const [expandedLectures, setExpandedLectures] = useState<Record<string, boolean>>({});
 
-  const { lectures, fetchLectures, isCreating, uploadingLectureIds, createLecture, uploadLectureVideo, deleteLecture, lecturesLoading, editLecture, editVideo, deleteVideo } =
-    useCourseLectures(courseId ?? "");
+  const { 
+    lectures, fetchLectures, isCreating, uploadingLectureIds, createLecture, 
+    uploadLectureVideo, deleteLecture, lecturesLoading, editLecture, editVideo, deleteVideo, getVideo,
+    uploadLectureDocument, uploadingDocLectureIds, editDocument, deleteDocument // Destructure new hooks
+  } = useCourseLectures(courseId ?? "");
 
   useEffect(() => {
     if (!courseId) {
@@ -110,6 +137,12 @@ const ManageCoursePage: React.FC = () => {
       return;
     }
 
+    // Validation bổ sung: Chặn gửi nếu không phải video
+    if (!videoFile.type.startsWith("video/")) {
+       toast.error("File được chọn không phải định dạng video hợp lệ.");
+       return;
+    }
+
     // Nếu người dùng nhập tên video, ta đổi tên file trước khi gửi (Tip để backend nhận được tên mong muốn nếu backend dùng filename)
     let fileToSend = videoFile;
     if (videoTitle.trim()) {
@@ -127,37 +160,213 @@ const ManageCoursePage: React.FC = () => {
     }
   };
 
+  const openDocumentModal = (lectureId: string) => {
+    setCurrentLectureId(lectureId);
+    setDocFile(null);
+    setShowDocumentModal(true);
+  };
+
+  const handleUploadDocument = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!currentLectureId) return;
+    if (!docFile) {
+      toast.error("Vui lòng chọn file tài liệu.");
+      return;
+    }
+    
+    // Validate trước khi submit
+    if (docFile.type.startsWith("video/") || docFile.type.startsWith("image/")) {
+        toast.error("Vui lòng chỉ tải lên file tài liệu (PDF, Word, Excel, TXT...)");
+        return;
+    }
+
+    const result = await uploadLectureDocument(currentLectureId, docFile);
+    if (result || result === undefined) {
+       setShowDocumentModal(false);
+       setDocFile(null);
+    }
+  };
+  
+  const handleDocFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+       const file = e.target.files[0];
+       
+       // FIX: Sửa logic check file. Trước đây copy nhầm check video.
+       // Chấp nhận các loại tài liệu phổ biến, chặn video/ảnh
+       if (file.type.startsWith("video/") || file.type.startsWith("image/")) {
+          toast.error("Vui lòng không chọn video hoặc ảnh. Chỉ chấp nhận tài liệu (PDF, Office, TXT).");
+          e.target.value = ""; // Reset input
+          return;
+       }
+
+       setDocFile(file);
+    }
+  };
+
+  // --- Document Actions ---
+  const openEditDocument = (lectureId: string, doc: any) => {
+    setEditingDocLectureId(lectureId);
+    const docId = doc.id || doc.documentId || doc.Id || doc.DocumentId;
+    setEditingDocumentId(docId);
+    setEditDocFile(null);
+    const currentName = typeof doc === 'string' ? doc : (doc.name ?? doc.fileName ?? "");
+    setEditDocName(currentName);
+    setShowEditDocumentModal(true);
+  };
+
+  const handleEditDocFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+       const file = e.target.files[0];
+       
+       // FIX: Sửa logic check file.
+       if (file.type.startsWith("video/") || file.type.startsWith("image/")) {
+          toast.error("Vui lòng không chọn video hoặc ảnh. Chỉ chấp nhận tài liệu (PDF, Office, TXT).");
+          e.target.value = ""; // Reset input
+          return;
+       }
+
+       setEditDocFile(file);
+    }
+  };
+
+  const handleEditDocumentSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingDocumentId || !editingDocLectureId) return;
+
+    if (!editDocName.trim()) {
+        toast.error("Tên tài liệu không được để trống");
+        return;
+    }
+
+    await editDocument(editingDocLectureId, editingDocumentId, {
+        name: editDocName.trim(),
+        documentFile: editDocFile || undefined
+    });
+    setShowEditDocumentModal(false);
+  };
+
+  const handleDeleteDocument = (lectureId: string, documentId: string) => {
+      setDocToDelete({ lectureId, documentId });
+      setShowDeleteDocumentModal(true);
+  };
+
+  const confirmDeleteDocument = async () => {
+      if (!docToDelete) return;
+      await deleteDocument(docToDelete.lectureId, docToDelete.documentId);
+      setShowDeleteDocumentModal(false);
+      setDocToDelete(null);
+  };
+
+  const handlePreviewVideo = async (video: any) => {
+    // 1. Kiểm tra nếu video đã có sẵn URL trực tiếp (fallback)
+    const directUrl = video?.url || video?.videoUrl || video?.filePath;
+    if (directUrl && typeof directUrl === 'string' && (directUrl.startsWith('http') || directUrl.startsWith('blob'))) {
+        setPreviewVideo({
+            url: directUrl,
+            title: typeof video === 'string' ? video : (video.name || video.title || "Video Preview")
+        });
+        return;
+    }
+
+    // 2. Tìm ID để fetch từ API (Dùng video.id vì đã được normalize trong hook)
+    const vidId = video?.id || video?.videoId || video?.Id;
+    if (!vidId) {
+      toast.error("Không tìm thấy ID video. Hãy thử tải lại trang.");
+      return;
+    }
+
+    const toastId = toast.loading("Đang tải video preview...");
+    try {
+      // Fetch video as Blob from API
+      const blob = await getVideo(String(vidId));
+      
+      if (!blob || !(blob instanceof Blob)) {
+        throw new Error("Dữ liệu nhận được không phải là video.");
+      }
+
+      // Kiểm tra nếu server trả về JSON lỗi thay vì Blob (xảy ra khi backend bắt lỗi và trả về JSON)
+      if (blob.type.includes("application/json") || blob.type.includes("text/plain")) {
+         const text = await blob.text();
+         try {
+             const data = JSON.parse(text);
+             toast.error(data.message || "Lỗi: Server không trả về file video.");
+         } catch {
+             toast.error("Format video không hợp lệ.");
+         }
+         toast.dismiss(toastId);
+         return;
+      }
+
+      // Tạo Blob URL
+      // Gán type video/mp4 nếu blob là octet-stream chung chung để browser hiểu
+      const mimeType = (!blob.type || blob.type === "application/octet-stream") ? "video/mp4" : blob.type;
+      
+      const safeBlob = new Blob([blob], { type: mimeType });
+      const videoUrl = URL.createObjectURL(safeBlob);
+      
+      setPreviewVideo({
+        url: videoUrl,
+        title: typeof video === 'string' ? video : (video.name || video.title || "Video Preview")
+      });
+      
+      toast.success("Đã tải xong video!");
+    } catch (error) {
+      console.error("Error loading video:", error);
+      toast.error("Lỗi khi kết nối lấy video.");
+    } finally {
+      toast.dismiss(toastId);
+    }
+  };
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
        const file = e.target.files[0];
+
+       // Thêm validation video chặt chẽ
+       if (!file.type.startsWith("video/")) {
+           toast.error("Vui lòng chỉ chọn file video (MP4, WebM, AVI, ...)");
+           e.target.value = "";
+           return;
+       }
+
        setVideoFile(file);
        
        // Tự động điền tiêu đề bằng tên file (bỏ đuôi mở rộng .mp4, .mp3, ...)
-       const cleanName = file.name.replace(/\.(mp4|mp3|webm|mkv|avi)$/i, "");
+       const cleanName = file.name.replace(/\.(mp4|mp3|webm|mkv|avi|mov)$/i, "");
        setVideoTitle(cleanName);
     }
   };
 
-  const handleDeleteLecture = async (id: string) => {
-    const ok = window.confirm("Bạn có chắc muốn xóa chương này? Hành động không thể hoàn tác.");
-    if (!ok) return;
-    const success = await deleteLecture(id);
+  const handleDeleteLecture = (id: string) => {
+    setLectureToDeleteId(id);
+    setShowDeleteLectureModal(true);
+  };
+
+  const confirmDeleteLecture = async () => {
+    if (!lectureToDeleteId) return;
+    const success = await deleteLecture(lectureToDeleteId);
     if (success) {
-      // optional visual feedback already handled in hook via toast
       setExpandedLectures((prev) => {
         const copy = { ...prev };
-        delete copy[id];
+        delete copy[lectureToDeleteId];
         return copy;
       });
     }
+    setShowDeleteLectureModal(false);
+    setLectureToDeleteId(null);
   };
 
   // --- Video Actions ---
-  const handleDeleteVideo = async (lectureId: string, videoId: string) => {
-    const ok = window.confirm("Xóa video này?");
-    if (ok) {
-        await deleteVideo(lectureId, videoId);
-    }
+  const handleDeleteVideo = (lectureId: string, videoId: string) => {
+    setVideoToDelete({ lectureId, videoId });
+    setShowDeleteVideoModal(true);
+  };
+
+  const confirmDeleteVideo = async () => {
+    if (!videoToDelete) return;
+    await deleteVideo(videoToDelete.lectureId, videoToDelete.videoId);
+    setShowDeleteVideoModal(false);
+    setVideoToDelete(null);
   };
 
   const [showEditVideoModal, setShowEditVideoModal] = useState(false);
@@ -179,7 +388,16 @@ const ManageCoursePage: React.FC = () => {
 
   const handleEditVideoFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-       setEditVideoFile(e.target.files[0]);
+       const file = e.target.files[0];
+       
+       // Thêm validation khi sửa video
+       if (!file.type.startsWith("video/")) {
+           toast.error("Vui lòng chỉ chọn file video (MP4, WebM, AVI, ...)");
+           e.target.value = "";
+           return;
+       }
+
+       setEditVideoFile(file);
     }
   };
 
@@ -189,6 +407,12 @@ const ManageCoursePage: React.FC = () => {
     
     if (!editVideoTitle.trim()) {
         toast.error("Tên video không được để trống");
+        return;
+    }
+
+    // Validation bổ sung khi cập nhật video
+    if (editVideoFile && !editVideoFile.type.startsWith("video/")) {
+        toast.error("File được chọn không phải định dạng video hợp lệ.");
         return;
     }
     
@@ -203,8 +427,9 @@ const ManageCoursePage: React.FC = () => {
     setEditLectureId(lecture.id);
     setEditLectureName(lecture.name ?? "");
     setEditLectureDescription(lecture.description ?? "");
-    // Default to 0 if undefined
-    setEditLectureOrder(lecture.displayOrder ?? lecture.order ?? 0);
+    // Default to 1 if undefined or 0
+    const currentOrder = lecture.displayOrder ?? lecture.order ?? 0;
+    setEditLectureOrder(currentOrder > 0 ? currentOrder : 1);
     setShowEditModal(true);
   };
 
@@ -234,6 +459,36 @@ const ManageCoursePage: React.FC = () => {
   const [editLectureDescription, setEditLectureDescription] = useState("");
   const [editLectureOrder, setEditLectureOrder] = useState<number | string>(0);
 
+  // Thêm xử lý phím ESC để đóng các modal
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        // Ưu tiên đóng preview video trước (nếu đang bật)
+        if (previewVideo) {
+          if (previewVideo.url && previewVideo.url.startsWith('blob:')) {
+            URL.revokeObjectURL(previewVideo.url);
+          }
+          setPreviewVideo(null);
+          return;
+        }
+        
+        // Đóng các modal khác
+        if (showDeleteVideoModal) { setShowDeleteVideoModal(false); return; }
+        if (showDeleteDocumentModal) { setShowDeleteDocumentModal(false); return; } // Added
+        if (showDeleteLectureModal) { setShowDeleteLectureModal(false); return; }
+        if (showEditVideoModal) { setShowEditVideoModal(false); return; }
+        if (showEditDocumentModal) { setShowEditDocumentModal(false); return; } // Added
+        if (showVideoModal) { setShowVideoModal(false); return; }
+        if (showDocumentModal) { setShowDocumentModal(false); return; }
+        if (showEditModal) { setShowEditModal(false); return; }
+        if (showLectureModal) { setShowLectureModal(false); return; }
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [previewVideo, showDeleteVideoModal, showDeleteDocumentModal, showDeleteLectureModal, showEditVideoModal, showEditDocumentModal, showVideoModal, showDocumentModal, showEditModal, showLectureModal]);
+
   if (loadingCourse) return <InstructorLayout><div className="flex justify-center py-20"><Loader2 className="animate-spin text-[#5a2dff]" /></div></InstructorLayout>
 
   return (
@@ -241,7 +496,7 @@ const ManageCoursePage: React.FC = () => {
       <div className="mx-auto max-w-5xl space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <button onClick={handleManageCourse} className="mb-2 flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-gray-700">
+            <button onClick={handleManageCourse} className="mb-2 flex items-center gap-2 text-sm font-medium text-[#5a2dff] hover:text-[#4a21eb]">
               <ArrowLeft size={16} /> Quay lại khóa học
             </button>
             <h1 className="text-2xl font-bold text-gray-900">{course?.name}</h1>
@@ -281,7 +536,7 @@ const ManageCoursePage: React.FC = () => {
                            {isExpanded ? <ChevronUp size={16} className="text-gray-400"/> : <ChevronDown size={16} className="text-gray-400"/>}
                         </div>
                         <div className="flex items-center gap-2">
-                           <button onClick={() => openEditModal(lecture)} className="p-2 text-gray-400 hover:text-indigo-600" title="Chỉnh sửa"><Edit2 size={16}/></button>
+                           <button onClick={() => openEditModal(lecture)} className="p-2 text-gray-400 hover:text-[#5a2dff]" title="Chỉnh sửa"><Edit2 size={16}/></button>
                            <button onClick={() => handleDeleteLecture(lecture.id)} className="p-2 text-gray-400 hover:text-red-500" title="Xóa"><Trash size={16}/></button>
                         </div>
                      </div>
@@ -302,20 +557,34 @@ const ManageCoursePage: React.FC = () => {
                                  const vidName = rawVidName.replace(/\.(mp4|mp3|webm|mkv|avi)$/i, "");
 
                                  const vidId = vid?.id; // Assuming object has ID
+                                 const hasUrl = vid.url || vid.filePath || vid.videoUrl; // Check if URL exists
+
                                  return (
-                                   <div key={vidIdx} className="flex items-center gap-3 rounded-lg border border-gray-100 bg-gray-50 p-3 group hover:border-indigo-200 transition-colors">
-                                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-100 text-indigo-600">
+                                   <div key={vidIdx} className="flex items-center gap-3 rounded-lg border border-gray-100 bg-gray-50 p-3 group hover:border-[#5a2dff]/30 transition-colors">
+                                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#5a2dff]/10 text-[#5a2dff]">
                                         <Video size={14} />
                                       </div>
                                       <span className="flex-1 text-sm font-medium text-gray-700">{vidName}</span>
                                       
+                                      {/* Preview Button: Bấm vào đây để xem video */}
+                                      {(hasUrl || vidId) && (
+                                        <button 
+                                            type="button" 
+                                            onClick={() => handlePreviewVideo(vid)}
+                                            className="p-1.5 text-gray-500 hover:text-[#5a2dff] hover:bg-white rounded transition-colors"
+                                            title="Xem video"
+                                        >
+                                            <PlayCircle size={15} />
+                                        </button>
+                                      )}
+
                                       {/* Action buttons only if we have an ID */}
                                       {vidId && (
                                         <div className="flex gap-2">
                                            <button 
                                               type="button" 
                                               onClick={() => openEditVideo(lecture.id, vid)}
-                                              className="p-1.5 text-gray-500 hover:text-indigo-600 hover:bg-white rounded transition-colors"
+                                              className="p-1.5 text-gray-500 hover:text-[#5a2dff] hover:bg-white rounded transition-colors"
                                               title="Sửa tên video"
                                            >
                                               <Edit2 size={15} />
@@ -331,7 +600,7 @@ const ManageCoursePage: React.FC = () => {
                                         </div>
                                       )}
 
-                                      <span className="text-xs text-green-600 bg-green-50 px-2 py-1 rounded border border-green-100">Video</span>
+                                      <span className="text-xs text-[#5a2dff] bg-[#5a2dff]/10 px-2 py-1 rounded border border-[#5a2dff]/20">Video</span>
                                    </div>
                                  );
                                })
@@ -340,15 +609,52 @@ const ManageCoursePage: React.FC = () => {
                              )}
 
                              {/* Documents / Quizzes Placeholders */}
-                             {lecture.documentNames?.map((doc, i) => (
-                               <div key={`d-${i}`} className="flex items-center gap-3 rounded-lg border border-gray-100 bg-gray-50 p-3">
-                                  <FileText size={16} className="text-orange-500"/>
-                                  <span className="flex-1 text-sm">{doc}</span>
+                             {/* Display Documents - Prefer 'documents' array of objects if available, fallback to names */}
+                             {(lecture.documents && lecture.documents.length > 0 ? lecture.documents : lecture.documentNames)?.map((doc: any, i: number) => {
+                               const docName = typeof doc === 'string' ? doc : (doc.name || doc.fileName || `Tài liệu ${i+1}`);
+                               const docUrl = typeof doc === 'object' ? (doc.url || doc.filePath) : null;
+                               const docId = typeof doc === 'object' ? (doc.id || doc.documentId || doc.Id || doc.DocumentId) : null;
+
+                               return (
+                               <div key={`d-${i}`} className="flex items-center gap-3 rounded-lg border border-gray-100 bg-gray-50 p-3 group hover:border-[#5a2dff]/30 transition-colors">
+                                  <FileText size={16} className="text-[#5a2dff]"/>
+                                  {docUrl ? (
+                                    <a href={docUrl} target="_blank" rel="noreferrer" className="flex-1 text-sm hover:underline hover:text-[#4b24cc]">{docName}</a>
+                                  ) : (
+                                    <span className="flex-1 text-sm">{docName}</span>
+                                  )}
+                                  
+                                  {/* Actions for Document */}
+                                  {docId && (
+                                    <div className="flex gap-2">
+                                        <button 
+                                            type="button"
+                                            onClick={() => openEditDocument(lecture.id, doc)}
+                                            className="p-1.5 text-gray-500 hover:text-[#5a2dff] hover:bg-white rounded transition-colors"
+                                            title="Sửa tài liệu"
+                                        >
+                                            <Edit2 size={15} />
+                                        </button>
+                                        <button 
+                                            type="button"
+                                            onClick={() => handleDeleteDocument(lecture.id, docId)}
+                                            className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-white rounded transition-colors"
+                                            title="Xóa tài liệu"
+                                        >
+                                            <Trash size={15} />
+                                        </button>
+                                    </div>
+                                  )}
+
+                                  {/* Tag Tài liệu giống tag Video */}
+                                  <span className="text-xs text-[#5a2dff] bg-[#5a2dff]/10 px-2 py-1 rounded border border-[#5a2dff]/20">Tài liệu</span>
                                </div>
-                             ))}
+                               );
+                             })}
+
                              {lecture.quizNames?.map((quiz, i) => (
                                <div key={`q-${i}`} className="flex items-center gap-3 rounded-lg border border-gray-100 bg-gray-50 p-3">
-                                  <HelpCircle size={16} className="text-purple-500"/>
+                                  <HelpCircle size={16} className="text-[#5a2dff]"/>
                                   <span className="flex-1 text-sm">{quiz}</span>
                                </div>
                              ))}
@@ -359,7 +665,7 @@ const ManageCoursePage: React.FC = () => {
                              <button 
                                onClick={() => openVideoModal(lecture.id)}
                                disabled={isUploading}
-                               className="flex items-center gap-2 rounded-md bg-indigo-50 px-3 py-2 text-sm font-medium text-indigo-700 hover:bg-indigo-100 disabled:opacity-50"
+                               className="flex items-center gap-2 rounded-md bg-[#5a2dff]/10 px-3 py-2 text-sm font-medium text-[#5a2dff] hover:bg-[#5a2dff]/20 disabled:opacity-50"
                              >
                                 {isUploading ? <Loader2 className="animate-spin h-4 w-4"/> : <UploadCloud size={16} />}
                                 Thêm Video
@@ -368,8 +674,14 @@ const ManageCoursePage: React.FC = () => {
                              <button disabled className="flex items-center gap-2 rounded-md bg-gray-50 px-3 py-2 text-sm font-medium text-gray-400 cursor-not-allowed" title="Tính năng đang cập nhật">
                                 <HelpCircle size={16} /> Thêm Quiz (Sắp có)
                              </button>
-                             <button disabled className="flex items-center gap-2 rounded-md bg-gray-50 px-3 py-2 text-sm font-medium text-gray-400 cursor-not-allowed" title="Tính năng đang cập nhật">
-                                <FileText size={16} /> Thêm Tài Liệu (Sắp có)
+                             
+                             <button 
+                               onClick={() => openDocumentModal(lecture.id)}
+                               disabled={uploadingDocLectureIds?.[lecture.id]} 
+                               className="flex items-center gap-2 rounded-md bg-[#5a2dff]/10 px-3 py-2 text-sm font-medium text-[#5a2dff] hover:bg-[#5a2dff]/20 disabled:opacity-50"
+                             >
+                                {uploadingDocLectureIds?.[lecture.id] ? <Loader2 className="animate-spin h-4 w-4"/> : <FileText size={16} />} 
+                                Thêm Tài Liệu
                              </button>
                           </div>
                        </div>
@@ -381,6 +693,45 @@ const ManageCoursePage: React.FC = () => {
             )}
         </div>
       </div>
+
+      {/* --- PREVIEW VIDEO MODAL --- */}
+      {previewVideo && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-4xl rounded-xl bg-black shadow-2xl overflow-hidden flex flex-col">
+            <div className="flex justify-between items-center p-4 bg-gray-900 text-white border-b border-gray-800">
+              <h3 className="font-medium text-lg truncate pr-4">{previewVideo.title}</h3>
+              <button 
+                onClick={() => {
+                  // Cleanup: Revoke Object URL để tránh memory leak
+                  if (previewVideo.url && previewVideo.url.startsWith('blob:')) {
+                    URL.revokeObjectURL(previewVideo.url);
+                  }
+                  setPreviewVideo(null);
+                }}
+                className="p-1 hover:bg-gray-800 rounded-full transition-colors"
+                title="Đóng"
+              >
+                <X className="text-gray-400 hover:text-white" />
+              </button>
+            </div>
+            <div className="aspect-video bg-black flex items-center justify-center relative">
+              <video 
+                key={previewVideo.url} 
+                src={previewVideo.url}
+                controls 
+                autoPlay 
+                className="w-full h-full max-h-[80vh]"
+                onError={(e) => {
+                  console.error("Video playback error:", e);
+                  toast.error("Lỗi phát video. Định dạng không được hỗ trợ.");
+                }}
+              >
+                Trình duyệt của bạn không hỗ trợ phát video.
+              </video>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* --- ADD CHAPTER MODAL --- */}
       {showLectureModal && (
@@ -443,10 +794,10 @@ const ManageCoursePage: React.FC = () => {
                     <label className="mb-1 block text-sm font-semibold text-gray-700">File Video <span className="text-red-500">*</span></label>
                     <div className="flex items-center justify-center w-full">
                         <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
-                            <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                            <div className="flex flex-col items-center justify-center text-center">
                                 {videoFile ? (
                                     <>
-                                        <Video className="w-8 h-8 mb-2 text-indigo-500" />
+                                        <Video className="w-8 h-8 mb-2 text-[#5a2dff]" />
                                         <p className="mb-2 text-sm text-gray-700 font-semibold">{videoFile.name}</p>
                                         <p className="text-xs text-gray-500">{(videoFile.size / (1024*1024)).toFixed(2)} MB</p>
                                     </>
@@ -454,11 +805,16 @@ const ManageCoursePage: React.FC = () => {
                                     <>
                                         <UploadCloud className="w-8 h-8 mb-4 text-gray-500" />
                                         <p className="mb-2 text-sm text-gray-500"><span className="font-semibold">Click để tải lên</span> hoặc kéo thả</p>
-                                        <p className="text-xs text-gray-500">MP4, WebM (Max 50MB)</p>
+                                        <p className="text-xs text-gray-500">MP4, WebM, AVI, MKV (Max 50MB)</p>
                                     </>
                                 )}
                             </div>
-                            <input type="file" className="hidden" accept="video/*" onChange={handleFileChange} />
+                            <input 
+                              type="file" 
+                              className="hidden" 
+                              accept="video/*, .mp4, .webm, .mkv, .avi, .mov" 
+                              onChange={handleFileChange} 
+                            />
                         </label>
                     </div> 
                  </div>
@@ -471,6 +827,55 @@ const ManageCoursePage: React.FC = () => {
                       className="flex items-center gap-2 rounded-lg bg-[#5a2dff] px-4 py-2 text-sm font-medium text-white hover:bg-[#4b24cc] disabled:opacity-50"
                     >
                         {uploadingLectureIds[currentLectureId || ''] ? <Loader2 className="animate-spin h-4 w-4"/> : <UploadCloud size={16} />}
+                        Tải Lên
+                    </button>
+                 </div>
+              </form>
+           </div>
+        </div>
+      )}
+
+      {/* --- ADD DOCUMENT MODAL --- */}
+      {showDocumentModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+           <div className="w-full max-w-lg rounded-xl bg-white shadow-xl animate-in fade-in zoom-in-95">
+              <div className="border-b px-6 py-4 flex justify-between items-center">
+                 <h3 className="font-bold text-gray-900">Thêm Tài Liệu</h3>
+                 <button onClick={() => setShowDocumentModal(false)}><X className="text-gray-400"/></button>
+              </div>
+              <form onSubmit={handleUploadDocument} className="p-6 space-y-5">
+                 <div>
+                    <label className="mb-1 block text-sm font-semibold text-gray-700">File Tài Liệu <span className="text-red-500">*</span></label>
+                    <div className="flex items-center justify-center w-full">
+                        <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
+                            <div className="flex flex-col items-center justify-center text-center">
+                                {docFile ? (
+                                    <>
+                                        <FileText className="w-8 h-8 mb-2 text-[#5a2dff]" />
+                                        <p className="mb-2 text-sm text-gray-700 font-semibold">{docFile.name}</p>
+                                        <p className="text-xs text-gray-500">{(docFile.size / (1024*1024)).toFixed(2)} MB</p>
+                                    </>
+                                ) : (
+                                    <>
+                                        <UploadCloud className="w-8 h-8 mb-2 text-gray-400" />
+                                        <p className="mb-1 text-sm text-gray-500"><span className="font-semibold">Click để tải lên</span> hoặc kéo thả</p>
+                                        <p className="text-xs text-gray-400 mt-1">PDF, Word, Excel, PPT, TXT</p>
+                                    </>
+                                )}
+                            </div>
+                            <input type="file" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt" className="hidden" onChange={handleDocFileChange} />
+                        </label>
+                    </div> 
+                 </div>
+
+                 <div className="flex justify-end gap-2 pt-4 border-t">
+                    <button type="button" onClick={() => setShowDocumentModal(false)} className="rounded-lg border px-4 py-2 text-sm font-medium hover:bg-gray-50">Hủy</button>
+                    <button 
+                      type="submit" 
+                      disabled={!docFile || uploadingDocLectureIds?.[currentLectureId || '']} 
+                      className="flex items-center gap-2 rounded-lg bg-[#5a2dff] px-4 py-2 text-sm font-medium text-white hover:bg-[#4b24cc] disabled:opacity-50"
+                    >
+                        {uploadingDocLectureIds?.[currentLectureId || ''] ? <Loader2 className="animate-spin h-4 w-4"/> : <UploadCloud size={16} />}
                         Tải Lên
                     </button>
                  </div>
@@ -495,11 +900,11 @@ const ManageCoursePage: React.FC = () => {
                            placeholder="Ví dụ: Chương 1: Giới thiệu..."/>
                  </div>
                  
-                 <div>
+                 {/* <div>
                     <label className="mb-1 block text-sm font-semibold text-gray-700">Thứ tự hiển thị</label>
                     <input type="number" value={editLectureOrder} onChange={e => setEditLectureOrder(e.target.value)} 
                            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#5a2dff] focus:ring-1 focus:ring-[#5a2dff]" />
-                 </div>
+                 </div> */}
                  
                  <div>
                     <label className="mb-1 block text-sm font-semibold text-gray-700">Mô tả (tùy chọn)</label>
@@ -546,7 +951,7 @@ const ManageCoursePage: React.FC = () => {
                            <div className="flex flex-col items-center justify-center text-center">
                               {editVideoFile ? (
                                  <>
-                                    <Video className="mb-1 h-6 w-6 text-indigo-500" />
+                                    <Video className="mb-1 h-6 w-6 text-[#5a2dff]" />
                                     <p className="text-sm font-medium text-gray-700">{editVideoFile.name}</p>
                                     <p className="text-xs text-gray-500">{(editVideoFile.size / (1024*1024)).toFixed(2)} MB</p>
                                  </>
@@ -554,10 +959,16 @@ const ManageCoursePage: React.FC = () => {
                                  <>
                                     <UploadCloud className="mb-1 h-6 w-6 text-gray-400" />
                                     <span className="text-sm text-gray-500">Chọn file mới để thay thế</span>
+                                    <p className="text-xs text-gray-400 mt-1">MP4, WebM, AVI, MKV (Max 50MB)</p>
                                  </>
                               )}
                            </div>
-                           <input type="file" className="hidden" accept="video/*" onChange={handleEditVideoFileChange} />
+                           <input 
+                              type="file" 
+                              className="hidden" 
+                              accept="video/*, .mp4, .webm, .mkv, .avi, .mov" 
+                              onChange={handleEditVideoFileChange} 
+                           />
                         </label>
                         {editVideoFile && (
                           <button type="button" onClick={() => setEditVideoFile(null)} className="p-2 text-red-500 hover:bg-red-50 rounded" title="Hủy chọn file">
@@ -576,6 +987,160 @@ const ManageCoursePage: React.FC = () => {
                </form>
             </div>
          </div>
+      )}
+
+      {/* --- EDIT DOCUMENT MODAL --- */}
+      {showEditDocumentModal && (
+         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+            <div className="w-full max-w-lg rounded-xl bg-white shadow-xl animate-in fade-in zoom-in-95">
+               <div className="border-b px-6 py-4 flex justify-between items-center">
+                  <h3 className="font-bold text-gray-900">Chỉnh sửa Tài Liệu</h3>
+                  <button onClick={() => setShowEditDocumentModal(false)}><X className="text-gray-400"/></button>
+               </div>
+               <form onSubmit={handleEditDocumentSubmit} className="p-6 space-y-5">
+                  <div>
+                     <label className="mb-1 block text-sm font-semibold text-gray-700">Tên tài liệu <span className="text-red-500">*</span></label>
+                     <input 
+                        autoFocus 
+                        value={editDocName} 
+                        onChange={e => setEditDocName(e.target.value)} 
+                        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#5a2dff] focus:ring-1 focus:ring-[#5a2dff]" 
+                        placeholder="Nhập tên tài liệu..."
+                     />
+                  </div>
+                  
+                  <div>
+                     <label className="mb-1 block text-sm font-semibold text-gray-700">Thay đổi file tài liệu (Tùy chọn)</label>
+                     <div className="flex items-center gap-3">
+                        <label className="flex flex-1 cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed border-gray-300 p-4 hover:bg-gray-50">
+                           <div className="flex flex-col items-center justify-center text-center">
+                              {editDocFile ? (
+                                 <>
+                                    <FileText className="mb-1 h-6 w-6 text-[#5a2dff]" />
+                                    <p className="text-sm font-medium text-gray-700">{editDocFile.name}</p>
+                                    <p className="text-xs text-gray-500">{(editDocFile.size / (1024*1024)).toFixed(2)} MB</p>
+                                 </>
+                              ) : (
+                                 <>
+                                    <UploadCloud className="mb-1 h-6 w-6 text-gray-400" />
+                                    <span className="text-sm text-gray-500">Chọn file mới để thay thế</span>
+                                    <p className="text-xs text-gray-400 mt-1">PDF, Word, Excel, PPT, TXT</p>
+                                 </>
+                              )}
+                           </div>
+                           <input type="file" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt" className="hidden" onChange={handleEditDocFileChange} />
+                        </label>
+                        {editDocFile && (
+                          <button type="button" onClick={() => setEditDocFile(null)} className="p-2 text-red-500 hover:bg-red-50 rounded" title="Hủy chọn file">
+                            <Trash size={18}/>
+                          </button>
+                        )}
+                     </div>
+                  </div>
+
+                  <div className="flex justify-end gap-2 pt-2 border-t mt-2">
+                     <button type="button" onClick={() => setShowEditDocumentModal(false)} className="rounded-lg border px-4 py-2 text-sm font-medium hover:bg-gray-50">Hủy</button>
+                     <button type="submit" className="flex items-center gap-2 rounded-lg bg-[#5a2dff] px-4 py-2 text-sm font-medium text-white hover:bg-[#4b24cc]">
+                         Lưu thay đổi
+                     </button>
+                  </div>
+               </form>
+            </div>
+         </div>
+      )}
+
+      {/* --- DELETE LECTURE MODAL --- */}
+      {showDeleteLectureModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+           <div className="w-full max-w-sm rounded-xl bg-white shadow-xl animate-in fade-in zoom-in-95">
+              <div className="p-6 text-center">
+                 <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-[#5a2dff]/10">
+                    <Trash className="h-6 w-6 text-[#5a2dff]" />
+                 </div>
+                 <h3 className="mt-4 text-lg font-semibold text-gray-900">Xóa Chương Học?</h3>
+                 <p className="mt-2 text-sm text-gray-500">
+                    Bạn có chắc chắn muốn xóa chương này? <br/>
+                    Hành động này không thể hoàn tác và tất cả video bên trong sẽ bị xóa.
+                 </p>
+                 <div className="mt-6 flex justify-center gap-3">
+                    <button
+                       onClick={() => setShowDeleteLectureModal(false)}
+                       className="rounded-lg border px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                    >
+                       Hủy
+                    </button>
+                    <button
+                       onClick={confirmDeleteLecture}
+                       className="rounded-lg bg-[#5a2dff] px-4 py-2 text-sm font-medium text-white hover:bg-[#4b24cc]"
+                    >
+                       Đồng ý xóa
+                    </button>
+                 </div>
+              </div>
+           </div>
+        </div>
+      )}
+
+      {/* --- DELETE DOCUMENT MODAL --- */}
+      {showDeleteDocumentModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+           <div className="w-full max-w-sm rounded-xl bg-white shadow-xl animate-in fade-in zoom-in-95">
+              <div className="p-6 text-center">
+                 <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-[#5a2dff]/10">
+                    <Trash className="h-6 w-6 text-[#5a2dff]" />
+                 </div>
+                 <h3 className="mt-4 text-lg font-semibold text-gray-900">Xóa Tài liệu?</h3>
+                 <p className="mt-2 text-sm text-gray-500">
+                    Bạn có chắc chắn muốn xóa tài liệu này khỏi bài giảng?
+                 </p>
+                 <div className="mt-6 flex justify-center gap-3">
+                    <button
+                       onClick={() => setShowDeleteDocumentModal(false)}
+                       className="rounded-lg border px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                    >
+                       Hủy
+                    </button>
+                    <button
+                       onClick={confirmDeleteDocument}
+                       className="rounded-lg bg-[#5a2dff] px-4 py-2 text-sm font-medium text-white hover:bg-[#4b24cc]"
+                    >
+                       Xóa ngay
+                    </button>
+                 </div>
+              </div>
+           </div>
+        </div>
+      )}
+
+      {/* --- DELETE VIDEO MODAL --- */}
+      {showDeleteVideoModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+           <div className="w-full max-w-sm rounded-xl bg-white shadow-xl animate-in fade-in zoom-in-95">
+              <div className="p-6 text-center">
+                 <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-[#5a2dff]/10">
+                    <Video className="h-6 w-6 text-[#5a2dff]" />
+                 </div>
+                 <h3 className="mt-4 text-lg font-semibold text-gray-900">Xóa Video?</h3>
+                 <p className="mt-2 text-sm text-gray-500">
+                    Bạn có chắc chắn muốn xóa video này khỏi danh sách bài giảng?
+                 </p>
+                 <div className="mt-6 flex justify-center gap-3">
+                    <button
+                       onClick={() => setShowDeleteVideoModal(false)}
+                       className="rounded-lg border px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                    >
+                       Hủy
+                    </button>
+                    <button
+                       onClick={confirmDeleteVideo}
+                       className="rounded-lg bg-[#5a2dff] px-4 py-2 text-sm font-medium text-white hover:bg-[#4b24cc]"
+                    >
+                       Xóa ngay
+                    </button>
+                 </div>
+              </div>
+           </div>
+        </div>
       )}
 
     </InstructorLayout>

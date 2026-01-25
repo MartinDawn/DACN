@@ -9,6 +9,7 @@ export interface Lecture {
   // Updated to reflect "Lecture as Chapter" grouping
   // These arrays contain the content of the lecture
   videos: any[]; // Can be strings or objects depending on API
+  documents?: any[]; // Array of document objects
   documentNames: string[];
   quizNames: string[];
   

@@ -9,16 +9,65 @@ interface CreateLectureInput {
   courseId?: string; 
 }
 
+// Helper: Video sorter
+const sortVideos = (videos: any[]): any[] => {
+    return videos.sort((a, b) => {
+        // 1. Order (asc) - Prioritize displayOrder similar to lectures logic
+        const aOrd = typeof a.displayOrder === 'number' ? a.displayOrder : 
+                     (typeof a.order === 'number' ? a.order : 
+                     (typeof a.Order === 'number' ? a.Order : Number.MAX_SAFE_INTEGER));
+
+        const bOrd = typeof b.displayOrder === 'number' ? b.displayOrder : 
+                     (typeof b.order === 'number' ? b.order : 
+                     (typeof b.Order === 'number' ? b.Order : Number.MAX_SAFE_INTEGER));
+        
+        if (aOrd !== bOrd) return aOrd - bOrd;
+        
+        // 2. CreatedAt (asc - oldest first)
+        const aTime = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const bTime = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        
+        if (aTime > 0 && bTime > 0) return aTime - bTime;
+        
+        return 0; // Keep original order
+    });
+};
+
 // mapCourseContentToLectures: normalize various shapes from Course/course-content
 const mapCourseContentToLectures = (raw: any, fallbackCourseId: string): Lecture[] => {
-  // 1. Try to extract direct lectures list (flat structure from API screenshot)
-  const directLectures =
-    Array.isArray(raw?.lectures) ? raw.lectures :
-    Array.isArray(raw?.data?.lectures) ? raw.data.lectures :
-    undefined;
+  // 1. Try to extract direct lectures list (flat structure from API)
+  let directLectures: any[] | undefined;
+  
+  // Handle various response shapes
+  if (Array.isArray(raw)) {
+      directLectures = raw;
+  } else if (Array.isArray(raw?.lectures)) {
+      directLectures = raw.lectures;
+  } else if (Array.isArray(raw?.data?.lectures)) {
+      directLectures = raw.data.lectures;
+  } else if (Array.isArray(raw?.data)) {
+      directLectures = raw.data;
+  }
 
   if (Array.isArray(directLectures)) {
     const mapped = directLectures.map((lesson: any, index: number) => {
+      // Extract videos and sort them
+      let mappedVideos = Array.isArray(lesson?.videos) ? lesson.videos.map((v: any) => ({
+             ...v,
+             // Normalizing video ID: API might return 'id', 'videoId', 'videoid', 'Id' or 'VideoId'
+             id: v.id || v.videoId || v.videoid || v.Id || v.VideoId || v.ID,
+             // Normalizing video name
+             name: v.name || v.title || v.fileName || v.Name || v.Title || "Video",
+             // Map URL properties just in case
+             url: v.url || v.videoUrl || v.filePath || undefined,
+             // Mapping Order & Time for sorting
+             displayOrder: v.displayOrder ?? v.DisplayOrder,
+             order: v.order ?? v.Order,
+             createdAt: v.createdAt ?? v.CreatedAt
+      })) : [];
+
+      mappedVideos = sortVideos(mappedVideos);
+
       return {
         id: String(lesson?.id ?? lesson?.lectureId ?? `generated-${index}`),
         name: lesson?.name ?? lesson?.title ?? `Chương ${index + 1}`,
@@ -26,8 +75,11 @@ const mapCourseContentToLectures = (raw: any, fallbackCourseId: string): Lecture
         courseId: String(lesson?.courseId ?? fallbackCourseId),
 
         // Map content arrays
-        videos: Array.isArray(lesson?.videos) ? lesson.videos : [],
-        documentNames: Array.isArray(lesson?.documentNames) ? lesson.documentNames : [],
+        videos: mappedVideos,
+        documents: Array.isArray(lesson?.documents) ? lesson.documents : [],
+        documentNames: Array.isArray(lesson?.documentNames) 
+            ? lesson.documentNames 
+            : (Array.isArray(lesson?.documents) ? lesson.documents.map((d: any) => d.name || d.fileName || d) : []),
         quizNames: Array.isArray(lesson?.quizNames) ? lesson.quizNames : [],
 
         // Legacy support
@@ -36,8 +88,10 @@ const mapCourseContentToLectures = (raw: any, fallbackCourseId: string): Lecture
         // Keep original createdAt if present, otherwise null (do NOT default to "now")
         createdAt: lesson?.createdAt ?? null,
         updatedAt: lesson?.updatedAt ?? null,
-        order: typeof lesson?.order === "number" ? lesson.order : null,
-        displayOrder: typeof lesson?.displayOrder === "number" ? lesson.displayOrder : (typeof lesson?.order === "number" ? lesson.order : null),
+        // Fix: Nếu API không trả về order hoặc = 0, dùng index + 1 làm mặc định để danh sách chạy từ 1
+        order: (typeof lesson?.order === "number" && lesson.order > 0) ? lesson.order : (index + 1),
+        displayOrder: (typeof lesson?.displayOrder === "number" && lesson.displayOrder > 0) ? lesson.displayOrder : 
+                      ((typeof lesson?.order === "number" && lesson.order > 0) ? lesson.order : (index + 1)),
         chapterId: lesson?.chapterId ?? undefined,
         chapterName: lesson?.chapterName ?? undefined,
         chapterOrder: lesson?.chapterOrder ?? undefined,
@@ -72,23 +126,38 @@ const mapCourseContentToLectures = (raw: any, fallbackCourseId: string): Lecture
 };
 
 // normalize single lecture object to our Lecture shape
-const normalizeLecture = (raw: any, fallbackCourseId: string): Lecture => ({
-  id: String(raw?.id ?? raw?.lectureId ?? `generated-${Math.random().toString(36).slice(2,9)}`),
-  name: raw?.name ?? raw?.title ?? 'Untitled Lecture',
-  description: raw?.description ?? '',
-  courseId: String(raw?.courseId ?? fallbackCourseId),
-  videos: Array.isArray(raw?.videos) ? raw.videos : [],
-  documentNames: Array.isArray(raw?.documentNames) ? raw.documentNames : [],
-  quizNames: Array.isArray(raw?.quizNames) ? raw.quizNames : [],
-  videoUrl: raw?.videoUrl ?? undefined,
-  createdAt: raw?.createdAt ?? null,
-  updatedAt: raw?.updatedAt ?? null,
-  order: typeof raw?.order === 'number' ? raw.order : null,
-  displayOrder: typeof raw?.displayOrder === 'number' ? raw.displayOrder : (typeof raw?.order === 'number' ? raw.order : null),
-  chapterId: raw?.chapterId ?? undefined,
-  chapterName: raw?.chapterName ?? undefined,
-  chapterOrder: raw?.chapterOrder ?? undefined,
-});
+const normalizeLecture = (raw: any, fallbackCourseId: string): Lecture => {
+  let mappedVideos = Array.isArray(raw?.videos) ? raw.videos.map((v: any) => ({
+      ...v,
+      id: v.id || v.videoId || v.videoid || v.Id || v.VideoId || v.ID,
+      name: v.name || v.title || v.fileName || v.Name || v.Title,
+      displayOrder: v.displayOrder ?? v.DisplayOrder,
+      order: v.order ?? v.Order,
+      createdAt: v.createdAt ?? v.CreatedAt
+  })) : [];
+
+  mappedVideos = sortVideos(mappedVideos);
+
+  return {
+    id: String(raw?.id ?? raw?.lectureId ?? `generated-${Math.random().toString(36).slice(2,9)}`),
+    name: raw?.name ?? raw?.title ?? 'Untitled Lecture',
+    description: raw?.description ?? '',
+    courseId: String(raw?.courseId ?? fallbackCourseId),
+    // Also map videos in normalizeLecture to ensure consistency if this function is used for state updates
+    videos: mappedVideos,
+    documents: Array.isArray(raw?.documents) ? raw.documents : [],
+    documentNames: Array.isArray(raw?.documentNames) ? raw.documentNames : [],
+    quizNames: Array.isArray(raw?.quizNames) ? raw.quizNames : [],
+    videoUrl: raw?.videoUrl ?? undefined,
+    createdAt: raw?.createdAt ?? null,
+    updatedAt: raw?.updatedAt ?? null,
+    order: typeof raw?.order === 'number' ? raw.order : null,
+    displayOrder: typeof raw?.displayOrder === 'number' ? raw.displayOrder : (typeof raw?.order === 'number' ? raw.order : null),
+    chapterId: raw?.chapterId ?? undefined,
+    chapterName: raw?.chapterName ?? undefined,
+    chapterOrder: raw?.chapterOrder ?? undefined,
+  };
+};
 
 // try to extract created/updated lecture from various response shapes
 const extractLectureFromResponse = (respData: any, fallbackCourseId: string, existing: Lecture[]): Lecture | null => {
@@ -122,6 +191,9 @@ export const useCourseLectures = (courseId: string) => {
   const [isCreating, setIsCreating] = useState(false);
   const [uploadingLectureIds, setUploadingLectureIds] = useState<Record<string, boolean>>({});
   const [lecturesLoading, setLecturesLoading] = useState(false);
+  
+  // State for document uploading
+  const [uploadingDocLectureIds, setUploadingDocLectureIds] = useState<Record<string, boolean>>({});
 
   const fetchLectures = useCallback(async () => {
     if (!courseId) return;
@@ -172,10 +244,10 @@ export const useCourseLectures = (courseId: string) => {
           const created = extractLectureFromResponse(response.data ?? response, targetCourseId, lectures);
           if (created) {
             // Ensure newly created lecture appears at the end:
-            if (created.displayOrder === null || typeof created.displayOrder !== "number") {
+            if (created.displayOrder === null || typeof created.displayOrder !== "number" || created.displayOrder === 0) {
                 created.displayOrder = nextOrder;
             }
-            if (created.order === null || typeof created.order !== "number") {
+            if (created.order === null || typeof created.order !== "number" || created.order === 0) {
               created.order = nextOrder;
             }
             if (!created.createdAt) {
@@ -231,6 +303,26 @@ export const useCourseLectures = (courseId: string) => {
       toast.error("Có lỗi khi tải video.");
     } finally {
       setUploadingLectureIds((prev) => ({ ...prev, [lectureId]: false }));
+    }
+    return null;
+  }, [fetchLectures]);
+
+  const uploadLectureDocument = useCallback(async (lectureId: string, file: File) => {
+    if (!file) {
+      toast.error("Vui lòng chọn tài liệu.");
+      return null;
+    }
+    setUploadingDocLectureIds((prev) => ({ ...prev, [lectureId]: true }));
+    try {
+      const response = await lectureService.addDocument(lectureId, file);
+      toast.success(response?.message ?? "Tải tài liệu lên thành công.");
+      await fetchLectures();
+      return response?.data;
+    } catch (error) {
+      console.error(error);
+      toast.error("Có lỗi khi tải tài liệu.");
+    } finally {
+      setUploadingDocLectureIds((prev) => ({ ...prev, [lectureId]: false }));
     }
     return null;
   }, [fetchLectures]);
@@ -324,6 +416,84 @@ export const useCourseLectures = (courseId: string) => {
     }
   }, []);
 
+  const editDocument = useCallback(async (lectureId: string, documentId: string, payload: { name: string; documentFile?: File }) => {
+    try {
+      await lectureService.updateDocument(documentId, { name: payload.name, documentFile: payload.documentFile });
+      
+      if (payload.documentFile) {
+         // If file changed, refetch to assume fresh URLs/metadata
+         await fetchLectures(); 
+         toast.success("Cập nhật tài liệu thành công.");
+         return true;
+      }
+      
+      // Optimistic update for renaming
+      setLectures((prev) => prev.map((l) => {
+          if (l.id !== lectureId) return l;
+          
+          let updatedDocs = l.documents ? [...l.documents] : [];
+          updatedDocs = updatedDocs.map(d => {
+             const dId = d.id || d.documentId || d.Id;
+             if (String(dId) === String(documentId)) {
+                 return { ...d, name: payload.name };
+             }
+             return d;
+          });
+          
+          return { ...l, documents: updatedDocs };
+      }));
+      
+      toast.success("Cập nhật tên tài liệu thành công.");
+      await fetchLectures(); // Sync
+      return true;
+    } catch (error) {
+      console.error(error);
+      toast.error("Lỗi cập nhật tài liệu.");
+      return false;
+    }
+  }, [fetchLectures]);
+
+  const deleteDocument = useCallback(async (lectureId: string, documentId: string) => {
+      try {
+        await lectureService.deleteDocument(documentId);
+        // Optimistic remove
+        setLectures((prev) => prev.map((l) => {
+            if (l.id !== lectureId) return l;
+            const newDocs = l.documents ? l.documents.filter((d: any) => String(d.id || d.documentId || d.Id) !== String(documentId)) : [];
+            return {
+              ...l,
+              documents: newDocs
+            };
+        }));
+
+        toast.success("Xóa tài liệu thành công.");
+        return true;
+      } catch (error) {
+        console.error(error);
+        toast.error("Lỗi xóa tài liệu.");
+        return false;
+      }
+  }, []);
+
+  // Get Video content for preview
+  const getVideo = useCallback(async (videoId: string) => {
+    try {
+      if (!videoId) return null;
+      
+      // Gọi service để lấy Blob
+      const blob = await lectureService.getVideo(videoId);
+      
+      // Kiểm tra blob có hợp lệ không
+      if (blob instanceof Blob && blob.size > 0) {
+        return blob;
+      }
+      return null;
+    } catch (error: any) {
+      console.error("Error fetching video:", error);
+      return null;
+    }
+  }, []);
+
   return {
     lectures,
     fetchLectures,
@@ -335,6 +505,11 @@ export const useCourseLectures = (courseId: string) => {
     editLecture,
     deleteLecture,
     editVideo,
-    deleteVideo
+    deleteVideo,
+    getVideo,
+    uploadLectureDocument,
+    uploadingDocLectureIds,
+    editDocument,
+    deleteDocument
   };
 };

@@ -91,6 +91,58 @@ export const lectureService = {
     return response.data;
   },
 
+  // Add Document
+  async addDocument(lectureId: string, file: File, lang = "vi"): Promise<any> {
+    const formData = new FormData();
+    formData.append("documentFile", file);
+
+    const response = await apiClient.post<any>(`/Lecture/add-document/${lectureId}`, formData, {
+      headers: {
+        "Accept-Language": lang,
+      },
+      transformRequest: [
+        (data: any, headers: any) => {
+          if (headers && headers["Content-Type"]) delete headers["Content-Type"];
+          return data;
+        },
+      ],
+    });
+    return response.data;
+  },
+
+  // Update Document
+  async updateDocument(documentId: string, payload: { name?: string; documentFile?: File }, lang = "vi"): Promise<any> {
+    const formData = new FormData();
+    // Use "Name" to match API requirement
+    if (payload.name) {
+      formData.append("Name", payload.name);
+    }
+    if (payload.documentFile) {
+        formData.append("DocumentFile", payload.documentFile);
+    }
+
+    const response = await apiClient.put<any>(`/Lecture/update-document/${documentId}`, formData, {
+      headers: { "Accept-Language": lang },
+      transformRequest: [
+        (data: any, headers: any) => {
+          if (headers && headers["Content-Type"]) {
+            delete headers["Content-Type"];
+          }
+          return data;
+        },
+      ],
+    });
+    return response.data;
+  },
+
+  // Delete Document
+  async deleteDocument(documentId: string, lang = "vi"): Promise<any> {
+    const response = await apiClient.delete<any>(`/Lecture/delete-document/${documentId}`, {
+      headers: { "Accept-Language": lang },
+    });
+    return response.data;
+  },
+
   // Update lecture (name/description)
   async updateLecture(lectureId: string, payload: UpdateLecturePayload, lang = "vi"): Promise<UpdateLectureResponse> {
     const formData = new FormData();
@@ -154,5 +206,31 @@ export const lectureService = {
       headers: { "Accept-Language": lang },
     });
     return response.data;
+  },
+
+  // Get video stream/content (Fix for preview button)
+  // Endpoint này map với: GET /api/Lecture/get-video/{videoId}
+  async getVideo(videoId: string, lang = "vi"): Promise<Blob> {
+    // Sử dụng 'any' cho generic để dễ xử lý response linh động
+    const response = await apiClient.get<any>(`/Lecture/get-video/${videoId}`, {
+      headers: { 
+        "Accept-Language": lang,
+      },
+      // Quan trọng: Báo cho axios biết server trả về binary data (blob)
+      responseType: "blob",
+    });
+
+    // FIX: Kiểm tra nếu interceptor của apiClient đã trả về data trực tiếp (là Blob)
+    if (response instanceof Blob) {
+        return response;
+    }
+    
+    // Trường hợp apiClient trả về object response axios chuẩn (có .data)
+    if (response?.data instanceof Blob) {
+       return response.data;
+    }
+
+    // Fallback: nếu response chính là object dữ liệu blob
+    return response as unknown as Blob;
   },
 };
