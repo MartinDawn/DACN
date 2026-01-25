@@ -478,18 +478,16 @@ export const useCourseLectures = (courseId: string) => {
   // Get Video content for preview
   const getVideo = useCallback(async (videoId: string) => {
     try {
-      if (!videoId) {
-        return null;
-      }
+      if (!videoId) return null;
+      
       // Gọi service để lấy Blob
       const blob = await lectureService.getVideo(videoId);
       
       // Kiểm tra blob có hợp lệ không
-      if (!blob || blob.size === 0) {
-        return null;
+      if (blob instanceof Blob && blob.size > 0) {
+        return blob;
       }
-      
-      return blob;
+      return null;
     } catch (error: any) {
       console.error("Error fetching video:", error);
       return null;

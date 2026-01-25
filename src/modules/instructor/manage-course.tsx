@@ -137,6 +137,12 @@ const ManageCoursePage: React.FC = () => {
       return;
     }
 
+    // Validation bổ sung: Chặn gửi nếu không phải video
+    if (!videoFile.type.startsWith("video/")) {
+       toast.error("File được chọn không phải định dạng video hợp lệ.");
+       return;
+    }
+
     // Nếu người dùng nhập tên video, ta đổi tên file trước khi gửi (Tip để backend nhận được tên mong muốn nếu backend dùng filename)
     let fileToSend = videoFile;
     if (videoTitle.trim()) {
@@ -167,6 +173,13 @@ const ManageCoursePage: React.FC = () => {
       toast.error("Vui lòng chọn file tài liệu.");
       return;
     }
+    
+    // Validate trước khi submit
+    if (docFile.type.startsWith("video/") || docFile.type.startsWith("image/")) {
+        toast.error("Vui lòng chỉ tải lên file tài liệu (PDF, Word, Excel, TXT...)");
+        return;
+    }
+
     const result = await uploadLectureDocument(currentLectureId, docFile);
     if (result || result === undefined) {
        setShowDocumentModal(false);
@@ -176,7 +189,17 @@ const ManageCoursePage: React.FC = () => {
   
   const handleDocFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-       setDocFile(e.target.files[0]);
+       const file = e.target.files[0];
+       
+       // FIX: Sửa logic check file. Trước đây copy nhầm check video.
+       // Chấp nhận các loại tài liệu phổ biến, chặn video/ảnh
+       if (file.type.startsWith("video/") || file.type.startsWith("image/")) {
+          toast.error("Vui lòng không chọn video hoặc ảnh. Chỉ chấp nhận tài liệu (PDF, Office, TXT).");
+          e.target.value = ""; // Reset input
+          return;
+       }
+
+       setDocFile(file);
     }
   };
 
@@ -193,7 +216,16 @@ const ManageCoursePage: React.FC = () => {
 
   const handleEditDocFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-       setEditDocFile(e.target.files[0]);
+       const file = e.target.files[0];
+       
+       // FIX: Sửa logic check file.
+       if (file.type.startsWith("video/") || file.type.startsWith("image/")) {
+          toast.error("Vui lòng không chọn video hoặc ảnh. Chỉ chấp nhận tài liệu (PDF, Office, TXT).");
+          e.target.value = ""; // Reset input
+          return;
+       }
+
+       setEditDocFile(file);
     }
   };
 
@@ -226,7 +258,7 @@ const ManageCoursePage: React.FC = () => {
   };
 
   const handlePreviewVideo = async (video: any) => {
-    // 1. Kiểm tra nếu video đã có sẵn URL trực tiếp (S3, Firebase...) thì dùng luôn
+    // 1. Kiểm tra nếu video đã có sẵn URL trực tiếp (fallback)
     const directUrl = video?.url || video?.videoUrl || video?.filePath;
     if (directUrl && typeof directUrl === 'string' && (directUrl.startsWith('http') || directUrl.startsWith('blob'))) {
         setPreviewVideo({
@@ -236,10 +268,10 @@ const ManageCoursePage: React.FC = () => {
         return;
     }
 
-    // 2. Nếu không có URL, tìm ID để fetch từ API
-    const vidId = video?.id || video?.videoId || video?.Id || video?.VideoId;
+    // 2. Tìm ID để fetch từ API (Dùng video.id vì đã được normalize trong hook)
+    const vidId = video?.id || video?.videoId || video?.Id;
     if (!vidId) {
-      toast.error("Không tìm thấy ID video.");
+      toast.error("Không tìm thấy ID video. Hãy thử tải lại trang.");
       return;
     }
 
@@ -248,44 +280,27 @@ const ManageCoursePage: React.FC = () => {
       // Fetch video as Blob from API
       const blob = await getVideo(String(vidId));
       
-      if (!blob) {
-        toast.error("Không thể tải video. Vui lòng thử lại.");
-        toast.dismiss(toastId);
-        return;
+      if (!blob || !(blob instanceof Blob)) {
+        throw new Error("Dữ liệu nhận được không phải là video.");
       }
 
-      // Kiểm tra nếu server trả về JSON/Text thay vì video (Lỗi server hoặc server trả về link URL JSON)
-      if (blob.type.includes("json") || blob.type.includes("text")) {
-        const text = await blob.text();
-        try {
-            const data = JSON.parse(text);
-            if (data.url || data.videoUrl || data.filePath) {
-                 const url = data.url || data.videoUrl || data.filePath;
-                 setPreviewVideo({
-                    url: url,
-                    title: typeof video === 'string' ? video : (video.name || video.title || "Video Preview")
-                 });
-                 toast.success("Tải video thành công!");
-                 toast.dismiss(toastId);
-                 return;
-            }
-            toast.error(data.message || "Lỗi: Server không trả về file video.");
-        } catch (e) {
-            toast.error("Lỗi: Dữ liệu trả về không phải là video.");
-        }
-        toast.dismiss(toastId);
-        return;
+      // Kiểm tra nếu server trả về JSON lỗi thay vì Blob (xảy ra khi backend bắt lỗi và trả về JSON)
+      if (blob.type.includes("application/json") || blob.type.includes("text/plain")) {
+         const text = await blob.text();
+         try {
+             const data = JSON.parse(text);
+             toast.error(data.message || "Lỗi: Server không trả về file video.");
+         } catch {
+             toast.error("Format video không hợp lệ.");
+         }
+         toast.dismiss(toastId);
+         return;
       }
 
-      if (blob.size === 0) {
-        toast.error("Video rỗng hoặc không tồn tại.");
-        toast.dismiss(toastId);
-        return;
-      }
-
-      // IMPORTANTE: Tạo Blob mới với type explicit "video/mp4" nếu server trả về generic binary (application/octet-stream)
-      // Điều này giúp trình duyệt biết cách decode video
-      const mimeType = blob.type && blob.type !== "application/octet-stream" ? blob.type : "video/mp4";
+      // Tạo Blob URL
+      // Gán type video/mp4 nếu blob là octet-stream chung chung để browser hiểu
+      const mimeType = (!blob.type || blob.type === "application/octet-stream") ? "video/mp4" : blob.type;
+      
       const safeBlob = new Blob([blob], { type: mimeType });
       const videoUrl = URL.createObjectURL(safeBlob);
       
@@ -294,11 +309,11 @@ const ManageCoursePage: React.FC = () => {
         title: typeof video === 'string' ? video : (video.name || video.title || "Video Preview")
       });
       
-      toast.success("Tải video thành công!");
-      toast.dismiss(toastId);
+      toast.success("Đã tải xong video!");
     } catch (error) {
       console.error("Error loading video:", error);
-      toast.error("Lỗi khi tải video.");
+      toast.error("Lỗi khi kết nối lấy video.");
+    } finally {
       toast.dismiss(toastId);
     }
   };
@@ -306,10 +321,18 @@ const ManageCoursePage: React.FC = () => {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
        const file = e.target.files[0];
+
+       // Thêm validation video chặt chẽ
+       if (!file.type.startsWith("video/")) {
+           toast.error("Vui lòng chỉ chọn file video (MP4, WebM, AVI, ...)");
+           e.target.value = "";
+           return;
+       }
+
        setVideoFile(file);
        
        // Tự động điền tiêu đề bằng tên file (bỏ đuôi mở rộng .mp4, .mp3, ...)
-       const cleanName = file.name.replace(/\.(mp4|mp3|webm|mkv|avi)$/i, "");
+       const cleanName = file.name.replace(/\.(mp4|mp3|webm|mkv|avi|mov)$/i, "");
        setVideoTitle(cleanName);
     }
   };
@@ -365,7 +388,16 @@ const ManageCoursePage: React.FC = () => {
 
   const handleEditVideoFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-       setEditVideoFile(e.target.files[0]);
+       const file = e.target.files[0];
+       
+       // Thêm validation khi sửa video
+       if (!file.type.startsWith("video/")) {
+           toast.error("Vui lòng chỉ chọn file video (MP4, WebM, AVI, ...)");
+           e.target.value = "";
+           return;
+       }
+
+       setEditVideoFile(file);
     }
   };
 
@@ -375,6 +407,12 @@ const ManageCoursePage: React.FC = () => {
     
     if (!editVideoTitle.trim()) {
         toast.error("Tên video không được để trống");
+        return;
+    }
+
+    // Validation bổ sung khi cập nhật video
+    if (editVideoFile && !editVideoFile.type.startsWith("video/")) {
+        toast.error("File được chọn không phải định dạng video hợp lệ.");
         return;
     }
     
@@ -756,7 +794,7 @@ const ManageCoursePage: React.FC = () => {
                     <label className="mb-1 block text-sm font-semibold text-gray-700">File Video <span className="text-red-500">*</span></label>
                     <div className="flex items-center justify-center w-full">
                         <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
-                            <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                            <div className="flex flex-col items-center justify-center text-center">
                                 {videoFile ? (
                                     <>
                                         <Video className="w-8 h-8 mb-2 text-[#5a2dff]" />
@@ -767,11 +805,16 @@ const ManageCoursePage: React.FC = () => {
                                     <>
                                         <UploadCloud className="w-8 h-8 mb-4 text-gray-500" />
                                         <p className="mb-2 text-sm text-gray-500"><span className="font-semibold">Click để tải lên</span> hoặc kéo thả</p>
-                                        <p className="text-xs text-gray-500">MP4, WebM (Max 50MB)</p>
+                                        <p className="text-xs text-gray-500">MP4, WebM, AVI, MKV (Max 50MB)</p>
                                     </>
                                 )}
                             </div>
-                            <input type="file" className="hidden" accept="video/*" onChange={handleFileChange} />
+                            <input 
+                              type="file" 
+                              className="hidden" 
+                              accept="video/*, .mp4, .webm, .mkv, .avi, .mov" 
+                              onChange={handleFileChange} 
+                            />
                         </label>
                     </div> 
                  </div>
@@ -814,12 +857,13 @@ const ManageCoursePage: React.FC = () => {
                                     </>
                                 ) : (
                                     <>
-                                        <UploadCloud className="w-8 h-8 mb-4 text-gray-400" />
-                                        <span className="text-sm text-gray-500">Chọn file mới để thay thế</span>
+                                        <UploadCloud className="w-8 h-8 mb-2 text-gray-400" />
+                                        <p className="mb-1 text-sm text-gray-500"><span className="font-semibold">Click để tải lên</span> hoặc kéo thả</p>
+                                        <p className="text-xs text-gray-400 mt-1">PDF, Word, Excel, PPT, TXT</p>
                                     </>
                                 )}
                             </div>
-                            <input type="file" className="hidden" onChange={handleDocFileChange} />
+                            <input type="file" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt" className="hidden" onChange={handleDocFileChange} />
                         </label>
                     </div> 
                  </div>
@@ -915,10 +959,16 @@ const ManageCoursePage: React.FC = () => {
                                  <>
                                     <UploadCloud className="mb-1 h-6 w-6 text-gray-400" />
                                     <span className="text-sm text-gray-500">Chọn file mới để thay thế</span>
+                                    <p className="text-xs text-gray-400 mt-1">MP4, WebM, AVI, MKV (Max 50MB)</p>
                                  </>
                               )}
                            </div>
-                           <input type="file" className="hidden" onChange={handleEditVideoFileChange} />
+                           <input 
+                              type="file" 
+                              className="hidden" 
+                              accept="video/*, .mp4, .webm, .mkv, .avi, .mov" 
+                              onChange={handleEditVideoFileChange} 
+                           />
                         </label>
                         {editVideoFile && (
                           <button type="button" onClick={() => setEditVideoFile(null)} className="p-2 text-red-500 hover:bg-red-50 rounded" title="Hủy chọn file">
@@ -974,10 +1024,11 @@ const ManageCoursePage: React.FC = () => {
                                  <>
                                     <UploadCloud className="mb-1 h-6 w-6 text-gray-400" />
                                     <span className="text-sm text-gray-500">Chọn file mới để thay thế</span>
+                                    <p className="text-xs text-gray-400 mt-1">PDF, Word, Excel, PPT, TXT</p>
                                  </>
                               )}
                            </div>
-                           <input type="file" className="hidden" onChange={handleEditDocFileChange} />
+                           <input type="file" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt" className="hidden" onChange={handleEditDocFileChange} />
                         </label>
                         {editDocFile && (
                           <button type="button" onClick={() => setEditDocFile(null)} className="p-2 text-red-500 hover:bg-red-50 rounded" title="Hủy chọn file">

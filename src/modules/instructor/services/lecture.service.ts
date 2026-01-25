@@ -211,14 +211,26 @@ export const lectureService = {
   // Get video stream/content (Fix for preview button)
   // Endpoint này map với: GET /api/Lecture/get-video/{videoId}
   async getVideo(videoId: string, lang = "vi"): Promise<Blob> {
-    const response = await apiClient.get<Blob>(`/Lecture/get-video/${videoId}`, {
+    // Sử dụng 'any' cho generic để dễ xử lý response linh động
+    const response = await apiClient.get<any>(`/Lecture/get-video/${videoId}`, {
       headers: { 
         "Accept-Language": lang,
       },
       // Quan trọng: Báo cho axios biết server trả về binary data (blob)
-      // Nếu thiếu dòng này, axios sẽ cố parse thành string/json và làm hỏng file video
       responseType: "blob",
     });
-    return response.data;
+
+    // FIX: Kiểm tra nếu interceptor của apiClient đã trả về data trực tiếp (là Blob)
+    if (response instanceof Blob) {
+        return response;
+    }
+    
+    // Trường hợp apiClient trả về object response axios chuẩn (có .data)
+    if (response?.data instanceof Blob) {
+       return response.data;
+    }
+
+    // Fallback: nếu response chính là object dữ liệu blob
+    return response as unknown as Blob;
   },
 };
