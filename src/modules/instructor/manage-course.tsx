@@ -195,8 +195,10 @@ const ManageCoursePage: React.FC = () => {
         return;
       }
 
-      // Tạo Blob mới với type explicit "video/mp4" nếu server trả về generic binary, để browser có thể play
-      const safeBlob = new Blob([blob], { type: blob.type || "video/mp4" });
+      // IMPORTANTE: Tạo Blob mới với type explicit "video/mp4" nếu server trả về generic binary (application/octet-stream)
+      // Điều này giúp trình duyệt biết cách decode video
+      const mimeType = blob.type && blob.type !== "application/octet-stream" ? blob.type : "video/mp4";
+      const safeBlob = new Blob([blob], { type: mimeType });
       const videoUrl = URL.createObjectURL(safeBlob);
       
       setPreviewVideo({

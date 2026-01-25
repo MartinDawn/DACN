@@ -9,16 +9,65 @@ interface CreateLectureInput {
   courseId?: string; 
 }
 
+// Helper: Video sorter
+const sortVideos = (videos: any[]): any[] => {
+    return videos.sort((a, b) => {
+        // 1. Order (asc) - Prioritize displayOrder similar to lectures logic
+        const aOrd = typeof a.displayOrder === 'number' ? a.displayOrder : 
+                     (typeof a.order === 'number' ? a.order : 
+                     (typeof a.Order === 'number' ? a.Order : Number.MAX_SAFE_INTEGER));
+
+        const bOrd = typeof b.displayOrder === 'number' ? b.displayOrder : 
+                     (typeof b.order === 'number' ? b.order : 
+                     (typeof b.Order === 'number' ? b.Order : Number.MAX_SAFE_INTEGER));
+        
+        if (aOrd !== bOrd) return aOrd - bOrd;
+        
+        // 2. CreatedAt (asc - oldest first)
+        const aTime = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const bTime = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        
+        if (aTime > 0 && bTime > 0) return aTime - bTime;
+        
+        return 0; // Keep original order
+    });
+};
+
 // mapCourseContentToLectures: normalize various shapes from Course/course-content
 const mapCourseContentToLectures = (raw: any, fallbackCourseId: string): Lecture[] => {
-  // 1. Try to extract direct lectures list (flat structure from API screenshot)
-  const directLectures =
-    Array.isArray(raw?.lectures) ? raw.lectures :
-    Array.isArray(raw?.data?.lectures) ? raw.data.lectures :
-    undefined;
+  // 1. Try to extract direct lectures list (flat structure from API)
+  let directLectures: any[] | undefined;
+  
+  // Handle various response shapes
+  if (Array.isArray(raw)) {
+      directLectures = raw;
+  } else if (Array.isArray(raw?.lectures)) {
+      directLectures = raw.lectures;
+  } else if (Array.isArray(raw?.data?.lectures)) {
+      directLectures = raw.data.lectures;
+  } else if (Array.isArray(raw?.data)) {
+      directLectures = raw.data;
+  }
 
   if (Array.isArray(directLectures)) {
     const mapped = directLectures.map((lesson: any, index: number) => {
+      // Extract videos and sort them
+      let mappedVideos = Array.isArray(lesson?.videos) ? lesson.videos.map((v: any) => ({
+             ...v,
+             // Normalizing video ID: API might return 'id', 'videoId', 'videoid', 'Id' or 'VideoId'
+             id: v.id || v.videoId || v.videoid || v.Id || v.VideoId || v.ID,
+             // Normalizing video name
+             name: v.name || v.title || v.fileName || v.Name || v.Title || "Video",
+             // Map URL properties just in case
+             url: v.url || v.videoUrl || v.filePath || undefined,
+             // Mapping Order & Time for sorting
+             displayOrder: v.displayOrder ?? v.DisplayOrder,
+             order: v.order ?? v.Order,
+             createdAt: v.createdAt ?? v.CreatedAt
+      })) : [];
+
+      mappedVideos = sortVideos(mappedVideos);
+
       return {
         id: String(lesson?.id ?? lesson?.lectureId ?? `generated-${index}`),
         name: lesson?.name ?? lesson?.title ?? `Chương ${index + 1}`,
@@ -26,15 +75,7 @@ const mapCourseContentToLectures = (raw: any, fallbackCourseId: string): Lecture
         courseId: String(lesson?.courseId ?? fallbackCourseId),
 
         // Map content arrays
-        videos: Array.isArray(lesson?.videos) ? lesson.videos.map((v: any) => ({
-             ...v,
-             // Normalizing video ID: API might return 'id', 'videoId', 'videoid', 'Id' or 'VideoId'
-             id: v.id || v.videoId || v.videoid || v.Id || v.VideoId || v.ID,
-             // Normalizing video name
-             name: v.name || v.title || v.fileName || v.Name || v.Title || "Video",
-             // Map URL properties just in case
-             url: v.url || v.videoUrl || v.filePath || undefined
-        })) : [],
+        videos: mappedVideos,
         documentNames: Array.isArray(lesson?.documentNames) ? lesson.documentNames : [],
         quizNames: Array.isArray(lesson?.quizNames) ? lesson.quizNames : [],
 
@@ -82,28 +123,37 @@ const mapCourseContentToLectures = (raw: any, fallbackCourseId: string): Lecture
 };
 
 // normalize single lecture object to our Lecture shape
-const normalizeLecture = (raw: any, fallbackCourseId: string): Lecture => ({
-  id: String(raw?.id ?? raw?.lectureId ?? `generated-${Math.random().toString(36).slice(2,9)}`),
-  name: raw?.name ?? raw?.title ?? 'Untitled Lecture',
-  description: raw?.description ?? '',
-  courseId: String(raw?.courseId ?? fallbackCourseId),
-  // Also map videos in normalizeLecture to ensure consistency if this function is used for state updates
-  videos: Array.isArray(raw?.videos) ? raw.videos.map((v: any) => ({
+const normalizeLecture = (raw: any, fallbackCourseId: string): Lecture => {
+  let mappedVideos = Array.isArray(raw?.videos) ? raw.videos.map((v: any) => ({
       ...v,
       id: v.id || v.videoId || v.videoid || v.Id || v.VideoId || v.ID,
-      name: v.name || v.title || v.fileName || v.Name || v.Title
-  })) : [],
-  documentNames: Array.isArray(raw?.documentNames) ? raw.documentNames : [],
-  quizNames: Array.isArray(raw?.quizNames) ? raw.quizNames : [],
-  videoUrl: raw?.videoUrl ?? undefined,
-  createdAt: raw?.createdAt ?? null,
-  updatedAt: raw?.updatedAt ?? null,
-  order: typeof raw?.order === 'number' ? raw.order : null,
-  displayOrder: typeof raw?.displayOrder === 'number' ? raw.displayOrder : (typeof raw?.order === 'number' ? raw.order : null),
-  chapterId: raw?.chapterId ?? undefined,
-  chapterName: raw?.chapterName ?? undefined,
-  chapterOrder: raw?.chapterOrder ?? undefined,
-});
+      name: v.name || v.title || v.fileName || v.Name || v.Title,
+      displayOrder: v.displayOrder ?? v.DisplayOrder,
+      order: v.order ?? v.Order,
+      createdAt: v.createdAt ?? v.CreatedAt
+  })) : [];
+
+  mappedVideos = sortVideos(mappedVideos);
+
+  return {
+    id: String(raw?.id ?? raw?.lectureId ?? `generated-${Math.random().toString(36).slice(2,9)}`),
+    name: raw?.name ?? raw?.title ?? 'Untitled Lecture',
+    description: raw?.description ?? '',
+    courseId: String(raw?.courseId ?? fallbackCourseId),
+    // Also map videos in normalizeLecture to ensure consistency if this function is used for state updates
+    videos: mappedVideos,
+    documentNames: Array.isArray(raw?.documentNames) ? raw.documentNames : [],
+    quizNames: Array.isArray(raw?.quizNames) ? raw.quizNames : [],
+    videoUrl: raw?.videoUrl ?? undefined,
+    createdAt: raw?.createdAt ?? null,
+    updatedAt: raw?.updatedAt ?? null,
+    order: typeof raw?.order === 'number' ? raw.order : null,
+    displayOrder: typeof raw?.displayOrder === 'number' ? raw.displayOrder : (typeof raw?.order === 'number' ? raw.order : null),
+    chapterId: raw?.chapterId ?? undefined,
+    chapterName: raw?.chapterName ?? undefined,
+    chapterOrder: raw?.chapterOrder ?? undefined,
+  };
+};
 
 // try to extract created/updated lecture from various response shapes
 const extractLectureFromResponse = (respData: any, fallbackCourseId: string, existing: Lecture[]): Lecture | null => {

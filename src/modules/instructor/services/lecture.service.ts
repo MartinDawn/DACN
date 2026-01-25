@@ -164,6 +164,7 @@ export const lectureService = {
         "Accept-Language": lang,
       },
       // Quan trọng: Báo cho axios biết server trả về binary data (blob)
+      // Nếu thiếu dòng này, axios sẽ cố parse thành string/json và làm hỏng file video
       responseType: "blob",
     });
     return response.data;
