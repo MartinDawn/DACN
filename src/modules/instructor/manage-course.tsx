@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { 
   ArrowLeft, PlusCircle, Video, UploadCloud, Loader2, X, Trash, Edit2, 
-  LayoutList, FileText, HelpCircle, ChevronDown, ChevronUp 
+  LayoutList, FileText, HelpCircle, ChevronDown, ChevronUp, PlayCircle // Ensure PlayCircle is imported
 } from "lucide-react";
 import { toast } from "react-hot-toast";
 import InstructorLayout from "../user/layout/layout";
@@ -32,10 +32,20 @@ const ManageCoursePage: React.FC = () => {
   const [videoTitle, setVideoTitle] = useState("");
   const [videoFile, setVideoFile] = useState<File | null>(null);
   
+  // --- Delete Confirmation States ---
+  const [showDeleteLectureModal, setShowDeleteLectureModal] = useState(false);
+  const [lectureToDeleteId, setLectureToDeleteId] = useState<string | null>(null);
+
+  const [showDeleteVideoModal, setShowDeleteVideoModal] = useState(false);
+  const [videoToDelete, setVideoToDelete] = useState<{ lectureId: string; videoId: string } | null>(null);
+
+  // --- Video Preview State ---
+  const [previewVideo, setPreviewVideo] = useState<{ url: string; title: string } | null>(null);
+
   // UI States for Expansion
   const [expandedLectures, setExpandedLectures] = useState<Record<string, boolean>>({});
 
-  const { lectures, fetchLectures, isCreating, uploadingLectureIds, createLecture, uploadLectureVideo, deleteLecture, lecturesLoading, editLecture, editVideo, deleteVideo } =
+  const { lectures, fetchLectures, isCreating, uploadingLectureIds, createLecture, uploadLectureVideo, deleteLecture, lecturesLoading, editLecture, editVideo, deleteVideo, getVideo } =
     useCourseLectures(courseId ?? "");
 
   useEffect(() => {
@@ -127,6 +137,82 @@ const ManageCoursePage: React.FC = () => {
     }
   };
 
+  const handlePreviewVideo = async (video: any) => {
+    // 1. Kiểm tra nếu video đã có sẵn URL trực tiếp (S3, Firebase...) thì dùng luôn
+    const directUrl = video?.url || video?.videoUrl || video?.filePath;
+    if (directUrl && typeof directUrl === 'string' && (directUrl.startsWith('http') || directUrl.startsWith('blob'))) {
+        setPreviewVideo({
+            url: directUrl,
+            title: typeof video === 'string' ? video : (video.name || video.title || "Video Preview")
+        });
+        return;
+    }
+
+    // 2. Nếu không có URL, tìm ID để fetch từ API
+    const vidId = video?.id || video?.videoId || video?.Id || video?.VideoId;
+    if (!vidId) {
+      toast.error("Không tìm thấy ID video.");
+      return;
+    }
+
+    const toastId = toast.loading("Đang tải video preview...");
+    try {
+      // Fetch video as Blob from API
+      const blob = await getVideo(String(vidId));
+      
+      if (!blob) {
+        toast.error("Không thể tải video. Vui lòng thử lại.");
+        toast.dismiss(toastId);
+        return;
+      }
+
+      // Kiểm tra nếu server trả về JSON/Text thay vì video (Lỗi server hoặc server trả về link URL JSON)
+      if (blob.type.includes("json") || blob.type.includes("text")) {
+        const text = await blob.text();
+        try {
+            const data = JSON.parse(text);
+            if (data.url || data.videoUrl || data.filePath) {
+                 const url = data.url || data.videoUrl || data.filePath;
+                 setPreviewVideo({
+                    url: url,
+                    title: typeof video === 'string' ? video : (video.name || video.title || "Video Preview")
+                 });
+                 toast.success("Tải video thành công!");
+                 toast.dismiss(toastId);
+                 return;
+            }
+            toast.error(data.message || "Lỗi: Server không trả về file video.");
+        } catch (e) {
+            toast.error("Lỗi: Dữ liệu trả về không phải là video.");
+        }
+        toast.dismiss(toastId);
+        return;
+      }
+
+      if (blob.size === 0) {
+        toast.error("Video rỗng hoặc không tồn tại.");
+        toast.dismiss(toastId);
+        return;
+      }
+
+      // Tạo Blob mới với type explicit "video/mp4" nếu server trả về generic binary, để browser có thể play
+      const safeBlob = new Blob([blob], { type: blob.type || "video/mp4" });
+      const videoUrl = URL.createObjectURL(safeBlob);
+      
+      setPreviewVideo({
+        url: videoUrl,
+        title: typeof video === 'string' ? video : (video.name || video.title || "Video Preview")
+      });
+      
+      toast.success("Tải video thành công!");
+      toast.dismiss(toastId);
+    } catch (error) {
+      console.error("Error loading video:", error);
+      toast.error("Lỗi khi tải video.");
+      toast.dismiss(toastId);
+    }
+  };
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
        const file = e.target.files[0];
@@ -138,26 +224,36 @@ const ManageCoursePage: React.FC = () => {
     }
   };
 
-  const handleDeleteLecture = async (id: string) => {
-    const ok = window.confirm("Bạn có chắc muốn xóa chương này? Hành động không thể hoàn tác.");
-    if (!ok) return;
-    const success = await deleteLecture(id);
+  const handleDeleteLecture = (id: string) => {
+    setLectureToDeleteId(id);
+    setShowDeleteLectureModal(true);
+  };
+
+  const confirmDeleteLecture = async () => {
+    if (!lectureToDeleteId) return;
+    const success = await deleteLecture(lectureToDeleteId);
     if (success) {
-      // optional visual feedback already handled in hook via toast
       setExpandedLectures((prev) => {
         const copy = { ...prev };
-        delete copy[id];
+        delete copy[lectureToDeleteId];
         return copy;
       });
     }
+    setShowDeleteLectureModal(false);
+    setLectureToDeleteId(null);
   };
 
   // --- Video Actions ---
-  const handleDeleteVideo = async (lectureId: string, videoId: string) => {
-    const ok = window.confirm("Xóa video này?");
-    if (ok) {
-        await deleteVideo(lectureId, videoId);
-    }
+  const handleDeleteVideo = (lectureId: string, videoId: string) => {
+    setVideoToDelete({ lectureId, videoId });
+    setShowDeleteVideoModal(true);
+  };
+
+  const confirmDeleteVideo = async () => {
+    if (!videoToDelete) return;
+    await deleteVideo(videoToDelete.lectureId, videoToDelete.videoId);
+    setShowDeleteVideoModal(false);
+    setVideoToDelete(null);
   };
 
   const [showEditVideoModal, setShowEditVideoModal] = useState(false);
@@ -203,8 +299,9 @@ const ManageCoursePage: React.FC = () => {
     setEditLectureId(lecture.id);
     setEditLectureName(lecture.name ?? "");
     setEditLectureDescription(lecture.description ?? "");
-    // Default to 0 if undefined
-    setEditLectureOrder(lecture.displayOrder ?? lecture.order ?? 0);
+    // Default to 1 if undefined or 0
+    const currentOrder = lecture.displayOrder ?? lecture.order ?? 0;
+    setEditLectureOrder(currentOrder > 0 ? currentOrder : 1);
     setShowEditModal(true);
   };
 
@@ -234,6 +331,33 @@ const ManageCoursePage: React.FC = () => {
   const [editLectureDescription, setEditLectureDescription] = useState("");
   const [editLectureOrder, setEditLectureOrder] = useState<number | string>(0);
 
+  // Thêm xử lý phím ESC để đóng các modal
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        // Ưu tiên đóng preview video trước (nếu đang bật)
+        if (previewVideo) {
+          if (previewVideo.url && previewVideo.url.startsWith('blob:')) {
+            URL.revokeObjectURL(previewVideo.url);
+          }
+          setPreviewVideo(null);
+          return;
+        }
+        
+        // Đóng các modal khác
+        if (showDeleteVideoModal) { setShowDeleteVideoModal(false); return; }
+        if (showDeleteLectureModal) { setShowDeleteLectureModal(false); return; }
+        if (showEditVideoModal) { setShowEditVideoModal(false); return; }
+        if (showVideoModal) { setShowVideoModal(false); return; }
+        if (showEditModal) { setShowEditModal(false); return; }
+        if (showLectureModal) { setShowLectureModal(false); return; }
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [previewVideo, showDeleteVideoModal, showDeleteLectureModal, showEditVideoModal, showVideoModal, showEditModal, showLectureModal]);
+
   if (loadingCourse) return <InstructorLayout><div className="flex justify-center py-20"><Loader2 className="animate-spin text-[#5a2dff]" /></div></InstructorLayout>
 
   return (
@@ -241,7 +365,7 @@ const ManageCoursePage: React.FC = () => {
       <div className="mx-auto max-w-5xl space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <button onClick={handleManageCourse} className="mb-2 flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-gray-700">
+            <button onClick={handleManageCourse} className="mb-2 flex items-center gap-2 text-sm font-medium text-[#5a2dff] hover:text-[#4a21eb]">
               <ArrowLeft size={16} /> Quay lại khóa học
             </button>
             <h1 className="text-2xl font-bold text-gray-900">{course?.name}</h1>
@@ -302,6 +426,8 @@ const ManageCoursePage: React.FC = () => {
                                  const vidName = rawVidName.replace(/\.(mp4|mp3|webm|mkv|avi)$/i, "");
 
                                  const vidId = vid?.id; // Assuming object has ID
+                                 const hasUrl = vid.url || vid.filePath || vid.videoUrl; // Check if URL exists
+
                                  return (
                                    <div key={vidIdx} className="flex items-center gap-3 rounded-lg border border-gray-100 bg-gray-50 p-3 group hover:border-indigo-200 transition-colors">
                                       <div className="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-100 text-indigo-600">
@@ -309,6 +435,18 @@ const ManageCoursePage: React.FC = () => {
                                       </div>
                                       <span className="flex-1 text-sm font-medium text-gray-700">{vidName}</span>
                                       
+                                      {/* Preview Button: Bấm vào đây để xem video */}
+                                      {(hasUrl || vidId) && (
+                                        <button 
+                                            type="button" 
+                                            onClick={() => handlePreviewVideo(vid)}
+                                            className="p-1.5 text-gray-500 hover:text-indigo-600 hover:bg-white rounded transition-colors"
+                                            title="Xem video"
+                                        >
+                                            <PlayCircle size={15} />
+                                        </button>
+                                      )}
+
                                       {/* Action buttons only if we have an ID */}
                                       {vidId && (
                                         <div className="flex gap-2">
@@ -381,6 +519,45 @@ const ManageCoursePage: React.FC = () => {
             )}
         </div>
       </div>
+
+      {/* --- PREVIEW VIDEO MODAL --- */}
+      {previewVideo && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-4xl rounded-xl bg-black shadow-2xl overflow-hidden flex flex-col">
+            <div className="flex justify-between items-center p-4 bg-gray-900 text-white border-b border-gray-800">
+              <h3 className="font-medium text-lg truncate pr-4">{previewVideo.title}</h3>
+              <button 
+                onClick={() => {
+                  // Cleanup: Revoke Object URL để tránh memory leak
+                  if (previewVideo.url && previewVideo.url.startsWith('blob:')) {
+                    URL.revokeObjectURL(previewVideo.url);
+                  }
+                  setPreviewVideo(null);
+                }}
+                className="p-1 hover:bg-gray-800 rounded-full transition-colors"
+                title="Đóng"
+              >
+                <X className="text-gray-400 hover:text-white" />
+              </button>
+            </div>
+            <div className="aspect-video bg-black flex items-center justify-center relative">
+              <video 
+                key={previewVideo.url} 
+                src={previewVideo.url}
+                controls 
+                autoPlay 
+                className="w-full h-full max-h-[80vh]"
+                onError={(e) => {
+                  console.error("Video playback error:", e);
+                  toast.error("Lỗi phát video. Định dạng không được hỗ trợ.");
+                }}
+              >
+                Trình duyệt của bạn không hỗ trợ phát video.
+              </video>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* --- ADD CHAPTER MODAL --- */}
       {showLectureModal && (
@@ -495,11 +672,11 @@ const ManageCoursePage: React.FC = () => {
                            placeholder="Ví dụ: Chương 1: Giới thiệu..."/>
                  </div>
                  
-                 <div>
+                 {/* <div>
                     <label className="mb-1 block text-sm font-semibold text-gray-700">Thứ tự hiển thị</label>
                     <input type="number" value={editLectureOrder} onChange={e => setEditLectureOrder(e.target.value)} 
                            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#5a2dff] focus:ring-1 focus:ring-[#5a2dff]" />
-                 </div>
+                 </div> */}
                  
                  <div>
                     <label className="mb-1 block text-sm font-semibold text-gray-700">Mô tả (tùy chọn)</label>
@@ -576,6 +753,69 @@ const ManageCoursePage: React.FC = () => {
                </form>
             </div>
          </div>
+      )}
+
+      {/* --- DELETE LECTURE MODAL --- */}
+      {showDeleteLectureModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+           <div className="w-full max-w-sm rounded-xl bg-white shadow-xl animate-in fade-in zoom-in-95">
+              <div className="p-6 text-center">
+                 <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-indigo-50">
+                    <Trash className="h-6 w-6 text-[#5a2dff]" />
+                 </div>
+                 <h3 className="mt-4 text-lg font-semibold text-gray-900">Xóa Chương Học?</h3>
+                 <p className="mt-2 text-sm text-gray-500">
+                    Bạn có chắc chắn muốn xóa chương này? <br/>
+                    Hành động này không thể hoàn tác và tất cả video bên trong sẽ bị xóa.
+                 </p>
+                 <div className="mt-6 flex justify-center gap-3">
+                    <button
+                       onClick={() => setShowDeleteLectureModal(false)}
+                       className="rounded-lg border px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                    >
+                       Hủy
+                    </button>
+                    <button
+                       onClick={confirmDeleteLecture}
+                       className="rounded-lg bg-[#5a2dff] px-4 py-2 text-sm font-medium text-white hover:bg-[#4b24cc]"
+                    >
+                       Đồng ý xóa
+                    </button>
+                 </div>
+              </div>
+           </div>
+        </div>
+      )}
+
+      {/* --- DELETE VIDEO MODAL --- */}
+      {showDeleteVideoModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+           <div className="w-full max-w-sm rounded-xl bg-white shadow-xl animate-in fade-in zoom-in-95">
+              <div className="p-6 text-center">
+                 <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-indigo-50">
+                    <Video className="h-6 w-6 text-[#5a2dff]" />
+                 </div>
+                 <h3 className="mt-4 text-lg font-semibold text-gray-900">Xóa Video?</h3>
+                 <p className="mt-2 text-sm text-gray-500">
+                    Bạn có chắc chắn muốn xóa video này khỏi danh sách bài giảng?
+                 </p>
+                 <div className="mt-6 flex justify-center gap-3">
+                    <button
+                       onClick={() => setShowDeleteVideoModal(false)}
+                       className="rounded-lg border px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                    >
+                       Hủy
+                    </button>
+                    <button
+                       onClick={confirmDeleteVideo}
+                       className="rounded-lg bg-[#5a2dff] px-4 py-2 text-sm font-medium text-white hover:bg-[#4b24cc]"
+                    >
+                       Xóa ngay
+                    </button>
+                 </div>
+              </div>
+           </div>
+        </div>
       )}
 
     </InstructorLayout>

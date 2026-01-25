@@ -26,7 +26,15 @@ const mapCourseContentToLectures = (raw: any, fallbackCourseId: string): Lecture
         courseId: String(lesson?.courseId ?? fallbackCourseId),
 
         // Map content arrays
-        videos: Array.isArray(lesson?.videos) ? lesson.videos : [],
+        videos: Array.isArray(lesson?.videos) ? lesson.videos.map((v: any) => ({
+             ...v,
+             // Normalizing video ID: API might return 'id', 'videoId', 'videoid', 'Id' or 'VideoId'
+             id: v.id || v.videoId || v.videoid || v.Id || v.VideoId || v.ID,
+             // Normalizing video name
+             name: v.name || v.title || v.fileName || v.Name || v.Title || "Video",
+             // Map URL properties just in case
+             url: v.url || v.videoUrl || v.filePath || undefined
+        })) : [],
         documentNames: Array.isArray(lesson?.documentNames) ? lesson.documentNames : [],
         quizNames: Array.isArray(lesson?.quizNames) ? lesson.quizNames : [],
 
@@ -36,8 +44,10 @@ const mapCourseContentToLectures = (raw: any, fallbackCourseId: string): Lecture
         // Keep original createdAt if present, otherwise null (do NOT default to "now")
         createdAt: lesson?.createdAt ?? null,
         updatedAt: lesson?.updatedAt ?? null,
-        order: typeof lesson?.order === "number" ? lesson.order : null,
-        displayOrder: typeof lesson?.displayOrder === "number" ? lesson.displayOrder : (typeof lesson?.order === "number" ? lesson.order : null),
+        // Fix: Nếu API không trả về order hoặc = 0, dùng index + 1 làm mặc định để danh sách chạy từ 1
+        order: (typeof lesson?.order === "number" && lesson.order > 0) ? lesson.order : (index + 1),
+        displayOrder: (typeof lesson?.displayOrder === "number" && lesson.displayOrder > 0) ? lesson.displayOrder : 
+                      ((typeof lesson?.order === "number" && lesson.order > 0) ? lesson.order : (index + 1)),
         chapterId: lesson?.chapterId ?? undefined,
         chapterName: lesson?.chapterName ?? undefined,
         chapterOrder: lesson?.chapterOrder ?? undefined,
@@ -77,7 +87,12 @@ const normalizeLecture = (raw: any, fallbackCourseId: string): Lecture => ({
   name: raw?.name ?? raw?.title ?? 'Untitled Lecture',
   description: raw?.description ?? '',
   courseId: String(raw?.courseId ?? fallbackCourseId),
-  videos: Array.isArray(raw?.videos) ? raw.videos : [],
+  // Also map videos in normalizeLecture to ensure consistency if this function is used for state updates
+  videos: Array.isArray(raw?.videos) ? raw.videos.map((v: any) => ({
+      ...v,
+      id: v.id || v.videoId || v.videoid || v.Id || v.VideoId || v.ID,
+      name: v.name || v.title || v.fileName || v.Name || v.Title
+  })) : [],
   documentNames: Array.isArray(raw?.documentNames) ? raw.documentNames : [],
   quizNames: Array.isArray(raw?.quizNames) ? raw.quizNames : [],
   videoUrl: raw?.videoUrl ?? undefined,
@@ -172,10 +187,10 @@ export const useCourseLectures = (courseId: string) => {
           const created = extractLectureFromResponse(response.data ?? response, targetCourseId, lectures);
           if (created) {
             // Ensure newly created lecture appears at the end:
-            if (created.displayOrder === null || typeof created.displayOrder !== "number") {
+            if (created.displayOrder === null || typeof created.displayOrder !== "number" || created.displayOrder === 0) {
                 created.displayOrder = nextOrder;
             }
-            if (created.order === null || typeof created.order !== "number") {
+            if (created.order === null || typeof created.order !== "number" || created.order === 0) {
               created.order = nextOrder;
             }
             if (!created.createdAt) {
@@ -324,6 +339,27 @@ export const useCourseLectures = (courseId: string) => {
     }
   }, []);
 
+  // Get Video content for preview
+  const getVideo = useCallback(async (videoId: string) => {
+    try {
+      if (!videoId) {
+        return null;
+      }
+      // Gọi service để lấy Blob
+      const blob = await lectureService.getVideo(videoId);
+      
+      // Kiểm tra blob có hợp lệ không
+      if (!blob || blob.size === 0) {
+        return null;
+      }
+      
+      return blob;
+    } catch (error: any) {
+      console.error("Error fetching video:", error);
+      return null;
+    }
+  }, []);
+
   return {
     lectures,
     fetchLectures,
@@ -335,6 +371,7 @@ export const useCourseLectures = (courseId: string) => {
     editLecture,
     deleteLecture,
     editVideo,
-    deleteVideo
+    deleteVideo,
+    getVideo
   };
 };

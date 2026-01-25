@@ -155,4 +155,17 @@ export const lectureService = {
     });
     return response.data;
   },
+
+  // Get video stream/content (Fix for preview button)
+  // Endpoint này map với: GET /api/Lecture/get-video/{videoId}
+  async getVideo(videoId: string, lang = "vi"): Promise<Blob> {
+    const response = await apiClient.get<Blob>(`/Lecture/get-video/${videoId}`, {
+      headers: { 
+        "Accept-Language": lang,
+      },
+      // Quan trọng: Báo cho axios biết server trả về binary data (blob)
+      responseType: "blob",
+    });
+    return response.data;
+  },
 };

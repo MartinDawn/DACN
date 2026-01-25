@@ -43,6 +43,17 @@ const InstructorDashboard: React.FC = () => {
     loadCourses();
   }, [fetchCourses]);
 
+  // Thêm xử lý phím ESC để đóng form tạo khóa học
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && showCreateCourseForm) {
+        setShowCreateCourseForm(false);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [showCreateCourseForm]);
+
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const tab = params.get('tab');
@@ -143,7 +154,7 @@ const InstructorDashboard: React.FC = () => {
     return (
       <InstructorLayout>
         <div className="mx-auto max-w-4xl">
-          <button onClick={() => setShowCreateCourseForm(false)} className="mb-6 flex items-center gap-2 text-sm font-semibold text-gray-600 hover:text-gray-900">
+          <button onClick={() => setShowCreateCourseForm(false)} className="mb-6 flex items-center gap-2 text-sm font-semibold text-[#5a2dff] hover:text-[#4a21eb]">
             <ArrowLeft size={16} />
             Quay lại
           </button>
