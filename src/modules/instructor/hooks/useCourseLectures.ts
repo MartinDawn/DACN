@@ -91,16 +91,25 @@ const normalizeLecture = (raw: any, fallbackCourseId: string): Lecture => ({
 // try to extract created/updated lecture from various response shapes
 const extractLectureFromResponse = (respData: any, fallbackCourseId: string, existing: Lecture[]): Lecture | null => {
   if (!respData) return null;
-  // case: API returns a Lecture object
+  
+  // Check common wrapper patterns
+  const candidate = respData.data || respData;
+
+  // case: API returns a Lecture object directly
+  if (candidate?.id) return normalizeLecture(candidate, fallbackCourseId);
+  
+  // also check outer object just in case
   if (respData?.id) return normalizeLecture(respData, fallbackCourseId);
 
   // case: API returns a course-like payload with lectures array
-  const lecturesArr = Array.isArray(respData?.lectures) ? respData.lectures : undefined;
+  const lecturesArr = Array.isArray(candidate?.lectures) ? candidate.lectures : 
+                      Array.isArray(respData?.lectures) ? respData.lectures : undefined;
+                      
   if (lecturesArr && lecturesArr.length) {
     const existingIds = new Set(existing.map((l) => String(l.id)));
     const added = lecturesArr.find((l: any) => !existingIds.has(String(l?.id ?? l?.lectureId)));
-    const candidate = added ?? lecturesArr[lecturesArr.length - 1];
-    return candidate ? normalizeLecture(candidate, fallbackCourseId) : null;
+    const lastOne = added ?? lecturesArr[lecturesArr.length - 1];
+    return lastOne ? normalizeLecture(lastOne, fallbackCourseId) : null;
   }
 
   return null;

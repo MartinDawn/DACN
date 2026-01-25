@@ -73,11 +73,17 @@ const ManageCoursePage: React.FC = () => {
       return;
     }
     
+    // Ensure courseId is present
+    if (!courseId) {
+        toast.error("Không tìm thấy ID khóa học.");
+        return;
+    }
+
     // API create-lecture: Creates a container (Chapter)
     const result = await createLecture({
       name: lectureName.trim(),
       description: lectureDescription.trim(),
-      courseId: courseId ?? undefined,
+      courseId: courseId, 
     });
 
     if (result) {

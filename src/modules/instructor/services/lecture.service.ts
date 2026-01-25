@@ -33,16 +33,18 @@ export const lectureService = {
   // NOTE: create-lecture expects JSON (swagger). We create the lecture first,
   // and upload the video separately via add-video if a file was provided.
   async createLecture(payload: CreateLecturePayload, lang = "vi"): Promise<CreateLectureResponse> {
-    const body: any = {
-      name: payload.name,
-      description: payload.description,
-    };
-    if (payload.courseId) body.courseId = payload.courseId;
+    // SWITCH TO FORM DATA for compatibility with typical [FromForm] backends in this stack
+    const formData = new FormData();
+    formData.append("name", payload.name);
+    formData.append("description", payload.description);
+    if (payload.courseId) {
+      formData.append("courseId", payload.courseId);
+    }
 
-    const response = await apiClient.post<CreateLectureResponse>("/Lecture/create-lecture", body, {
+    const response = await apiClient.post<CreateLectureResponse>("/Lecture/create-lecture", formData, {
       headers: {
         "Accept-Language": lang,
-        "Content-Type": "application/json",
+        // Let browser set Content-Type for FormData boundary
       },
     });
     return response.data;
@@ -88,10 +90,13 @@ export const lectureService = {
 
   // Update lecture (name/description)
   async updateLecture(lectureId: string, payload: UpdateLecturePayload, lang = "vi"): Promise<UpdateLectureResponse> {
-    const response = await apiClient.put<UpdateLectureResponse>(`/Lecture/update/${lectureId}`, payload, {
+    const formData = new FormData();
+    if (payload.name) formData.append("name", payload.name);
+    if (payload.description) formData.append("description", payload.description);
+
+    const response = await apiClient.put<UpdateLectureResponse>(`/Lecture/update/${lectureId}`, formData, {
       headers: {
         "Accept-Language": lang,
-        "Content-Type": "application/json",
       },
     });
     return response.data;
