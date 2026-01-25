@@ -511,7 +511,7 @@ export const useCourseLectures = (courseId: string) => {
     getVideo,
     uploadLectureDocument,
     uploadingDocLectureIds,
-    editDocument, // Export
-    deleteDocument // Export
+    editDocument,
+    deleteDocument
   };
 };

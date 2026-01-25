@@ -578,7 +578,7 @@ const ManageCoursePage: React.FC = () => {
                                const docId = typeof doc === 'object' ? (doc.id || doc.documentId || doc.Id || doc.DocumentId) : null;
 
                                return (
-                               <div key={`d-${i}`} className="flex items-center gap-3 rounded-lg border border-gray-100 bg-gray-50 p-3 group">
+                               <div key={`d-${i}`} className="flex items-center gap-3 rounded-lg border border-gray-100 bg-gray-50 p-3 group hover:border-[#5a2dff]/30 transition-colors">
                                   <FileText size={16} className="text-[#5a2dff]"/>
                                   {docUrl ? (
                                     <a href={docUrl} target="_blank" rel="noreferrer" className="flex-1 text-sm hover:underline hover:text-[#4b24cc]">{docName}</a>
@@ -607,6 +607,9 @@ const ManageCoursePage: React.FC = () => {
                                         </button>
                                     </div>
                                   )}
+
+                                  {/* Tag Tài liệu giống tag Video */}
+                                  <span className="text-xs text-[#5a2dff] bg-[#5a2dff]/10 px-2 py-1 rounded border border-[#5a2dff]/20">Tài liệu</span>
                                </div>
                                );
                              })}
@@ -802,7 +805,7 @@ const ManageCoursePage: React.FC = () => {
                     <label className="mb-1 block text-sm font-semibold text-gray-700">File Tài Liệu <span className="text-red-500">*</span></label>
                     <div className="flex items-center justify-center w-full">
                         <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
-                            <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                            <div className="flex flex-col items-center justify-center text-center">
                                 {docFile ? (
                                     <>
                                         <FileText className="w-8 h-8 mb-2 text-[#5a2dff]" />
@@ -811,9 +814,8 @@ const ManageCoursePage: React.FC = () => {
                                     </>
                                 ) : (
                                     <>
-                                        <UploadCloud className="w-8 h-8 mb-4 text-gray-500" />
-                                        <p className="mb-2 text-sm text-gray-500"><span className="font-semibold">Click để tải lên</span> hoặc kéo thả</p>
-                                        <p className="text-xs text-gray-500">PDF, DOCX, XLSX...</p>
+                                        <UploadCloud className="w-8 h-8 mb-4 text-gray-400" />
+                                        <span className="text-sm text-gray-500">Chọn file mới để thay thế</span>
                                     </>
                                 )}
                             </div>
@@ -928,6 +930,65 @@ const ManageCoursePage: React.FC = () => {
 
                   <div className="flex justify-end gap-2 pt-2 border-t mt-2">
                      <button type="button" onClick={() => setShowEditVideoModal(false)} className="rounded-lg border px-4 py-2 text-sm font-medium hover:bg-gray-50">Hủy</button>
+                     <button type="submit" className="flex items-center gap-2 rounded-lg bg-[#5a2dff] px-4 py-2 text-sm font-medium text-white hover:bg-[#4b24cc]">
+                         Lưu thay đổi
+                     </button>
+                  </div>
+               </form>
+            </div>
+         </div>
+      )}
+
+      {/* --- EDIT DOCUMENT MODAL --- */}
+      {showEditDocumentModal && (
+         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+            <div className="w-full max-w-lg rounded-xl bg-white shadow-xl animate-in fade-in zoom-in-95">
+               <div className="border-b px-6 py-4 flex justify-between items-center">
+                  <h3 className="font-bold text-gray-900">Chỉnh sửa Tài Liệu</h3>
+                  <button onClick={() => setShowEditDocumentModal(false)}><X className="text-gray-400"/></button>
+               </div>
+               <form onSubmit={handleEditDocumentSubmit} className="p-6 space-y-5">
+                  <div>
+                     <label className="mb-1 block text-sm font-semibold text-gray-700">Tên tài liệu <span className="text-red-500">*</span></label>
+                     <input 
+                        autoFocus 
+                        value={editDocName} 
+                        onChange={e => setEditDocName(e.target.value)} 
+                        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#5a2dff] focus:ring-1 focus:ring-[#5a2dff]" 
+                        placeholder="Nhập tên tài liệu..."
+                     />
+                  </div>
+                  
+                  <div>
+                     <label className="mb-1 block text-sm font-semibold text-gray-700">Thay đổi file tài liệu (Tùy chọn)</label>
+                     <div className="flex items-center gap-3">
+                        <label className="flex flex-1 cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed border-gray-300 p-4 hover:bg-gray-50">
+                           <div className="flex flex-col items-center justify-center text-center">
+                              {editDocFile ? (
+                                 <>
+                                    <FileText className="mb-1 h-6 w-6 text-[#5a2dff]" />
+                                    <p className="text-sm font-medium text-gray-700">{editDocFile.name}</p>
+                                    <p className="text-xs text-gray-500">{(editDocFile.size / (1024*1024)).toFixed(2)} MB</p>
+                                 </>
+                              ) : (
+                                 <>
+                                    <UploadCloud className="mb-1 h-6 w-6 text-gray-400" />
+                                    <span className="text-sm text-gray-500">Chọn file mới để thay thế</span>
+                                 </>
+                              )}
+                           </div>
+                           <input type="file" className="hidden" onChange={handleEditDocFileChange} />
+                        </label>
+                        {editDocFile && (
+                          <button type="button" onClick={() => setEditDocFile(null)} className="p-2 text-red-500 hover:bg-red-50 rounded" title="Hủy chọn file">
+                            <Trash size={18}/>
+                          </button>
+                        )}
+                     </div>
+                  </div>
+
+                  <div className="flex justify-end gap-2 pt-2 border-t mt-2">
+                     <button type="button" onClick={() => setShowEditDocumentModal(false)} className="rounded-lg border px-4 py-2 text-sm font-medium hover:bg-gray-50">Hủy</button>
                      <button type="submit" className="flex items-center gap-2 rounded-lg bg-[#5a2dff] px-4 py-2 text-sm font-medium text-white hover:bg-[#4b24cc]">
                          Lưu thay đổi
                      </button>
