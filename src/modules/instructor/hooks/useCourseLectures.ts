@@ -54,7 +54,7 @@ const mapCourseContentToLectures = (raw: any, fallbackCourseId: string): Lecture
       // Extract videos and sort them
       let mappedVideos = Array.isArray(lesson?.videos) ? lesson.videos.map((v: any) => ({
              ...v,
-             // Normalizing video ID: API might return 'id', 'videoId', 'videoid', 'Id' or 'VideoId'
+             // Normalizing video ID: API might return 'id', 'videoId', 'videoid', 'Id', 'VideoId' or 'ID'
              id: v.id || v.videoId || v.videoid || v.Id || v.VideoId || v.ID,
              // Normalizing video name
              name: v.name || v.title || v.fileName || v.Name || v.Title || "Video",
@@ -479,17 +479,10 @@ export const useCourseLectures = (courseId: string) => {
   const getVideo = useCallback(async (videoId: string) => {
     try {
       if (!videoId) return null;
-      
-      // Gọi service để lấy Blob
       const blob = await lectureService.getVideo(videoId);
-      
-      // Kiểm tra blob có hợp lệ không
-      if (blob instanceof Blob && blob.size > 0) {
-        return blob;
-      }
-      return null;
+      return blob;
     } catch (error: any) {
-      console.error("Error fetching video:", error);
+      console.error("Error fetching video in hook:", error);
       return null;
     }
   }, []);
