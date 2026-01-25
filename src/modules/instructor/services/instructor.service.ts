@@ -13,6 +13,15 @@ export const instructorService = {
   },
 
   /**
+   * Fetches a single course by its ID.
+   * @param courseId The ID of the course to fetch.
+   */
+  async getCourseById(courseId: string): Promise<ApiResponse<InstructorCourse>> {
+    const response = await apiClient.get<ApiResponse<InstructorCourse>>(`/Course/${courseId}`);
+    return response.data;
+  },
+
+  /**
    * Fetches all available tags/categories.
    */
   async getAllTags(): Promise<ApiResponse<Tag[]>> {
@@ -29,9 +38,11 @@ export const instructorService = {
     for (let [key, value] of courseData.entries()) {
       console.log(`${key}:`, value);
     }
+
+    // SỬA LỖI: Thêm headers multipart/form-data để đảm bảo apiClient không override thành application/json
     const response = await apiClient.post<CreateCourseResponse>('/Course/create', courseData, {
       headers: {
-        'Content-Type': 'multipart/form-data',
+        "Content-Type": "multipart/form-data",
       },
     });
 

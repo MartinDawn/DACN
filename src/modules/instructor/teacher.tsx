@@ -84,23 +84,29 @@ const InstructorDashboard: React.FC = () => {
     e.preventDefault();
 
     if (!courseImage) {
-      toast.error("The image field is required.");
+      toast.error("Vui lòng chọn ảnh đại diện cho khóa học.");
       return;
     }
 
-    if (!courseName || !coursePrice || !courseDescription || selectedTagIds.length === 0) { // require at least one category
+    // Cho phép giá là 0 (miễn phí), chỉ báo lỗi nếu để trống
+    if (!courseName || coursePrice === "" || !courseDescription || selectedTagIds.length === 0) { // require at least one category
       toast.error("Vui lòng điền đầy đủ các trường bắt buộc, bao gồm cả danh mục.");
       return;
     }
 
     const formData = new FormData();
-    formData.append("Name", courseName);
-    formData.append("Description", courseDescription);
-    formData.append("Price", Number(coursePrice).toString());
-    // Append each selected tag id as separate FormData entries (backend often accepts repeated keys)
-    selectedTagIds.forEach((id) => formData.append("TagIds", id));
+    // SỬA LỖI: Sử dụng camelCase (chữ thường đầu) bởi vì Backend thường map theo camelCase hoặc case-insensitive
+    // Lỗi "The name field is required" gợi ý backend đang tìm key "name"
+    formData.append("name", courseName);
+    formData.append("description", courseDescription);
+    formData.append("price", Number(coursePrice).toString());
+    
+    // Gửi danh sách tagIds 
+    selectedTagIds.forEach((id) => formData.append("tagIds", id));
+    
     if (courseImage) {
-      formData.append("Image", courseImage);
+      // Backend thường yêu cầu tên trường file là image (lowercase)
+      formData.append("image", courseImage);
     }
 
     // CALL hook -> MAY RETURN InstructorCourse | null | { status: 'not-instructor' }
@@ -118,7 +124,7 @@ const InstructorDashboard: React.FC = () => {
         if (prev.some((c) => c.id === createdCourse.id)) return prev;
         return [createdCourse, ...prev];
       });
-      navigate(`/instructor/courses/manage/${createdCourse.id}`);
+      navigate(`/instructor/courses/manage/${createdCourse.id}`, { state: { course: createdCourse } });
       setShowCreateCourseForm(false);
       return;
     }
@@ -537,7 +543,7 @@ const InstructorDashboard: React.FC = () => {
                     
                     <div className="mt-5">
                       <button 
-                        onClick={() => navigate(`/instructor/courses/manage/${course.id}`)}
+                        onClick={() => navigate(`/instructor/courses/manage/${course.id}`, { state: { course } })}
                         className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#5a2dff] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#4a21eb] active:translate-y-0.5">
                           <Settings size={18} />
                           Quản lý
