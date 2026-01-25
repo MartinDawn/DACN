@@ -131,10 +131,10 @@ const ManageCoursePage: React.FC = () => {
     if (e.target.files && e.target.files[0]) {
        const file = e.target.files[0];
        setVideoFile(file);
-       // Auto fill title if empty
-       if (!videoTitle) {
-          setVideoTitle(file.name.replace(/\.[^/.]+$/, ""));
-       }
+       
+       // Tự động điền tiêu đề bằng tên file (bỏ đuôi mở rộng .mp4, .mp3, ...)
+       const cleanName = file.name.replace(/\.(mp4|mp3|webm|mkv|avi)$/i, "");
+       setVideoTitle(cleanName);
     }
   };
 
@@ -164,20 +164,38 @@ const ManageCoursePage: React.FC = () => {
   const [editingVideoId, setEditingVideoId] = useState<string | null>(null);
   const [editingVideoLectureId, setEditingVideoLectureId] = useState<string | null>(null);
   const [editVideoTitle, setEditVideoTitle] = useState("");
+  const [editVideoFile, setEditVideoFile] = useState<File | null>(null);
 
   const openEditVideo = (lectureId: string, video: any) => {
     setEditingVideoLectureId(lectureId);
     setEditingVideoId(video.id);
+    setEditVideoFile(null); // Reset file
+    // Determine current name based on available properties
     const currTitle = typeof video === 'string' ? video : (video.title ?? video.name ?? "");
-    setEditVideoTitle(currTitle);
+    // Loại bỏ đuôi file khi hiển thị form sửa
+    setEditVideoTitle(currTitle.replace(/\.(mp4|mp3|webm|mkv|avi)$/i, ""));
     setShowEditVideoModal(true);
   }
+
+  const handleEditVideoFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+       setEditVideoFile(e.target.files[0]);
+    }
+  };
 
   const handleEditVideoSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingVideoId || !editingVideoLectureId) return;
     
-    await editVideo(editingVideoLectureId, editingVideoId, { title: editVideoTitle });
+    if (!editVideoTitle.trim()) {
+        toast.error("Tên video không được để trống");
+        return;
+    }
+    
+    await editVideo(editingVideoLectureId, editingVideoId, { 
+      title: editVideoTitle.trim(),
+      videoFile: editVideoFile || undefined
+    });
     setShowEditVideoModal(false);
   };
 
@@ -279,10 +297,13 @@ const ManageCoursePage: React.FC = () => {
                              {lecture.videos && lecture.videos.length > 0 ? (
                                lecture.videos.map((vid: any, vidIdx: number) => {
                                  // Handle if video is object or string
-                                 const vidName = typeof vid === 'string' ? vid : (vid.name || vid.title || `Video ${vidIdx+1}`);
+                                 const rawVidName = typeof vid === 'string' ? vid : (vid.name || vid.title || `Video ${vidIdx+1}`);
+                                 // Loại bỏ đuôi .mp4, .mp3... khỏi tên hiển thị trong danh sách
+                                 const vidName = rawVidName.replace(/\.(mp4|mp3|webm|mkv|avi)$/i, "");
+
                                  const vidId = vid?.id; // Assuming object has ID
                                  return (
-                                   <div key={vidIdx} className="flex items-center gap-3 rounded-lg border border-gray-100 bg-gray-50 p-3 group">
+                                   <div key={vidIdx} className="flex items-center gap-3 rounded-lg border border-gray-100 bg-gray-50 p-3 group hover:border-indigo-200 transition-colors">
                                       <div className="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-100 text-indigo-600">
                                         <Video size={14} />
                                       </div>
@@ -290,27 +311,27 @@ const ManageCoursePage: React.FC = () => {
                                       
                                       {/* Action buttons only if we have an ID */}
                                       {vidId && (
-                                        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <div className="flex gap-2">
                                            <button 
                                               type="button" 
                                               onClick={() => openEditVideo(lecture.id, vid)}
-                                              className="p-1.5 text-gray-400 hover:text-indigo-600 rounded hover:bg-white"
+                                              className="p-1.5 text-gray-500 hover:text-indigo-600 hover:bg-white rounded transition-colors"
                                               title="Sửa tên video"
                                            >
-                                              <Edit2 size={14} />
+                                              <Edit2 size={15} />
                                            </button>
                                            <button 
                                               type="button" 
                                               onClick={() => handleDeleteVideo(lecture.id, vidId)}
-                                              className="p-1.5 text-gray-400 hover:text-red-600 rounded hover:bg-white"
+                                              className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-white rounded transition-colors"
                                               title="Xóa video"
                                            >
-                                              <Trash size={14} />
+                                              <Trash size={15} />
                                            </button>
                                         </div>
                                       )}
 
-                                      <span className="text-xs text-green-600 bg-green-50 px-2 py-1 rounded">Video</span>
+                                      <span className="text-xs text-green-600 bg-green-50 px-2 py-1 rounded border border-green-100">Video</span>
                                    </div>
                                  );
                                })
@@ -503,14 +524,47 @@ const ManageCoursePage: React.FC = () => {
          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
             <div className="w-full max-w-lg rounded-xl bg-white shadow-xl animate-in fade-in zoom-in-95">
                <div className="border-b px-6 py-4 flex justify-between items-center">
-                  <h3 className="font-bold text-gray-900">Đổi tên Video</h3>
+                  <h3 className="font-bold text-gray-900">Chỉnh sửa Video</h3>
                   <button onClick={() => setShowEditVideoModal(false)}><X className="text-gray-400"/></button>
                </div>
                <form onSubmit={handleEditVideoSubmit} className="p-6 space-y-5">
                   <div>
-                     <label className="mb-1 block text-sm font-semibold text-gray-700">Tiêu đề mới <span className="text-red-500">*</span></label>
-                     <input autoFocus value={editVideoTitle} onChange={e => setEditVideoTitle(e.target.value)} 
-                            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#5a2dff] focus:ring-1 focus:ring-[#5a2dff]" />
+                     <label className="mb-1 block text-sm font-semibold text-gray-700">Tiêu đề video <span className="text-red-500">*</span></label>
+                     <input 
+                        autoFocus 
+                        value={editVideoTitle} 
+                        onChange={e => setEditVideoTitle(e.target.value)} 
+                        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#5a2dff] focus:ring-1 focus:ring-[#5a2dff]" 
+                        placeholder="Nhập tiêu đề video..."
+                     />
+                  </div>
+                  
+                  <div>
+                     <label className="mb-1 block text-sm font-semibold text-gray-700">Thay đổi file video (Tùy chọn)</label>
+                     <div className="flex items-center gap-3">
+                        <label className="flex flex-1 cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed border-gray-300 p-4 hover:bg-gray-50">
+                           <div className="flex flex-col items-center justify-center text-center">
+                              {editVideoFile ? (
+                                 <>
+                                    <Video className="mb-1 h-6 w-6 text-indigo-500" />
+                                    <p className="text-sm font-medium text-gray-700">{editVideoFile.name}</p>
+                                    <p className="text-xs text-gray-500">{(editVideoFile.size / (1024*1024)).toFixed(2)} MB</p>
+                                 </>
+                              ) : (
+                                 <>
+                                    <UploadCloud className="mb-1 h-6 w-6 text-gray-400" />
+                                    <span className="text-sm text-gray-500">Chọn file mới để thay thế</span>
+                                 </>
+                              )}
+                           </div>
+                           <input type="file" className="hidden" accept="video/*" onChange={handleEditVideoFileChange} />
+                        </label>
+                        {editVideoFile && (
+                          <button type="button" onClick={() => setEditVideoFile(null)} className="p-2 text-red-500 hover:bg-red-50 rounded" title="Hủy chọn file">
+                            <Trash size={18}/>
+                          </button>
+                        )}
+                     </div>
                   </div>
 
                   <div className="flex justify-end gap-2 pt-2 border-t mt-2">

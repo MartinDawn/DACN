@@ -121,15 +121,29 @@ export const lectureService = {
   },
 
   // Update video details (e.g. title)
-  async updateVideo(videoId: string, payload: { title?: string }, lang = "vi"): Promise<any> {
+  async updateVideo(videoId: string, payload: { title?: string; videoFile?: File }, lang = "vi"): Promise<any> {
     const formData = new FormData();
     if (payload.title) {
-      // Key "title" or "name" depends on backend DTO. Assuming "title" based on context.
-      formData.append("title", payload.title);
+      // Key "Name" matches the API requirement from the screenshot (not 'title')
+      formData.append("Name", payload.title);
     }
 
+    if (payload.videoFile) {
+       formData.append("VideoFile", payload.videoFile);
+    }
+
+    // Ensure we handle FormData correctly for PUT like we do for POST
     const response = await apiClient.put<any>(`/Lecture/update-video/${videoId}`, formData, {
       headers: { "Accept-Language": lang },
+      transformRequest: [
+        (data: any, headers: any) => {
+          // Remove Content-Type so browser sets boundary for multipart/form-data
+          if (headers && headers["Content-Type"]) {
+            delete headers["Content-Type"];
+          }
+          return data;
+        },
+      ],
     });
     return response.data;
   },

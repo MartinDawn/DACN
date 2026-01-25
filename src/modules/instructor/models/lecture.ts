@@ -65,4 +65,5 @@ export interface DeleteLectureResponse extends LectureResponseBase {
 
 export interface UpdateVideoPayload {
   title?: string;
+  videoFile?: File; 
 }

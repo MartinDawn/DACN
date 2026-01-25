@@ -275,11 +275,18 @@ export const useCourseLectures = (courseId: string) => {
     return false;
   }, []); // removed deps
 
-  const editVideo = useCallback(async (lectureId: string, videoId: string, payload: { title: string }) => {
+  const editVideo = useCallback(async (lectureId: string, videoId: string, payload: { title: string; videoFile?: File }) => {
     try {
-      const response = await lectureService.updateVideo(videoId, payload);
-      // Assumption: API returns success or updated data.
-      // Optimistically update local state for smoother UI
+      await lectureService.updateVideo(videoId, { title: payload.title, videoFile: payload.videoFile });
+      
+      // Nếu có thay đổi file video, cần load lại dữ liệu để lấy URL mới
+      if (payload.videoFile) {
+        await fetchLectures();
+        toast.success("Cập nhật video và tiêu đề thành công.");
+        return true;
+      }
+      
+      // Nếu chỉ đổi tên, cập nhật state cục bộ cho nhanh
       setLectures((prev) => prev.map((l) => {
           if (l.id !== lectureId) return l;
           return {
@@ -295,7 +302,7 @@ export const useCourseLectures = (courseId: string) => {
       toast.error("Lỗi cập nhật video.");
       return false;
     }
-  }, []);
+  }, [fetchLectures]);
 
   const deleteVideo = useCallback(async (lectureId: string, videoId: string) => {
     try {
