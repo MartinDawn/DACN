@@ -416,6 +416,65 @@ export const useCourseLectures = (courseId: string) => {
     }
   }, []);
 
+  const editDocument = useCallback(async (lectureId: string, documentId: string, payload: { name: string; documentFile?: File }) => {
+    try {
+      await lectureService.updateDocument(documentId, { name: payload.name, documentFile: payload.documentFile });
+      
+      if (payload.documentFile) {
+         // If file changed, refetch to assume fresh URLs/metadata
+         await fetchLectures(); 
+         toast.success("Cập nhật tài liệu thành công.");
+         return true;
+      }
+      
+      // Optimistic update for renaming
+      setLectures((prev) => prev.map((l) => {
+          if (l.id !== lectureId) return l;
+          
+          let updatedDocs = l.documents ? [...l.documents] : [];
+          updatedDocs = updatedDocs.map(d => {
+             const dId = d.id || d.documentId || d.Id;
+             if (String(dId) === String(documentId)) {
+                 return { ...d, name: payload.name };
+             }
+             return d;
+          });
+          
+          return { ...l, documents: updatedDocs };
+      }));
+      
+      toast.success("Cập nhật tên tài liệu thành công.");
+      await fetchLectures(); // Sync
+      return true;
+    } catch (error) {
+      console.error(error);
+      toast.error("Lỗi cập nhật tài liệu.");
+      return false;
+    }
+  }, [fetchLectures]);
+
+  const deleteDocument = useCallback(async (lectureId: string, documentId: string) => {
+      try {
+        await lectureService.deleteDocument(documentId);
+        // Optimistic remove
+        setLectures((prev) => prev.map((l) => {
+            if (l.id !== lectureId) return l;
+            const newDocs = l.documents ? l.documents.filter((d: any) => String(d.id || d.documentId || d.Id) !== String(documentId)) : [];
+            return {
+              ...l,
+              documents: newDocs
+            };
+        }));
+
+        toast.success("Xóa tài liệu thành công.");
+        return true;
+      } catch (error) {
+        console.error(error);
+        toast.error("Lỗi xóa tài liệu.");
+        return false;
+      }
+  }, []);
+
   // Get Video content for preview
   const getVideo = useCallback(async (videoId: string) => {
     try {
@@ -451,6 +510,8 @@ export const useCourseLectures = (courseId: string) => {
     deleteVideo,
     getVideo,
     uploadLectureDocument,
-    uploadingDocLectureIds
+    uploadingDocLectureIds,
+    editDocument, // Export
+    deleteDocument // Export
   };
 };

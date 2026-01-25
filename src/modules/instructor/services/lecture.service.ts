@@ -110,6 +110,39 @@ export const lectureService = {
     return response.data;
   },
 
+  // Update Document
+  async updateDocument(documentId: string, payload: { name?: string; documentFile?: File }, lang = "vi"): Promise<any> {
+    const formData = new FormData();
+    // Use "Name" to match API requirement
+    if (payload.name) {
+      formData.append("Name", payload.name);
+    }
+    if (payload.documentFile) {
+        formData.append("DocumentFile", payload.documentFile);
+    }
+
+    const response = await apiClient.put<any>(`/Lecture/update-document/${documentId}`, formData, {
+      headers: { "Accept-Language": lang },
+      transformRequest: [
+        (data: any, headers: any) => {
+          if (headers && headers["Content-Type"]) {
+            delete headers["Content-Type"];
+          }
+          return data;
+        },
+      ],
+    });
+    return response.data;
+  },
+
+  // Delete Document
+  async deleteDocument(documentId: string, lang = "vi"): Promise<any> {
+    const response = await apiClient.delete<any>(`/Lecture/delete-document/${documentId}`, {
+      headers: { "Accept-Language": lang },
+    });
+    return response.data;
+  },
+
   // Update lecture (name/description)
   async updateLecture(lectureId: string, payload: UpdateLecturePayload, lang = "vi"): Promise<UpdateLectureResponse> {
     const formData = new FormData();

@@ -46,13 +46,23 @@ const ManageCoursePage: React.FC = () => {
   const [showDocumentModal, setShowDocumentModal] = useState(false);
   const [docFile, setDocFile] = useState<File | null>(null);
 
+  // --- Document Edit/Delete States ---
+  const [showEditDocumentModal, setShowEditDocumentModal] = useState(false);
+  const [editingDocumentId, setEditingDocumentId] = useState<string | null>(null);
+  const [editingDocLectureId, setEditingDocLectureId] = useState<string | null>(null);
+  const [editDocName, setEditDocName] = useState("");
+  const [editDocFile, setEditDocFile] = useState<File | null>(null);
+
+  const [showDeleteDocumentModal, setShowDeleteDocumentModal] = useState(false);
+  const [docToDelete, setDocToDelete] = useState<{ lectureId: string; documentId: string } | null>(null);
+
   // UI States for Expansion
   const [expandedLectures, setExpandedLectures] = useState<Record<string, boolean>>({});
 
   const { 
     lectures, fetchLectures, isCreating, uploadingLectureIds, createLecture, 
     uploadLectureVideo, deleteLecture, lecturesLoading, editLecture, editVideo, deleteVideo, getVideo,
-    uploadLectureDocument, uploadingDocLectureIds // Import new items
+    uploadLectureDocument, uploadingDocLectureIds, editDocument, deleteDocument // Destructure new hooks
   } = useCourseLectures(courseId ?? "");
 
   useEffect(() => {
@@ -168,6 +178,51 @@ const ManageCoursePage: React.FC = () => {
     if (e.target.files && e.target.files[0]) {
        setDocFile(e.target.files[0]);
     }
+  };
+
+  // --- Document Actions ---
+  const openEditDocument = (lectureId: string, doc: any) => {
+    setEditingDocLectureId(lectureId);
+    const docId = doc.id || doc.documentId || doc.Id || doc.DocumentId;
+    setEditingDocumentId(docId);
+    setEditDocFile(null);
+    const currentName = typeof doc === 'string' ? doc : (doc.name ?? doc.fileName ?? "");
+    setEditDocName(currentName);
+    setShowEditDocumentModal(true);
+  };
+
+  const handleEditDocFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+       setEditDocFile(e.target.files[0]);
+    }
+  };
+
+  const handleEditDocumentSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingDocumentId || !editingDocLectureId) return;
+
+    if (!editDocName.trim()) {
+        toast.error("Tên tài liệu không được để trống");
+        return;
+    }
+
+    await editDocument(editingDocLectureId, editingDocumentId, {
+        name: editDocName.trim(),
+        documentFile: editDocFile || undefined
+    });
+    setShowEditDocumentModal(false);
+  };
+
+  const handleDeleteDocument = (lectureId: string, documentId: string) => {
+      setDocToDelete({ lectureId, documentId });
+      setShowDeleteDocumentModal(true);
+  };
+
+  const confirmDeleteDocument = async () => {
+      if (!docToDelete) return;
+      await deleteDocument(docToDelete.lectureId, docToDelete.documentId);
+      setShowDeleteDocumentModal(false);
+      setDocToDelete(null);
   };
 
   const handlePreviewVideo = async (video: any) => {
@@ -381,8 +436,10 @@ const ManageCoursePage: React.FC = () => {
         
         // Đóng các modal khác
         if (showDeleteVideoModal) { setShowDeleteVideoModal(false); return; }
+        if (showDeleteDocumentModal) { setShowDeleteDocumentModal(false); return; } // Added
         if (showDeleteLectureModal) { setShowDeleteLectureModal(false); return; }
         if (showEditVideoModal) { setShowEditVideoModal(false); return; }
+        if (showEditDocumentModal) { setShowEditDocumentModal(false); return; } // Added
         if (showVideoModal) { setShowVideoModal(false); return; }
         if (showDocumentModal) { setShowDocumentModal(false); return; }
         if (showEditModal) { setShowEditModal(false); return; }
@@ -392,7 +449,7 @@ const ManageCoursePage: React.FC = () => {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [previewVideo, showDeleteVideoModal, showDeleteLectureModal, showEditVideoModal, showVideoModal, showDocumentModal, showEditModal, showLectureModal]);
+  }, [previewVideo, showDeleteVideoModal, showDeleteDocumentModal, showDeleteLectureModal, showEditVideoModal, showEditDocumentModal, showVideoModal, showDocumentModal, showEditModal, showLectureModal]);
 
   if (loadingCourse) return <InstructorLayout><div className="flex justify-center py-20"><Loader2 className="animate-spin text-[#5a2dff]" /></div></InstructorLayout>
 
@@ -518,13 +575,37 @@ const ManageCoursePage: React.FC = () => {
                              {(lecture.documents && lecture.documents.length > 0 ? lecture.documents : lecture.documentNames)?.map((doc: any, i: number) => {
                                const docName = typeof doc === 'string' ? doc : (doc.name || doc.fileName || `Tài liệu ${i+1}`);
                                const docUrl = typeof doc === 'object' ? (doc.url || doc.filePath) : null;
+                               const docId = typeof doc === 'object' ? (doc.id || doc.documentId || doc.Id || doc.DocumentId) : null;
+
                                return (
-                               <div key={`d-${i}`} className="flex items-center gap-3 rounded-lg border border-gray-100 bg-gray-50 p-3">
+                               <div key={`d-${i}`} className="flex items-center gap-3 rounded-lg border border-gray-100 bg-gray-50 p-3 group">
                                   <FileText size={16} className="text-[#5a2dff]"/>
                                   {docUrl ? (
                                     <a href={docUrl} target="_blank" rel="noreferrer" className="flex-1 text-sm hover:underline hover:text-[#4b24cc]">{docName}</a>
                                   ) : (
                                     <span className="flex-1 text-sm">{docName}</span>
+                                  )}
+                                  
+                                  {/* Actions for Document */}
+                                  {docId && (
+                                    <div className="flex gap-2">
+                                        <button 
+                                            type="button"
+                                            onClick={() => openEditDocument(lecture.id, doc)}
+                                            className="p-1.5 text-gray-500 hover:text-[#5a2dff] hover:bg-white rounded transition-colors"
+                                            title="Sửa tài liệu"
+                                        >
+                                            <Edit2 size={15} />
+                                        </button>
+                                        <button 
+                                            type="button"
+                                            onClick={() => handleDeleteDocument(lecture.id, docId)}
+                                            className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-white rounded transition-colors"
+                                            title="Xóa tài liệu"
+                                        >
+                                            <Trash size={15} />
+                                        </button>
+                                    </div>
                                   )}
                                </div>
                                );
@@ -835,7 +916,7 @@ const ManageCoursePage: React.FC = () => {
                                  </>
                               )}
                            </div>
-                           <input type="file" className="hidden" accept="video/*" onChange={handleEditVideoFileChange} />
+                           <input type="file" className="hidden" onChange={handleEditVideoFileChange} />
                         </label>
                         {editVideoFile && (
                           <button type="button" onClick={() => setEditVideoFile(null)} className="p-2 text-red-500 hover:bg-red-50 rounded" title="Hủy chọn file">
@@ -881,6 +962,37 @@ const ManageCoursePage: React.FC = () => {
                        className="rounded-lg bg-[#5a2dff] px-4 py-2 text-sm font-medium text-white hover:bg-[#4b24cc]"
                     >
                        Đồng ý xóa
+                    </button>
+                 </div>
+              </div>
+           </div>
+        </div>
+      )}
+
+      {/* --- DELETE DOCUMENT MODAL --- */}
+      {showDeleteDocumentModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+           <div className="w-full max-w-sm rounded-xl bg-white shadow-xl animate-in fade-in zoom-in-95">
+              <div className="p-6 text-center">
+                 <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-[#5a2dff]/10">
+                    <Trash className="h-6 w-6 text-[#5a2dff]" />
+                 </div>
+                 <h3 className="mt-4 text-lg font-semibold text-gray-900">Xóa Tài liệu?</h3>
+                 <p className="mt-2 text-sm text-gray-500">
+                    Bạn có chắc chắn muốn xóa tài liệu này khỏi bài giảng?
+                 </p>
+                 <div className="mt-6 flex justify-center gap-3">
+                    <button
+                       onClick={() => setShowDeleteDocumentModal(false)}
+                       className="rounded-lg border px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                    >
+                       Hủy
+                    </button>
+                    <button
+                       onClick={confirmDeleteDocument}
+                       className="rounded-lg bg-[#5a2dff] px-4 py-2 text-sm font-medium text-white hover:bg-[#4b24cc]"
+                    >
+                       Xóa ngay
                     </button>
                  </div>
               </div>
