@@ -380,6 +380,19 @@ export const useCourseLectures = (courseId: string) => {
     }
   }, [fetchLectures]);
 
+  const updateVideoOrders = useCallback(async (orders: { id: string; displayOrder: number }[]) => {
+    try {
+      await lectureService.updateVideoOrders(orders);
+      toast.success("Cập nhật thứ tự video thành công.");
+      await fetchLectures();
+      return true;
+    } catch (error) {
+      console.error(error);
+      toast.error("Lỗi cập nhật thứ tự video.");
+      return false;
+    }
+  }, [fetchLectures]);
+
   const editVideo = useCallback(async (lectureId: string, videoId: string, payload: { title: string; videoFile?: File }) => {
     try {
       await lectureService.updateVideo(videoId, { title: payload.title, videoFile: payload.videoFile });
@@ -520,6 +533,7 @@ export const useCourseLectures = (courseId: string) => {
     uploadingDocLectureIds,
     editDocument,
     deleteDocument,
-    updateLectureOrders, // Export new hook
+    updateLectureOrders,
+    updateVideoOrders,
   };
 };

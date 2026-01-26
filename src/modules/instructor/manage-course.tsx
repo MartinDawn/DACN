@@ -38,6 +38,11 @@ const ManageCoursePage: React.FC = () => {
   const [reorderList, setReorderList] = useState<Lecture[]>([]);
   const [isSavingOrder, setIsSavingOrder] = useState(false);
 
+  // --- Video Reorder Modal States ---
+  const [showVideoReorderModal, setShowVideoReorderModal] = useState(false);
+  const [videoReorderList, setVideoReorderList] = useState<any[]>([]);
+  const [isVideoSavingOrder, setIsVideoSavingOrder] = useState(false);
+
   // --- Delete Confirmation States ---
   const [showDeleteLectureModal, setShowDeleteLectureModal] = useState(false);
   const [lectureToDeleteId, setLectureToDeleteId] = useState<string | null>(null);
@@ -67,7 +72,8 @@ const ManageCoursePage: React.FC = () => {
   const { 
     lectures, fetchLectures, isCreating, uploadingLectureIds, createLecture, 
     uploadLectureVideo, deleteLecture, lecturesLoading, editLecture, editVideo, deleteVideo, getVideo,
-    uploadLectureDocument, uploadingDocLectureIds, editDocument, deleteDocument, updateLectureOrders
+    uploadLectureDocument, uploadingDocLectureIds, editDocument, deleteDocument, updateLectureOrders,
+    updateVideoOrders // Destructure new function
   } = useCourseLectures(courseId ?? "");
 
   useEffect(() => {
@@ -129,6 +135,49 @@ const ManageCoursePage: React.FC = () => {
     
     if (success) {
       setShowReorderModal(false);
+    }
+  };
+
+  // --- Video Reorder Handlers ---
+  const openVideoReorderModal = (lecture: any) => {
+    if (!lecture.videos || lecture.videos.length === 0) {
+        toast.error("Chương này chưa có video nào để sắp xếp.");
+        return;
+    }
+    // Clone and sort videos
+    const sorted = [...lecture.videos].sort((a: any, b: any) => {
+        const orderA = a.displayOrder ?? a.order ?? 0;
+        const orderB = b.displayOrder ?? b.order ?? 0;
+        return orderA - orderB;
+    });
+    setVideoReorderList(sorted);
+    setShowVideoReorderModal(true);
+  };
+
+  const moveVideoItem = (index: number, direction: 'up' | 'down') => {
+    const newList = [...videoReorderList];
+    if (direction === 'up') {
+      if (index === 0) return;
+      [newList[index - 1], newList[index]] = [newList[index], newList[index - 1]];
+    } else {
+      if (index === newList.length - 1) return;
+      [newList[index + 1], newList[index]] = [newList[index], newList[index + 1]];
+    }
+    setVideoReorderList(newList);
+  };
+
+  const handleSaveVideoOrder = async () => {
+    setIsVideoSavingOrder(true);
+    const payload = videoReorderList.map((v, index) => ({
+      id: v.id,
+      displayOrder: index + 1
+    }));
+    
+    const success = await updateVideoOrders(payload);
+    setIsVideoSavingOrder(false);
+    
+    if (success) {
+      setShowVideoReorderModal(false);
     }
   };
 
@@ -387,7 +436,7 @@ const ManageCoursePage: React.FC = () => {
        setVideoFile(file);
        
        // Tự động điền tiêu đề bằng tên file (bỏ đuôi mở rộng .mp4, .mp3, ...)
-       const cleanName = file.name.replace(/\.(mp4|mp3|webm|mkv|avi|mov)$/i, "");
+       const cleanName = file.name.replace(/\.(mp4|mp3|webm|mkv|avi)$/i, "");
        setVideoTitle(cleanName);
     }
   };
@@ -532,7 +581,8 @@ const ManageCoursePage: React.FC = () => {
         }
         
         // Đóng các modal khác
-        if (showReorderModal) { setShowReorderModal(false); return; } // Add closing for Reorder Modal
+        if (showReorderModal) { setShowReorderModal(false); return; } 
+        if (showVideoReorderModal) { setShowVideoReorderModal(false); return; } // Add video reorder modal close
         if (showDeleteVideoModal) { setShowDeleteVideoModal(false); return; }
         if (showDeleteDocumentModal) { setShowDeleteDocumentModal(false); return; } 
         if (showDeleteLectureModal) { setShowDeleteLectureModal(false); return; }
@@ -547,7 +597,7 @@ const ManageCoursePage: React.FC = () => {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [previewVideo, showReorderModal, showDeleteVideoModal, showDeleteDocumentModal, showDeleteLectureModal, showEditVideoModal, showEditDocumentModal, showVideoModal, showDocumentModal, showEditModal, showLectureModal]);
+  }, [previewVideo, showReorderModal, showVideoReorderModal /*Add ref*/, showDeleteVideoModal, showDeleteDocumentModal, showDeleteLectureModal, showEditVideoModal, showEditDocumentModal, showVideoModal, showDocumentModal, showEditModal, showLectureModal]);
 
   if (loadingCourse) return <InstructorLayout><div className="flex justify-center py-20"><Loader2 className="animate-spin text-[#5a2dff]" /></div></InstructorLayout>
 
@@ -604,6 +654,8 @@ const ManageCoursePage: React.FC = () => {
                            {isExpanded ? <ChevronUp size={16} className="text-gray-400"/> : <ChevronDown size={16} className="text-gray-400"/>}
                         </div>
                         <div className="flex items-center gap-2">
+                           {/* Reorder Videos Button */}
+                           <button onClick={() => openVideoReorderModal(lecture)} className="p-2 text-gray-400 hover:text-[#5a2dff]" title="Sắp xếp video trong chương"><List size={16}/></button>
                            <button onClick={() => openEditModal(lecture)} className="p-2 text-gray-400 hover:text-[#5a2dff]" title="Chỉnh sửa"><Edit2 size={16}/></button>
                            <button onClick={() => handleDeleteLecture(lecture.id)} className="p-2 text-gray-400 hover:text-red-500" title="Xóa"><Trash size={16}/></button>
                         </div>
@@ -1260,6 +1312,67 @@ const ManageCoursePage: React.FC = () => {
                     className="flex items-center gap-2 rounded-lg bg-[#5a2dff] px-4 py-2 text-sm font-medium text-white hover:bg-[#4b24cc] disabled:opacity-70"
                  >
                     {isSavingOrder && <Loader2 className="animate-spin h-4 w-4"/>}
+                    Lưu thứ tự
+                 </button>
+              </div>
+           </div>
+        </div>
+      )}
+
+      {/* --- VIDEO REORDER MODAL --- */}
+      {showVideoReorderModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+           <div className="w-full max-w-lg rounded-xl bg-white shadow-xl animate-in fade-in zoom-in-95 flex flex-col max-h-[85vh]">
+              <div className="border-b px-6 py-4 flex justify-between items-center">
+                 <h3 className="font-bold text-gray-900">Sắp xếp Video</h3>
+                 <button onClick={() => setShowVideoReorderModal(false)}><X className="text-gray-400"/></button>
+              </div>
+              
+              <div className="p-6 overflow-y-auto flex-1">
+                 <p className="text-sm text-gray-500 mb-4">Sử dụng nút lên xuống để thay đổi thứ tự video trong chương học.</p>
+                 <div className="space-y-2">
+                    {videoReorderList.map((v, idx) => {
+                       const vName = typeof v === 'string' ? v : (v.name || v.title || v.fileName || "Video");
+                       const cleanName = vName.replace(/\.(mp4|mp3|webm|mkv|avi)$/i, "");
+                       return (
+                           <div key={v.id || idx} className="flex items-center justify-between rounded-lg border bg-gray-50 p-3">
+                              <div className="flex items-center gap-3">
+                                 <div className="flex h-6 w-6 items-center justify-center rounded-full bg-gray-200 text-xs font-bold text-gray-600">
+                                    {idx + 1}
+                                 </div>
+                                 <Video size={16} className="text-gray-500"/>
+                                 <span className="text-sm font-medium text-gray-800 line-clamp-1">{cleanName}</span>
+                              </div>
+                              <div className="flex gap-1">
+                                 <button 
+                                    onClick={() => moveVideoItem(idx, 'up')}
+                                    disabled={idx === 0}
+                                    className="p-1 text-gray-500 hover:bg-white hover:shadow rounded disabled:opacity-30"
+                                 >
+                                    <ChevronUp size={18}/>
+                                 </button>
+                                 <button 
+                                    onClick={() => moveVideoItem(idx, 'down')}
+                                    disabled={idx === videoReorderList.length - 1}
+                                    className="p-1 text-gray-500 hover:bg-white hover:shadow rounded disabled:opacity-30"
+                                 >
+                                    <ChevronDown size={18}/>
+                                 </button>
+                              </div>
+                           </div>
+                       );
+                    })}
+                 </div>
+              </div>
+
+              <div className="border-t px-6 py-4 flex justify-end gap-2 bg-gray-50 rounded-b-xl">
+                 <button onClick={() => setShowVideoReorderModal(false)} className="rounded-lg border px-4 py-2 text-sm font-medium hover:bg-white text-gray-700">Hủy</button>
+                 <button 
+                    onClick={handleSaveVideoOrder} 
+                    disabled={isVideoSavingOrder}
+                    className="flex items-center gap-2 rounded-lg bg-[#5a2dff] px-4 py-2 text-sm font-medium text-white hover:bg-[#4b24cc] disabled:opacity-70"
+                 >
+                    {isVideoSavingOrder && <Loader2 className="animate-spin h-4 w-4"/>}
                     Lưu thứ tự
                  </button>
               </div>

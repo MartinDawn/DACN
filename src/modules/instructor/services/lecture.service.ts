@@ -181,6 +181,14 @@ export const lectureService = {
     return response.data;
   },
 
+  // Update order of multiple videos
+  async updateVideoOrders(payload: UpdateOrderPayload[], lang = "vi"): Promise<any> {
+    const response = await apiClient.patch<any>("/Lecture/update-video-orders", payload, {
+      headers: { "Accept-Language": lang },
+    });
+    return response.data;
+  },
+
   // Update video details (e.g. title)
   async updateVideo(videoId: string, payload: { title?: string; videoFile?: File }, lang = "vi"): Promise<any> {
     const formData = new FormData();
