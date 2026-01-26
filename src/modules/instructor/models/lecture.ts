@@ -68,3 +68,8 @@ export interface UpdateVideoPayload {
   title?: string;
   videoFile?: File; 
 }
+
+export interface UpdateOrderPayload {
+  id: string;
+  displayOrder: number;
+}

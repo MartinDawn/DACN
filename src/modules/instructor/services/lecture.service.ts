@@ -9,6 +9,7 @@ import type {
   UpdateLecturePayload,
   UpdateLectureResponse,
   DeleteLectureResponse,
+  UpdateOrderPayload, // Import struct
 } from "../models/lecture";
 
 export const lectureService = {
@@ -168,6 +169,22 @@ export const lectureService = {
       headers: {
         "Accept-Language": lang,
       },
+    });
+    return response.data;
+  },
+
+  // Update order of multiple lectures
+  async updateLectureOrders(payload: UpdateOrderPayload[], lang = "vi"): Promise<any> {
+    const response = await apiClient.patch<any>("/Lecture/update-orders", payload, {
+      headers: { "Accept-Language": lang },
+    });
+    return response.data;
+  },
+
+  // Update order of multiple videos
+  async updateVideoOrders(payload: UpdateOrderPayload[], lang = "vi"): Promise<any> {
+    const response = await apiClient.patch<any>("/Lecture/update-video-orders", payload, {
+      headers: { "Accept-Language": lang },
     });
     return response.data;
   },
