@@ -367,6 +367,19 @@ export const useCourseLectures = (courseId: string) => {
     return false;
   }, []); // removed deps
 
+  const updateLectureOrders = useCallback(async (orders: { id: string; displayOrder: number }[]) => {
+    try {
+      await lectureService.updateLectureOrders(orders);
+      toast.success("Cập nhật thứ tự thành công.");
+      await fetchLectures();
+      return true;
+    } catch (error) {
+      console.error(error);
+      toast.error("Lỗi cập nhật thứ tự.");
+      return false;
+    }
+  }, [fetchLectures]);
+
   const editVideo = useCallback(async (lectureId: string, videoId: string, payload: { title: string; videoFile?: File }) => {
     try {
       await lectureService.updateVideo(videoId, { title: payload.title, videoFile: payload.videoFile });
@@ -462,7 +475,10 @@ export const useCourseLectures = (courseId: string) => {
             const newDocs = l.documents ? l.documents.filter((d: any) => String(d.id || d.documentId || d.Id) !== String(documentId)) : [];
             return {
               ...l,
-              documents: newDocs
+              documents: newDocs,
+              // FIX: Cập nhật documentNames đồng bộ với danh sách mới.
+              // Điều này ngăn UI fallback về danh sách cũ khi documents trở nên rỗng.
+              documentNames: newDocs.map((d: any) => d.name || d.fileName || "")
             };
         }));
 
@@ -503,6 +519,7 @@ export const useCourseLectures = (courseId: string) => {
     uploadLectureDocument,
     uploadingDocLectureIds,
     editDocument,
-    deleteDocument
+    deleteDocument,
+    updateLectureOrders, // Export new hook
   };
 };

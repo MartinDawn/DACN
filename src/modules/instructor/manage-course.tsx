@@ -2,14 +2,15 @@ import React, { useEffect, useState } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { 
   ArrowLeft, PlusCircle, Video, UploadCloud, Loader2, X, Trash, Edit2, 
-  LayoutList, FileText, HelpCircle, ChevronDown, ChevronUp, PlayCircle // Ensure PlayCircle is imported
+  LayoutList, FileText, HelpCircle, ChevronDown, ChevronUp, PlayCircle, List
 } from "lucide-react";
 import { toast } from "react-hot-toast";
 import InstructorLayout from "../user/layout/layout";
 import { useCourseLectures } from "./hooks/useCourseLectures";
 import { instructorService } from "./services/instructor.service";
 import type { InstructorCourse } from "./models/instructor";
-import { Confirm } from "react-confirm-box"; // optional - if not available fallback to window.confirm (see usage)
+import { Confirm } from "react-confirm-box"; 
+import type { Lecture } from "./models/lecture"; // Ensure Lecture type is imported
 
 const ManageCoursePage: React.FC = () => {
   const params = useParams();
@@ -32,10 +33,14 @@ const ManageCoursePage: React.FC = () => {
   const [videoTitle, setVideoTitle] = useState("");
   const [videoFile, setVideoFile] = useState<File | null>(null);
   
+  // --- Reorder Modal States ---
+  const [showReorderModal, setShowReorderModal] = useState(false);
+  const [reorderList, setReorderList] = useState<Lecture[]>([]);
+  const [isSavingOrder, setIsSavingOrder] = useState(false);
+
   // --- Delete Confirmation States ---
   const [showDeleteLectureModal, setShowDeleteLectureModal] = useState(false);
   const [lectureToDeleteId, setLectureToDeleteId] = useState<string | null>(null);
-
   const [showDeleteVideoModal, setShowDeleteVideoModal] = useState(false);
   const [videoToDelete, setVideoToDelete] = useState<{ lectureId: string; videoId: string } | null>(null);
 
@@ -62,7 +67,7 @@ const ManageCoursePage: React.FC = () => {
   const { 
     lectures, fetchLectures, isCreating, uploadingLectureIds, createLecture, 
     uploadLectureVideo, deleteLecture, lecturesLoading, editLecture, editVideo, deleteVideo, getVideo,
-    uploadLectureDocument, uploadingDocLectureIds, editDocument, deleteDocument // Destructure new hooks
+    uploadLectureDocument, uploadingDocLectureIds, editDocument, deleteDocument, updateLectureOrders
   } = useCourseLectures(courseId ?? "");
 
   useEffect(() => {
@@ -87,6 +92,44 @@ const ManageCoursePage: React.FC = () => {
   const handleManageCourse = () => {
     fetchLectures();
     navigate("/instructor?tab=courses");
+  };
+
+  const openReorderModal = () => {
+    // Clone and sort by current logic
+    const sorted = [...lectures].sort((a, b) => {
+        const orderA = a.displayOrder ?? a.order ?? 0;
+        const orderB = b.displayOrder ?? b.order ?? 0;
+        return orderA - orderB;
+    });
+    setReorderList(sorted);
+    setShowReorderModal(true);
+  };
+
+  const moveLecture = (index: number, direction: 'up' | 'down') => {
+    const newList = [...reorderList];
+    if (direction === 'up') {
+      if (index === 0) return;
+      [newList[index - 1], newList[index]] = [newList[index], newList[index - 1]];
+    } else {
+      if (index === newList.length - 1) return;
+      [newList[index + 1], newList[index]] = [newList[index], newList[index + 1]];
+    }
+    setReorderList(newList);
+  };
+
+  const handleSaveOrder = async () => {
+    setIsSavingOrder(true);
+    const payload = reorderList.map((l, index) => ({
+      id: l.id,
+      displayOrder: index + 1
+    }));
+    
+    const success = await updateLectureOrders(payload);
+    setIsSavingOrder(false);
+    
+    if (success) {
+      setShowReorderModal(false);
+    }
   };
 
   const toggleExpand = (id: string) => {
@@ -489,11 +532,12 @@ const ManageCoursePage: React.FC = () => {
         }
         
         // Đóng các modal khác
+        if (showReorderModal) { setShowReorderModal(false); return; } // Add closing for Reorder Modal
         if (showDeleteVideoModal) { setShowDeleteVideoModal(false); return; }
-        if (showDeleteDocumentModal) { setShowDeleteDocumentModal(false); return; } // Added
+        if (showDeleteDocumentModal) { setShowDeleteDocumentModal(false); return; } 
         if (showDeleteLectureModal) { setShowDeleteLectureModal(false); return; }
         if (showEditVideoModal) { setShowEditVideoModal(false); return; }
-        if (showEditDocumentModal) { setShowEditDocumentModal(false); return; } // Added
+        if (showEditDocumentModal) { setShowEditDocumentModal(false); return; }
         if (showVideoModal) { setShowVideoModal(false); return; }
         if (showDocumentModal) { setShowDocumentModal(false); return; }
         if (showEditModal) { setShowEditModal(false); return; }
@@ -503,7 +547,7 @@ const ManageCoursePage: React.FC = () => {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [previewVideo, showDeleteVideoModal, showDeleteDocumentModal, showDeleteLectureModal, showEditVideoModal, showEditDocumentModal, showVideoModal, showDocumentModal, showEditModal, showLectureModal]);
+  }, [previewVideo, showReorderModal, showDeleteVideoModal, showDeleteDocumentModal, showDeleteLectureModal, showEditVideoModal, showEditDocumentModal, showVideoModal, showDocumentModal, showEditModal, showLectureModal]);
 
   if (loadingCourse) return <InstructorLayout><div className="flex justify-center py-20"><Loader2 className="animate-spin text-[#5a2dff]" /></div></InstructorLayout>
 
@@ -518,12 +562,20 @@ const ManageCoursePage: React.FC = () => {
             <h1 className="text-2xl font-bold text-gray-900">{course?.name}</h1>
             <p className="text-sm text-gray-500">Quản lý nội dung chương trình học</p>
           </div>
-          <button
-            onClick={() => setShowLectureModal(true)}
-            className="flex items-center gap-2 rounded-lg bg-[#5a2dff] px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-[#4b24cc]"
-          >
-            <PlusCircle size={18} /> Thêm Chương Học
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={openReorderModal}
+              className="flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50"
+            >
+              <List size={18} /> Sắp xếp lại
+            </button>
+            <button
+              onClick={() => setShowLectureModal(true)}
+              className="flex items-center gap-2 rounded-lg bg-[#5a2dff] px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-[#4b24cc]"
+            >
+              <PlusCircle size={18} /> Thêm Chương Học
+            </button>
+          </div>
         </div>
 
         <div className="space-y-6">
@@ -643,14 +695,14 @@ const ManageCoursePage: React.FC = () => {
                                   {/* Actions for Document */}
                                   {docId && (
                                     <div className="flex gap-2">
-                                        <button 
+                                        {/* <button 
                                             type="button"
                                             onClick={() => openEditDocument(lecture.id, doc)}
                                             className="p-1.5 text-gray-500 hover:text-[#5a2dff] hover:bg-white rounded transition-colors"
                                             title="Sửa tài liệu"
                                         >
                                             <Edit2 size={15} />
-                                        </button>
+                                        </button> */}
                                         <button 
                                             type="button"
                                             onClick={() => handleDeleteDocument(lecture.id, docId)}
@@ -1154,6 +1206,62 @@ const ManageCoursePage: React.FC = () => {
                        Xóa ngay
                     </button>
                  </div>
+              </div>
+           </div>
+        </div>
+      )}
+
+      {/* --- REORDER MODAL --- */}
+      {showReorderModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+           <div className="w-full max-w-lg rounded-xl bg-white shadow-xl animate-in fade-in zoom-in-95 flex flex-col max-h-[85vh]">
+              <div className="border-b px-6 py-4 flex justify-between items-center">
+                 <h3 className="font-bold text-gray-900">Sắp xếp lại chương học</h3>
+                 <button onClick={() => setShowReorderModal(false)}><X className="text-gray-400"/></button>
+              </div>
+              
+              <div className="p-6 overflow-y-auto flex-1">
+                 <p className="text-sm text-gray-500 mb-4">Sử dụng nút lên xuống để thay đổi thứ tự hiển thị.</p>
+                 <div className="space-y-2">
+                    {reorderList.map((l, idx) => (
+                       <div key={l.id} className="flex items-center justify-between rounded-lg border bg-gray-50 p-3">
+                          <div className="flex items-center gap-3">
+                             <div className="flex h-6 w-6 items-center justify-center rounded-full bg-gray-200 text-xs font-bold text-gray-600">
+                                {idx + 1}
+                             </div>
+                             <span className="text-sm font-medium text-gray-800 line-clamp-1">{l.name}</span>
+                          </div>
+                          <div className="flex gap-1">
+                             <button 
+                                onClick={() => moveLecture(idx, 'up')}
+                                disabled={idx === 0}
+                                className="p-1 text-gray-500 hover:bg-white hover:shadow rounded disabled:opacity-30"
+                             >
+                                <ChevronUp size={18}/>
+                             </button>
+                             <button 
+                                onClick={() => moveLecture(idx, 'down')}
+                                disabled={idx === reorderList.length - 1}
+                                className="p-1 text-gray-500 hover:bg-white hover:shadow rounded disabled:opacity-30"
+                             >
+                                <ChevronDown size={18}/>
+                             </button>
+                          </div>
+                       </div>
+                    ))}
+                 </div>
+              </div>
+
+              <div className="border-t px-6 py-4 flex justify-end gap-2 bg-gray-50 rounded-b-xl">
+                 <button onClick={() => setShowReorderModal(false)} className="rounded-lg border px-4 py-2 text-sm font-medium hover:bg-white text-gray-700">Hủy</button>
+                 <button 
+                    onClick={handleSaveOrder} 
+                    disabled={isSavingOrder}
+                    className="flex items-center gap-2 rounded-lg bg-[#5a2dff] px-4 py-2 text-sm font-medium text-white hover:bg-[#4b24cc] disabled:opacity-70"
+                 >
+                    {isSavingOrder && <Loader2 className="animate-spin h-4 w-4"/>}
+                    Lưu thứ tự
+                 </button>
               </div>
            </div>
         </div>
