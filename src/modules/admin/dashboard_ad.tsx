@@ -138,7 +138,7 @@ export default function AdminDashboard() {
                {/* Chart 2: User Registrations */}
                <div className="col-span-12 xl:col-span-4 rounded-3xl border border-gray-200 bg-white p-6 shadow-[0_25px_60px_rgba(15,23,42,0.08)] flex flex-col justify-between group/chart2">
                   <div className="mb-4 flex flex-col justify-between">
-                       <h4 className="text-xl font-bold text-black">Tổng số User</h4>
+                       <h4 className="text-xl font-bold text-black">Tổng số người dùng</h4>
                        <p className="text-sm font-medium text-gray-500">Tăng trưởng người dùng 6 tháng qua</p>
                   </div>
                   

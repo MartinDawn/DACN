@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import AdminLayout from './layout/layout';
 import { 
   CheckCircleIcon, 
@@ -72,6 +73,7 @@ const mockCourses: Course[] = [
 ];
 
 export default function AdminManageCourse() {
+    const navigate = useNavigate();
     const [activeTab, setActiveTab] = useState<'published' | 'pending'>('published');
     const [courses, setCourses] = useState<Course[]>(mockCourses);
     const [searchTerm, setSearchTerm] = useState('');
@@ -159,6 +161,7 @@ export default function AdminManageCourse() {
                                     <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-gray-500">Giảng viên</th>
                                     <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-gray-500">Danh mục</th>
                                     <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-gray-500">Giá</th>
+                                    <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-gray-500">Kiểm tra</th>
                                     <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-gray-500">Ngày gửi</th>
                                     <th className="px-6 py-4 text-end text-xs font-semibold uppercase tracking-wider text-gray-500">Hành động</th>
                                 </tr>
@@ -187,6 +190,15 @@ export default function AdminManageCourse() {
                                             <td className="px-6 py-4 font-semibold text-gray-900">
                                                 {course.price.toLocaleString('vi-VN')}đ
                                             </td>
+                                            <td className="px-6 py-4 text-gray-600">
+                                                <button
+                                                    onClick={() => navigate(`/courses/${course.id}`)}
+                                                    className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-600 transition hover:border-[#5a2dff] hover:text-[#5a2dff] hover:shadow-sm"
+                                                >
+                                                    <EyeIcon className="h-4 w-4" />
+                                                    Xem chi tiết
+                                                </button>
+                                            </td>
                                             <td className="px-6 py-4 text-gray-600">{course.submittedDate}</td>
                                             <td className="px-6 py-4 text-end">
                                                 <div className="flex items-center justify-end gap-2">
@@ -209,12 +221,6 @@ export default function AdminManageCourse() {
                                                         </>
                                                     ) : (
                                                         <>  
-                                                             <button 
-                                                                className="group relative inline-flex items-center justify-center rounded-lg bg-blue-50 p-2 text-blue-600 transition-colors hover:bg-blue-100"
-                                                                title="Xem chi tiết"
-                                                            >
-                                                                <EyeIcon className="h-5 w-5" />
-                                                            </button>
                                                             <button 
                                                                 onClick={() => handleDelete(course.id)}
                                                                 className="group relative inline-flex items-center justify-center rounded-lg bg-red-50 p-2 text-red-600 transition-colors hover:bg-red-100"
@@ -230,7 +236,7 @@ export default function AdminManageCourse() {
                                     ))
                                 ) : (
                                     <tr>
-                                        <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
+                                        <td colSpan={7} className="px-6 py-12 text-center text-gray-500">
                                             <div className="flex flex-col items-center justify-center">
                                                 <div className="rounded-full bg-gray-50 p-4 mb-3">
                                                     <MagnifyingGlassIcon className="h-8 w-8 text-gray-300"/>
