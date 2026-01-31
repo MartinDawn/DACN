@@ -24,6 +24,7 @@ import LoginSuccess from './modules/auth/login-success';
 import { ProtectedRoute, GuestRoute, InstructorRoute } from './modules/auth/components/AuthGuard';
 import ManageCoursePage from './modules/instructor/manage-course';
 import AdminDashboard from './modules/admin/dashboard_ad';
+import AdminManageCourse from './modules/admin/manage_course_ad';
 
 function App() {
   return (
@@ -64,6 +65,7 @@ function App() {
         
         {/* Admin Routes */}
         <Route path="/admin/dashboard" element={<AdminDashboard />} />
+        <Route path="/admin/courses" element={<AdminManageCourse />} />
       </Routes>
     </Router>
   );

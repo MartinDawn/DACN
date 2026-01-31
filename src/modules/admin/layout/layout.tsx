@@ -1,5 +1,5 @@
 import React, { useState, ReactNode } from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
 
 // Icons for Layout
 const DashboardIcon = () => (<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>);
@@ -63,6 +63,7 @@ interface AdminLayoutProps {
 export default function AdminLayout({ children }: AdminLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarExpanded, setSidebarExpanded] = useState(true);
+  const location = useLocation();
 
   const toggleSidebar = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -103,10 +104,28 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             <div>
               <h3 className={`mb-3 ml-4 text-xs font-semibold uppercase tracking-[0.18em] text-gray-400 ${!sidebarExpanded && 'hidden'}`}>Danh mục</h3>
               <ul className="mb-6 flex flex-col gap-1.5">
-                <li><SidebarItem icon={DashboardIcon} label="Dashboard" isActive={true} isExpanded={sidebarExpanded}/></li>
+                <li>
+                  <NavLink to="/admin/dashboard">
+                    <SidebarItem 
+                      icon={DashboardIcon} 
+                      label="Dashboard" 
+                      isActive={location.pathname === '/admin/dashboard'} 
+                      isExpanded={sidebarExpanded}
+                    />
+                  </NavLink>
+                </li>
                 {/* <li><SidebarItem icon={CalendarIcon} label="Lịch" isExpanded={sidebarExpanded}/></li> */}
                 <li><SidebarItem icon={UsersIcon} label="Quản lý người dùng" isExpanded={sidebarExpanded}/></li>
-                <li><SidebarItem icon={BookOpenIcon} label="Quản lý khóa học" isExpanded={sidebarExpanded}/></li>
+                <li>
+                  <NavLink to="/admin/courses">
+                    <SidebarItem 
+                      icon={BookOpenIcon} 
+                      label="Quản lý khóa học" 
+                      isActive={location.pathname === '/admin/courses'} 
+                      isExpanded={sidebarExpanded}
+                    />
+                  </NavLink>
+                </li>
                 {/* <li><SidebarItem icon={ProfileIcon} label="Hồ sơ người dùng" isExpanded={sidebarExpanded}/></li> */}
                 <li><SidebarItem icon={FormIcon} label="Biểu mẫu" hasSubmenu={true} isExpanded={sidebarExpanded}/></li>
                 <li><SidebarItem icon={TableIcon} label="Bảng" hasSubmenu={true} isExpanded={sidebarExpanded}/></li>
