@@ -40,7 +40,7 @@ const courses = [
     students: "45,821",
     price: "599,000₫",
     oldPrice: "1,199,000₫",
-    badge: "Bestseller",
+    badge: "Bán chạy nhất",
     image:
       "https://images.unsplash.com/photo-1517430816045-df4b7de11d1d?auto=format&fit=crop&w=900&q=80",
   },
@@ -51,7 +51,7 @@ const courses = [
     students: "32,154",
     price: "449,000₫",
     oldPrice: "899,000₫",
-    badge: "Bestseller",
+    badge: "Bán chạy nhất",
     image:
       "https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=900&q=80",
   },
@@ -62,7 +62,7 @@ const courses = [
     students: "28,743",
     price: "699,000₫",
     oldPrice: "1,399,000₫",
-    badge: "Bestseller",
+    badge: "Bán chạy nhất",
     image:
       "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&w=900&q=80",
   },

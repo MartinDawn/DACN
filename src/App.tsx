@@ -23,6 +23,8 @@ import TeacherDashboard from './modules/instructor/teacher';
 import LoginSuccess from './modules/auth/login-success';
 import { ProtectedRoute, GuestRoute, InstructorRoute } from './modules/auth/components/AuthGuard';
 import ManageCoursePage from './modules/instructor/manage-course';
+import AdminDashboard from './modules/admin/dashboard_ad';
+import AdminManageCourse from './modules/admin/manage_course_ad';
 
 function App() {
   return (
@@ -60,6 +62,10 @@ function App() {
         <Route path="/instructor" element={<InstructorRoute><TeacherDashboard /></InstructorRoute>} />
         <Route path="/instructor/dashboard" element={<InstructorRoute><TeacherDashboard /></InstructorRoute>} />
         <Route path="/instructor/courses/manage/:courseId" element={<InstructorRoute><ManageCoursePage /></InstructorRoute>} />
+        
+        {/* Admin Routes */}
+        <Route path="/admin/dashboard" element={<AdminDashboard />} />
+        <Route path="/admin/courses" element={<AdminManageCourse />} />
       </Routes>
     </Router>
   );
