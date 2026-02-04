@@ -61,19 +61,19 @@ export default function AdminDashboard() {
 
           <div className="mt-4 grid grid-cols-12 gap-4 md:mt-6 md:gap-6 2xl:mt-7.5 2xl:gap-7.5">
               
-              {/* Chart 1: Course Sales & Revenue */}
+              {/* Chart 1: Users & Instructors */}
               <div className="col-span-12 xl:col-span-8 rounded-3xl border border-gray-200 bg-white p-6 shadow-[0_25px_60px_rgba(15,23,42,0.08)]">
                   <div className="flex justify-between mb-4">
                        <div>
-                           <h4 className="text-xl font-bold text-black">Doanh số & Doanh thu</h4>
-                           <p className="text-xs text-gray-500">Khóa học đã bán vs Doanh thu theo tháng</p>
+                           <h4 className="text-xl font-bold text-black">Thống kê Học viên & Giảng viên</h4>
+                           <p className="text-xs text-gray-500">Số lượng Học viên vs Giảng viên mới theo tháng</p>
                        </div>
                        <div className="flex items-center gap-4">
                            <div className="flex items-center gap-2 text-xs">
-                               <span className="block w-3 h-3 rounded-full bg-[#5a2dff]"></span> Bán hàng
+                               <span className="block w-3 h-3 rounded-full bg-[#5a2dff]"></span> Học viên
                            </div>
                            <div className="flex items-center gap-2 text-xs">
-                               <span className="block w-3 h-3 rounded-full bg-green-500"></span> Doanh thu
+                               <span className="block w-3 h-3 rounded-full bg-green-500"></span> Giảng viên
                            </div>
                        </div>
                   </div>
@@ -81,14 +81,14 @@ export default function AdminDashboard() {
                   {/* Grouped Bar Chart with Tooltips */}
                   <div className="h-[300px] w-full flex items-end justify-between gap-2 pt-10 pb-2 px-2 border-b border-gray-100">
                         {([
-                            {s: 40, r: 35}, {s: 70, r: 60}, {s: 45, r: 55}, {s: 65, r: 40}, 
-                            {s: 50, r: 65}, {s: 55, r: 75}, {s: 65, r: 50}, {s: 40, r: 60}, 
-                            {s: 50, r: 70}, {s: 85, r: 80}, {s: 60, r: 55}, {s: 45, r: 40}
+                            {s: 40, r: 15}, {s: 70, r: 25}, {s: 45, r: 20}, {s: 65, r: 30}, 
+                            {s: 50, r: 22}, {s: 55, r: 18}, {s: 65, r: 35}, {s: 40, r: 15}, 
+                            {s: 50, r: 28}, {s: 85, r: 40}, {s: 60, r: 30}, {s: 45, r: 25}
                         ]).map((d, i) => {
                             const months = ['Tháng 1','Tháng 2','Tháng 3','Tháng 4','Tháng 5','Tháng 6','Tháng 7','Tháng 8','Tháng 9','Tháng 10','Tháng 11','Tháng 12'];
                             const shortMonths = ['T1','T2','T3','T4','T5','T6','T7','T8','T9','T10','T11','T12'];
-                            const salesCount = Math.floor(d.s * 4.2);
-                            const revenueRaw = Math.floor(d.r * 1250);
+                            const studentCount = Math.floor(d.s * 3.5);
+                            const instructorCount = Math.floor(d.r * 1.2);
                             
                             return (
                                 <div key={i} className="group relative flex flex-col items-center gap-2 w-full h-full justify-end cursor-pointer">
@@ -100,17 +100,17 @@ export default function AdminDashboard() {
                                             <div className="flex justify-between items-center mb-1">
                                                 <div className="flex items-center gap-1.5">
                                                     <span className="h-2 w-2 rounded-full bg-[#5a2dff] shadow-[0_0_5px_#5a2dff]"></span>
-                                                    <span className="text-gray-400">Bán hàng:</span>
+                                                    <span className="text-gray-400">Học viên:</span>
                                                 </div>
-                                                <span className="font-semibold">{salesCount}</span>
+                                                <span className="font-semibold">{studentCount}</span>
                                             </div>
                                             
                                             <div className="flex justify-between items-center">
                                                 <div className="flex items-center gap-1.5">
                                                     <span className="h-2 w-2 rounded-full bg-green-500 shadow-[0_0_5px_#22c55e]"></span>
-                                                    <span className="text-gray-400">D.Thu:</span>
+                                                    <span className="text-gray-400">Giảng viên:</span>
                                                 </div>
-                                                <span className="font-semibold text-green-400">${(revenueRaw / 1000).toFixed(1)}k</span>
+                                                <span className="font-semibold text-green-400">{instructorCount}</span>
                                             </div>
                                             
                                             {/* Arrow */}
@@ -135,11 +135,11 @@ export default function AdminDashboard() {
                   </div>
               </div>
 
-               {/* Chart 2: User Registrations */}
+               {/* Chart 2: Revenue */}
                <div className="col-span-12 xl:col-span-4 rounded-3xl border border-gray-200 bg-white p-6 shadow-[0_25px_60px_rgba(15,23,42,0.08)] flex flex-col justify-between group/chart2">
                   <div className="mb-4 flex flex-col justify-between">
-                       <h4 className="text-xl font-bold text-black">Tổng số người dùng</h4>
-                       <p className="text-sm font-medium text-gray-500">Tăng trưởng người dùng 6 tháng qua</p>
+                       <h4 className="text-xl font-bold text-black">Tổng Doanh thu</h4>
+                       <p className="text-sm font-medium text-gray-500">Tăng trưởng doanh thu 6 tháng qua</p>
                   </div>
                   
                   <div className="relative h-64 w-full mt-4">
@@ -170,22 +170,22 @@ export default function AdminDashboard() {
                        </svg>
 
                        <div className="absolute top-0 right-0 z-10 pointer-events-none">
-                           <span className="text-3xl font-bold block text-right text-gray-800">3,052</span>
+                           <span className="text-3xl font-bold block text-right text-gray-800">2.4 tỷ</span>
                            <span className="flex items-center justify-end gap-1 text-xs font-semibold text-emerald-500">
                               <ArrowUpIcon />
-                              +15.2% tháng này
+                              +18.5% tháng này
                            </span>
                        </div>
 
                        {/* Interactive Points Layer */}
                        {/* Data points matching visually with SVG curve */}
                        {([
-                         { x: 0, y: 70, val: 1250, label: 'Tháng 1' },
-                         { x: 20, y: 55, val: 1840, label: 'Tháng 2' },
-                         { x: 40, y: 60, val: 1620, label: 'Tháng 3' },
-                         { x: 60, y: 35, val: 2680, label: 'Tháng 4' },
-                         { x: 80, y: 45, val: 2250, label: 'Tháng 5' },
-                         { x: 100, y: 20, val: 3052, label: 'Tháng 6' }
+                         { x: 0, y: 70, val: 125000000, label: 'Tháng 1' },
+                         { x: 20, y: 55, val: 184000000, label: 'Tháng 2' },
+                         { x: 40, y: 60, val: 162000000, label: 'Tháng 3' },
+                         { x: 60, y: 35, val: 268000000, label: 'Tháng 4' },
+                         { x: 80, y: 45, val: 225000000, label: 'Tháng 5' },
+                         { x: 100, y: 20, val: 305000000, label: 'Tháng 6' }
                        ]).map((point, i) => (
                            <div 
                               key={i}
@@ -206,7 +206,7 @@ export default function AdminDashboard() {
                               <div className="absolute bottom-full mb-3 left-1/2 -translate-x-1/2 hidden flex-col items-center group-hover/point:flex z-30 pointer-events-none">
                                    <div className="whitespace-nowrap rounded-xl bg-gray-900 px-4 py-2 text-white shadow-xl">
                                       <p className="mb-0.5 text-[10px] font-bold text-gray-400 uppercase tracking-wider">{point.label}</p>
-                                      <p className="text-lg font-bold">{point.val.toLocaleString()} <span className="text-xs font-normal text-gray-400">user</span></p>
+                                      <p className="text-lg font-bold">{point.val.toLocaleString('vi-VN')} <span className="text-xs font-normal text-gray-400">đ</span></p>
                                    </div>
                                     {/* Arrow */}
                                     <div className=" -mt-1 h-2 w-2 rotate-45 bg-gray-900"></div>
@@ -217,12 +217,12 @@ export default function AdminDashboard() {
                   
                   <div className="mt-6 grid grid-cols-2 gap-4 text-center">
                        <div className="rounded-2xl bg-purple-50 p-4 transition-transform hover:scale-105">
-                           <span className="block text-xs font-semibold text-gray-500 uppercase tracking-wider">Tổng user</span>
-                           <span className="text-xl font-bold text-[#5a2dff]">45.2k</span>
+                           <span className="block text-xs font-semibold text-gray-500 uppercase tracking-wider">Tổng doanh thu</span>
+                           <span className="text-xl font-bold text-[#5a2dff]">12.5 tỷ</span>
                        </div>
                        <div className="rounded-2xl bg-emerald-50 p-4 transition-transform hover:scale-105">
-                           <span className="block text-xs font-semibold text-gray-500 uppercase tracking-wider">Hoạt động</span>
-                           <span className="text-xl font-bold text-emerald-600">12.5k</span>
+                           <span className="block text-xs font-semibold text-gray-500 uppercase tracking-wider">Lợi nhuận</span>
+                           <span className="text-xl font-bold text-emerald-600">4.2 tỷ</span>
                        </div>
                   </div>
                </div>
