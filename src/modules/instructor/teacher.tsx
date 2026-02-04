@@ -4,7 +4,8 @@ import InstructorLayout from "../user/layout/layout";
 import { 
   ArrowLeft, Book, Camera, FileText, Lightbulb, UploadCloud, X, List, 
   LayoutDashboard, BarChart2, Activity, Users, DollarSign, Star, 
-  MessageSquare, PlusCircle, UserPlus, MessageCircle, Settings
+  MessageSquare, PlusCircle, UserPlus, MessageCircle, Settings, Trash2,
+  AlertTriangle 
 } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { useInstructorCourses } from "./hooks/useInstructorCourses";
@@ -13,6 +14,11 @@ import type { InstructorCourse } from "./models/instructor";
 const InstructorDashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState<"overview" | "courses" | "analytics" | "activity">("courses");
   const [showCreateCourseForm, setShowCreateCourseForm] = useState(false);
+  
+  // State for Delete Confirmation Modal
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [courseToDelete, setCourseToDelete] = useState<{ id: string; name: string } | null>(null);
+
   const [courseName, setCourseName] = useState("");
   const [coursePrice, setCoursePrice] = useState<number | string>("");
   const [courseDescription, setCourseDescription] = useState("");
@@ -29,6 +35,7 @@ const InstructorDashboard: React.FC = () => {
     isLoading: isLoadingCourses, 
     isSubmitting, 
     createCourse,
+    deleteCourse,
     setCourses,
     becomeInstructor,
     tags, // Lấy tags từ hook
@@ -143,6 +150,19 @@ const InstructorDashboard: React.FC = () => {
     // Fallback: result === null hoặc không có id -> không tự động điều hướng,
     // giữ form mở để người dùng có thể xem thông báo từ hook hoặc thử lại.
     return;
+  };
+
+  const handleDeleteCourse = (courseId: string, courseName: string) => {
+    setCourseToDelete({ id: courseId, name: courseName });
+    setShowDeleteModal(true);
+  };
+
+  const confirmDelete = async () => {
+    if (courseToDelete) {
+      await deleteCourse(courseToDelete.id);
+      setShowDeleteModal(false);
+      setCourseToDelete(null);
+    }
   };
 
   const handleBecomeInstructor = async () => {
@@ -552,12 +572,19 @@ const InstructorDashboard: React.FC = () => {
                       </div>
                     </div>
                     
-                    <div className="mt-5">
+                    <div className="mt-5 flex items-center gap-2">
                       <button 
                         onClick={() => navigate(`/instructor/courses/manage/${course.id}`, { state: { course } })}
-                        className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#5a2dff] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#4a21eb] active:translate-y-0.5">
+                        className="flex-1 flex w-full items-center justify-center gap-2 rounded-xl bg-[#5a2dff] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#4a21eb] active:translate-y-0.5">
                           <Settings size={18} />
                           Quản lý
+                      </button>
+                      <button 
+                        onClick={() => handleDeleteCourse(course.id, course.name)}
+                        className="flex items-center justify-center rounded-xl bg-red-50 px-3 py-2.5 text-red-500 transition hover:bg-red-100 hover:text-red-700 active:translate-y-0.5"
+                        title="Xóa khóa học"
+                      >
+                        <Trash2 size={18} />
                       </button>
                     </div>
                   </div>
@@ -600,6 +627,39 @@ const InstructorDashboard: React.FC = () => {
             </div>
           </div>
         </section>
+      )}
+      
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4 backdrop-blur-sm transition-all">
+          <div className="w-full max-w-md transform overflow-hidden rounded-2xl bg-white p-6 shadow-2xl transition-all animate-in fade-in zoom-in duration-200">
+            <div className="text-center">
+              <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[#eef2ff]">
+                <AlertTriangle className="h-8 w-8 text-[#5a2dff]" />
+              </div>
+              <h3 className="mb-2 text-xl font-bold text-gray-900">Xóa Khóa Học?</h3>
+              <p className="text-sm text-gray-500">
+                Bạn có chắc chắn muốn xóa khóa học <span className="font-semibold text-gray-900">"{courseToDelete?.name}"</span>?
+                <br />Hành động này không thể hoàn tác.
+              </p>
+            </div>
+            
+            <div className="mt-8 flex gap-3">
+              <button
+                onClick={() => setShowDeleteModal(false)}
+                className="flex-1 rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 shadow-sm transition-all hover:bg-gray-50 hover:text-[#5a2dff] hover:border-[#5a2dff]"
+              >
+                Hủy bỏ
+              </button>
+              <button
+                onClick={confirmDelete}
+                className="flex-1 rounded-xl bg-[#5a2dff] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-[#4a21eb] hover:shadow-lg hover:shadow-[#5a2dff]/30"
+              >
+                Xóa ngay
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </InstructorLayout>
   );

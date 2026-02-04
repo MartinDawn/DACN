@@ -115,7 +115,16 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                   </NavLink>
                 </li>
                 {/* <li><SidebarItem icon={CalendarIcon} label="Lịch" isExpanded={sidebarExpanded}/></li> */}
-                <li><SidebarItem icon={UsersIcon} label="Quản lý người dùng" isExpanded={sidebarExpanded}/></li>
+                <li>
+                  <NavLink to="/admin/users">
+                    <SidebarItem 
+                      icon={UsersIcon} 
+                      label="Quản lý người dùng" 
+                      isActive={location.pathname === '/admin/users'} 
+                      isExpanded={sidebarExpanded}
+                    />
+                  </NavLink>
+                </li>
                 <li>
                   <NavLink to="/admin/courses">
                     <SidebarItem 
