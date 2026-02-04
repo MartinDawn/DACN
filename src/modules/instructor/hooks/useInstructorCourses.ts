@@ -217,6 +217,19 @@ export const useInstructorCourses = () => {
     }
   }, [fetchCourses]);
 
+  const deleteCourse = useCallback(async (courseId: string): Promise<boolean> => {
+    try {
+      await instructorService.deleteCourse(courseId);
+      setCourses(prev => prev.filter(c => c.id !== courseId));
+      toast.success("Xóa khóa học thành công");
+      return true;
+    } catch (error: any) {
+      console.error("Error deleting course:", error);
+      toast.error(error.response?.data?.message || "Không thể xóa khóa học");
+      return false;
+    }
+  }, []);
+
   useEffect(() => {
     fetchCourses();
     fetchTags();
@@ -232,6 +245,7 @@ export const useInstructorCourses = () => {
     tagsError,
     fetchCourses,
     createCourse,
+    deleteCourse,
     setCourses,
     becomeInstructor,
   };

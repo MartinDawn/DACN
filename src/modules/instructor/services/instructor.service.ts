@@ -53,6 +53,15 @@ export const instructorService = {
   },
 
   /**
+   * Deletes a course by its ID.
+   * @param courseId The ID of the course to delete.
+   */
+  async deleteCourse(courseId: string): Promise<any> {
+    const response = await apiClient.delete(`/Course/${courseId}`);
+    return response.data;
+  },
+
+  /**
    * Registers the current user to become an instructor.
    */
   async becomeInstructor(): Promise<BecomeInstructorResponse> {
