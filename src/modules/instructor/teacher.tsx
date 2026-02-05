@@ -596,15 +596,18 @@ const InstructorDashboard: React.FC = () => {
                       </button>
 
                       {/* Button Request Publish */}
-                      {!course.isPublished && (
-                        <button 
-                          onClick={() => handleRequestPublish(course.id)}
-                          className="flex items-center justify-center rounded-xl bg-green-50 px-3 py-2.5 text-green-600 transition hover:bg-green-100 hover:text-green-700 active:translate-y-0.5"
-                          title="Gửi yêu cầu duyệt"
-                        >
-                          <Send size={18} />
-                        </button>
-                      )}
+                      <button 
+                        disabled={course.isPublished || course.status === 'Pending'}
+                        onClick={() => handleRequestPublish(course.id)}
+                        className={`flex items-center justify-center rounded-xl px-3 py-2.5 transition active:translate-y-0.5 ${
+                          course.isPublished || course.status === 'Pending'
+                            ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                            : "bg-green-50 text-green-600 hover:bg-green-100 hover:text-green-700"
+                        }`}
+                        title={course.isPublished ? "Đã công khai" : course.status === 'Pending' ? "Đang chờ duyệt" : "Gửi yêu cầu duyệt"}
+                      >
+                        <Send size={18} />
+                      </button>
 
                       <button 
                         onClick={() => handleDeleteCourse(course.id, course.name)}
