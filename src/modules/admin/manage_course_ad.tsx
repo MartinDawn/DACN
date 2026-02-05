@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AdminLayout from './layout/layout';
+import type { Course } from './models/course.model'; // Thêm 'type' vào đây
+import { useCourseRequests } from './hooks/useCourseRequests'; // Import hook
 import { 
   CheckCircleIcon, 
   XCircleIcon, 
@@ -11,21 +13,8 @@ import {
   ClockIcon
 } from "@heroicons/react/24/outline";
 
-// Mock Data Structure
-interface Course {
-  id: string;
-  title: string;
-  instructor: string;
-  category: string;
-  price: number;
-  status: 'published' | 'pending';
-  submittedDate: string;
-  image: string;
-  lessons: number;
-}
-
-// Mock Data
-const mockCourses: Course[] = [
+// Keep mock data only for Published courses until that API is connected
+const mockPublishedCourses: Course[] = [
   {
     id: '1',
     title: 'Complete React Developer Course 2024',
@@ -38,17 +27,6 @@ const mockCourses: Course[] = [
     lessons: 45
   },
   {
-    id: '2',
-    title: 'Advanced Python Masterclass',
-    instructor: 'Le Thi B',
-    category: 'Data Science',
-    price: 799000,
-    status: 'pending',
-    submittedDate: '2024-01-15',
-    image: 'https://images.unsplash.com/photo-1526379095098-d400fd0bf935?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&q=80',
-    lessons: 32
-  },
-  {
     id: '3',
     title: 'Digital Marketing Zero to Hero',
     instructor: 'Tran Van C',
@@ -58,46 +36,49 @@ const mockCourses: Course[] = [
     submittedDate: '2023-11-20',
     image: 'https://images.unsplash.com/photo-1533750516457-a7f992034fec?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&q=80',
     lessons: 28
-  },
-  {
-    id: '4',
-    title: 'Machine Learning A-Z',
-    instructor: 'Pham Thi D',
-    category: 'AI & Machine Learning',
-    price: 899000,
-    status: 'pending',
-    submittedDate: '2024-01-18',
-    image: 'https://images.unsplash.com/photo-1555949963-ff9fe0c870eb?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&q=80',
-    lessons: 50
   }
 ];
 
 export default function AdminManageCourse() {
     const navigate = useNavigate();
     const [activeTab, setActiveTab] = useState<'published' | 'pending'>('published');
-    const [courses, setCourses] = useState<Course[]>(mockCourses);
     const [searchTerm, setSearchTerm] = useState('');
+    
+    // Use the hook for fetching requests
+    const { courses: apiPendingCourses, setCourses: setApiCourses, loading } = useCourseRequests(activeTab);
+    const [displayCourses, setDisplayCourses] = useState<Course[]>([]);
+
+    // Combine data sources
+    useEffect(() => {
+        if (activeTab === 'pending') {
+            setDisplayCourses(apiPendingCourses);
+        } else {
+            setDisplayCourses(mockPublishedCourses);
+        }
+    }, [activeTab, apiPendingCourses]);
 
     const handleApprove = (id: string) => {
         if(window.confirm('Bạn có chắc chắn muốn duyệt khóa học này?')) {
-            setCourses(prev => prev.map(c => c.id === id ? { ...c, status: 'published' } : c));
+            // Optimistic update for UI
+            setApiCourses(prev => prev.filter(c => c.id !== id));
+            // TODO: Call API to approve
         }
     };
 
     const handleReject = (id: string) => {
         if(window.confirm('Bạn có chắc chắn muốn từ chối khóa học này?')) {
-             setCourses(prev => prev.filter(c => c.id !== id));
+             setApiCourses(prev => prev.filter(c => c.id !== id));
+             // TODO: Call API to reject
         }
     };
 
     const handleDelete = (id: string) => {
         if(window.confirm('Bạn có chắc chắn muốn xóa khóa học này không? Hành động này không thể hoàn tác.')) {
-            setCourses(prev => prev.filter(c => c.id !== id));
+            setDisplayCourses(prev => prev.filter(c => c.id !== id));
         }
     };
 
-    const filteredCourses = courses.filter(course => 
-        course.status === activeTab && 
+    const filteredCourses = displayCourses.filter(course => 
         (course.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
          course.instructor.toLowerCase().includes(searchTerm.toLowerCase()))
     );
@@ -132,7 +113,7 @@ export default function AdminManageCourse() {
                         <BookOpenIcon className="h-4 w-4" />
                         Đã Public
                         <span className="ml-2 rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600">
-                            {courses.filter(c => c.status === 'published').length}
+                            {mockPublishedCourses.length}
                         </span>
                     </button>
                     <button
@@ -146,7 +127,7 @@ export default function AdminManageCourse() {
                         <ClockIcon className="h-4 w-4" />
                         Chờ duyệt
                         <span className="ml-2 rounded-full bg-red-100 px-2 py-0.5 text-xs text-red-600">
-                             {courses.filter(c => c.status === 'pending').length}
+                             {loading ? '...' : apiPendingCourses.length}
                         </span>
                     </button>
                 </div>
@@ -167,7 +148,13 @@ export default function AdminManageCourse() {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-100 text-sm">
-                                {filteredCourses.length > 0 ? (
+                                {loading && activeTab === 'pending' ? (
+                                    <tr>
+                                        <td colSpan={7} className="px-6 py-12 text-center text-gray-500">
+                                            Đang tải dữ liệu...
+                                        </td>
+                                    </tr>
+                                ) : filteredCourses.length > 0 ? (
                                     filteredCourses.map((course) => (
                                         <tr key={course.id} className="hover:bg-gray-50/50 transition-colors">
                                             <td className="px-6 py-4">
