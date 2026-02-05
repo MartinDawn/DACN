@@ -75,15 +75,17 @@ export interface UpdateOrderPayload {
   displayOrder: number;
 }
 
+export interface QuizOptionPayload {
+  content: string;
+  isCorrect: boolean;
+  displayOrder: number;
+}
+
 export interface QuizQuestionPayload {
-  question: string;
-  key: string; // "A", "B", "C", "D"
-  description?: string;
-  // Specific answer fields implied by UI
-  a: string;
-  b: string;
-  c: string;
-  d: string;
+  content: string;       // Changed from question
+  explanation?: string;  // Changed from description
+  displayOrder: number;
+  options: QuizOptionPayload[];
 }
 
 export interface CreateQuizPayload {

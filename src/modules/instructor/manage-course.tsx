@@ -10,7 +10,7 @@ import { useCourseLectures } from "./hooks/useCourseLectures";
 import { instructorService } from "./services/instructor.service";
 import type { InstructorCourse } from "./models/instructor";
 import { Confirm } from "react-confirm-box"; 
-import type { Lecture, QuizQuestionPayload } from "./models/lecture"; // Ensure Lecture type is imported
+import type { Lecture, QuizQuestionPayload, QuizOptionPayload, CreateQuizPayload } from "./models/lecture"; // Ensure imports
 
 const ManageCoursePage: React.FC = () => {
   const params = useParams();
@@ -67,8 +67,20 @@ const ManageCoursePage: React.FC = () => {
   const [showQuizModal, setShowQuizModal] = useState(false);
   const [quizName, setQuizName] = useState("");
   const [quizDescription, setQuizDescription] = useState("");
+  const [quizTestTime, setQuizTestTime] = useState(0); // Add default 0
+  const [quizAttemptCount, setQuizAttemptCount] = useState(0); // Add default 0
+  
+  // FIX: Initialize with new structure for nested options
   const [quizQuestions, setQuizQuestions] = useState<QuizQuestionPayload[]>([
-    { question: "", key: "", description: "", a: "", b: "", c: "", d: "" }
+    { 
+      content: "", 
+      explanation: "", 
+      displayOrder: 1,
+      options: [
+        { content: "", isCorrect: true, displayOrder: 1 },
+        { content: "", isCorrect: false, displayOrder: 2 }
+      ] 
+    }
   ]);
   const [quizLectureId, setQuizLectureId] = useState<string | null>(null);
   const [editingQuizId, setEditingQuizId] = useState<string | null>(null); // New state
@@ -273,7 +285,18 @@ const ManageCoursePage: React.FC = () => {
     setEditingQuizId(null); // Reset editing ID
     setQuizName("");
     setQuizDescription("");
-    setQuizQuestions([{ question: "", key: "A", description: "", a: "", b: "", c: "", d: "" }]);
+    setQuizTestTime(0); // Reset time
+    setQuizAttemptCount(0); // Reset attempt count
+    // Reset to one empty question with 2 default options
+    setQuizQuestions([{ 
+      content: "", 
+      explanation: "", 
+      displayOrder: 1,
+      options: [
+        { content: "", isCorrect: true, displayOrder: 1 },
+        { content: "", isCorrect: false, displayOrder: 2 }
+      ] 
+    }]);
     setShowQuizModal(true);
   };
 
@@ -290,24 +313,31 @@ const ManageCoursePage: React.FC = () => {
         setEditingQuizId(quizId);
         setQuizName(quizData.name || "");
         setQuizDescription(quizData.description || "");
+        setQuizTestTime(quizData.testTime || 0); // Load existing time
+        setQuizAttemptCount(quizData.attemptCount || 0); // Load existing attemp count
         
         // Map questions if available
         if (Array.isArray(quizData.questions) && quizData.questions.length > 0) {
-            // Ensure compatibility
-            const mappedQuestions = quizData.questions.map((q: any) => ({
-                question: q.question || "",
-                key: q.key || "A",
-                description: q.description || "",
-                a: q.a || "",
-                b: q.b || "",
-                c: q.c || "",
-                d: q.d || ""
+            // Adapt API response back to UI state
+            const mappedQuestions = quizData.questions.map((q: any, index: number) => ({
+                content: q.content || q.question || "",
+                explanation: q.explanation || q.description || "",
+                displayOrder: q.displayOrder || index + 1,
+                options: Array.isArray(q.options) 
+                  ? q.options.map((o: any, oIdx: number) => ({
+                      content: o.content || "",
+                      isCorrect: o.isCorrect || false,
+                      displayOrder: o.displayOrder || oIdx + 1
+                    }))
+                  : []
             }));
             setQuizQuestions(mappedQuestions);
         } else {
-            setQuizQuestions([{ question: "", key: "A", description: "", a: "", b: "", c: "", d: "" }]);
+            setQuizQuestions([{ 
+                content: "", explanation: "", displayOrder: 1,
+                options: [{ content: "", isCorrect: true, displayOrder: 1 }, { content: "", isCorrect: false, displayOrder: 2 }] 
+            }]);
         }
-
         setShowQuizModal(true);
     } catch (e) {
         toast.error("Lỗi khi tải Quiz.");
@@ -317,18 +347,68 @@ const ManageCoursePage: React.FC = () => {
   };
 
   const handleAddQuestion = () => {
-    setQuizQuestions([...quizQuestions, { question: "", key: "A", description: "", a: "", b: "", c: "", d: "" }]);
+    setQuizQuestions([
+        ...quizQuestions, 
+        { 
+            content: "", 
+            explanation: "", 
+            displayOrder: quizQuestions.length + 1,
+            options: [
+                { content: "", isCorrect: true, displayOrder: 1 },
+                { content: "", isCorrect: false, displayOrder: 2 }
+            ]
+        }
+    ]);
   };
-
-  const handleRemoveQuestion = (index: number) => {
-    if (quizQuestions.length > 1) {
-       setQuizQuestions(quizQuestions.filter((_, i) => i !== index));
-    }
-  };
-
-  const updateQuestionField = (index: number, field: keyof QuizQuestionPayload, value: string) => {
+  
+  // New Helper: Update question content
+  const updateQuestionText = (index: number, text: string) => {
     const newQuestions = [...quizQuestions];
-    newQuestions[index] = { ...newQuestions[index], [field]: value };
+    newQuestions[index].content = text;
+    setQuizQuestions(newQuestions);
+  };
+
+  const updateQuestionExplanation = (index: number, text: string) => {
+    const newQuestions = [...quizQuestions];
+    newQuestions[index].explanation = text;
+    setQuizQuestions(newQuestions);
+  };
+
+  // New Helper: Option Management
+  const handleAddOption = (qIndex: number) => {
+    const newQuestions = [...quizQuestions];
+    const currentOptions = newQuestions[qIndex].options;
+    newQuestions[qIndex].options.push({
+        content: "",
+        isCorrect: false,
+        displayOrder: currentOptions.length + 1
+    });
+    setQuizQuestions(newQuestions);
+  };
+
+  const handleRemoveOption = (qIndex: number, oIndex: number) => {
+    const newQuestions = [...quizQuestions];
+    if (newQuestions[qIndex].options.length <= 2) {
+        toast.error("Một câu hỏi cần tối thiểu 2 đáp án.");
+        return;
+    }
+    newQuestions[qIndex].options.splice(oIndex, 1);
+    // Re-index displayOrder
+    newQuestions[qIndex].options.forEach((opt, i) => opt.displayOrder = i + 1);
+    setQuizQuestions(newQuestions);
+  };
+
+  const updateOptionText = (qIndex: number, oIndex: number, text: string) => {
+    const newQuestions = [...quizQuestions];
+    newQuestions[qIndex].options[oIndex].content = text;
+    setQuizQuestions(newQuestions);
+  };
+
+  const setCorrectOption = (qIndex: number, oIndex: number) => {
+    const newQuestions = [...quizQuestions];
+    // Reset all to false then set current to true
+    newQuestions[qIndex].options.forEach(opt => opt.isCorrect = false);
+    newQuestions[qIndex].options[oIndex].isCorrect = true;
     setQuizQuestions(newQuestions);
   };
 
@@ -339,34 +419,50 @@ const ManageCoursePage: React.FC = () => {
     // Validate questions
     for (let i = 0; i < quizQuestions.length; i++) {
         const q = quizQuestions[i];
-        if (!q.question.trim()) { toast.error(`Câu hỏi ${i+1} chưa có nội dung.`); return; }
-        if (!q.a.trim() || !q.b.trim()) { toast.error(`Câu hỏi ${i+1} cần ít nhất đáp án A và B.`); return; }
-        if (!q.key) { toast.error(`Vui lòng chọn đáp án đúng cho câu ${i+1}.`); return; }
+        if (!q.content.trim()) { toast.error(`Câu hỏi ${i+1} chưa có nội dung.`); return; }
+        if (q.options.length < 2) { toast.error(`Câu hỏi ${i+1} cần ít nhất 2 đáp án.`); return; }
+        
+        let hasContent = true;
+        let hasCorrect = false;
+        q.options.forEach(o => {
+            if (!o.content.trim()) hasContent = false;
+            if (o.isCorrect) hasCorrect = true;
+        });
+
+        if (!hasContent) { toast.error(`Vui lòng nhập đầy đủ nội dung các đáp án ở câu ${i+1}.`); return; }
+        if (!hasCorrect) { toast.error(`Vui lòng chọn đáp án đúng cho câu ${i+1}.`); return; }
     }
 
     let success = false;
     
-    if (editingQuizId) {
-        // Update mode
-        success = await updateQuiz(editingQuizId, {
-            name: quizName,
-            description: quizDescription,
-            questions: quizQuestions,
-            testTime: 0,
-            attemptCount: 0
-        });
-    } else {
-        // Create mode
-        success = await addQuiz({
-            lectureId: quizLectureId,
-            name: quizName,
-            description: quizDescription,
-            questions: quizQuestions,
-            testTime: 0,
-            attemptCount: 0
-        });
-    }
+    // Construct payload strictly following API requirements provided
+    // Typed explicitely to catch structure errors
+    const basePayload: CreateQuizPayload = {
+        name: quizName,
+        lectureId: quizLectureId, 
+        testTime: Number(quizTestTime), // Ensure Number type
+        attemptCount: Number(quizAttemptCount), // Ensure Number type
+        // Description omitted here to match strict creation JSON, handled in update if needed
+        questions: quizQuestions.map((q, i) => ({
+            content: q.content,
+            displayOrder: i + 1,
+            explanation: q.explanation || "",
+            options: q.options.map((o, j) => ({
+                content: o.content,
+                isCorrect: o.isCorrect,
+                displayOrder: j + 1
+            }))
+        }))
+    };
 
+    if (editingQuizId) {
+        // For update, we assume description might be allowed, so we merge it back
+        success = await updateQuiz(editingQuizId, { ...basePayload, description: quizDescription });
+    } else {
+        // For create, strict payload
+        success = await addQuiz(basePayload);
+    }
+    
     if (success) {
         setShowQuizModal(false);
         setEditingQuizId(null);
@@ -1536,9 +1632,31 @@ const ManageCoursePage: React.FC = () => {
                     <label className="mb-1 block text-sm font-semibold text-gray-700">Mô tả (tùy chọn)</label>
                     <input 
                        value={quizDescription} onChange={e => setQuizDescription(e.target.value)}
-                       className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#5a2dff] focus:ring-1 focus:ring-[#5a2dff]" 
+                       className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#5a2dff] focus:ring-1 focus:ring-[#5a2dff] mb-4" 
                        placeholder="Mô tả ngắn về nội dung quiz"
                     />
+
+                    {/* NEW: Inputs for Test Time and Attempt Count */}
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="mb-1 block text-sm font-semibold text-gray-700">Thời gian (phút)</label>
+                            <input 
+                               type="number" min="0"
+                               value={quizTestTime} onChange={e => setQuizTestTime(Number(e.target.value))}
+                               className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#5a2dff] focus:ring-1 focus:ring-[#5a2dff]" 
+                               placeholder="0 = Không giới hạn"
+                            />
+                        </div>
+                        <div>
+                            <label className="mb-1 block text-sm font-semibold text-gray-700">Số lần làm lại</label>
+                            <input 
+                               type="number" min="0"
+                               value={quizAttemptCount} onChange={e => setQuizAttemptCount(Number(e.target.value))}
+                               className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#5a2dff] focus:ring-1 focus:ring-[#5a2dff]" 
+                               placeholder="0 = Không giới hạn"
+                            />
+                        </div>
+                    </div>
                  </div>
 
                  <div className="flex items-center justify-between">
@@ -1550,59 +1668,76 @@ const ManageCoursePage: React.FC = () => {
 
                  {/* Question List */}
                  <div className="space-y-4">
-                    {quizQuestions.map((q, idx) => (
-                       <div key={idx} className="bg-white p-5 rounded-lg border border-gray-200 shadow-sm relative group">
-                          {idx > 0 && (
-                              <button onClick={() => handleRemoveQuestion(idx)} className="absolute top-4 right-4 text-gray-400 hover:text-red-500 p-1" title="Xóa câu hỏi">
+                    {quizQuestions.map((q, qImg) => (
+                       <div key={qImg} className="bg-white p-5 rounded-lg border border-gray-200 shadow-sm relative group">
+                          {quizQuestions.length > 1 && (
+                              <button onClick={() => handleRemoveQuestion(qImg)} className="absolute top-4 right-4 text-gray-400 hover:text-red-500 p-1" title="Xóa câu hỏi">
                                   <Trash size={18}/>
                               </button>
                           )}
                           
                           <div className="mb-4">
-                              <label className="block text-sm font-bold text-gray-800 mb-2">Câu {idx + 1}</label>
+                              <label className="block text-sm font-bold text-gray-800 mb-2">Câu {qImg + 1}</label>
                               <input 
-                                 value={q.question}
-                                 onChange={e => updateQuestionField(idx, 'question', e.target.value)}
+                                 value={q.content}
+                                 onChange={e => updateQuestionText(qImg, e.target.value)}
                                  className="w-full rounded-lg bg-gray-50 border border-gray-200 px-4 py-3 text-sm focus:bg-white focus:border-[#5a2dff] focus:ring-1 focus:ring-[#5a2dff] transition-colors"
-                                 placeholder="Nhập câu hỏi"
+                                 placeholder="Nhập nội dung câu hỏi..."
                               />
                           </div>
 
                           <div className="space-y-3 mb-4">
                               <p className="text-sm font-semibold text-gray-700">Đáp án (chọn đáp án đúng)</p>
-                              {['A','B','C','D'].map((optKey) => {
-                                  const fieldName = optKey.toLowerCase() as keyof QuizQuestionPayload;
-                                  return (
-                                    <div key={optKey} className="flex items-center gap-3">
-                                        <input 
-                                            type="radio" 
-                                            name={`q-${idx}-key`}
-                                            checked={q.key === optKey}
-                                            onChange={() => updateQuestionField(idx, 'key', optKey)}
-                                            className="h-5 w-5 border-gray-300 text-[#5a2dff] focus:ring-[#5a2dff] cursor-pointer"
-                                        />
-                                        <div className={`flex-1 flex items-center rounded-lg border px-3 py-2 ${q.key === optKey ? "border-[#5a2dff] bg-[#5a2dff]/5" : "border-gray-200"}`}>
-                                            <span className="text-gray-500 font-medium w-6">{optKey}.</span>
-                                            <input 
-                                                value={q[fieldName] as string}
-                                                onChange={e => updateQuestionField(idx, fieldName, e.target.value)}
-                                                className="flex-1 bg-transparent border-none p-0 text-sm focus:ring-0"
-                                                placeholder={`Đáp án ${optKey}`}
-                                            />
-                                            {q.key === optKey && <div className="text-[#5a2dff] ml-2">✔</div>}
-                                        </div>
-                                    </div>
-                                  );
-                              })}
+                              {q.options.map((opt, oIdx) => (
+                                  <div key={oIdx} className="flex items-center gap-3">
+                                      {/* Radio button for Correct Answer */}
+                                      <input 
+                                          type="radio" 
+                                          name={`q-${qImg}-correct`}
+                                          checked={opt.isCorrect}
+                                          onChange={() => setCorrectOption(qImg, oIdx)}
+                                          className="h-5 w-5 border-gray-300 text-[#5a2dff] focus:ring-[#5a2dff] cursor-pointer"
+                                      />
+                                      
+                                      {/* Option Content Input */}
+                                      <div className={`flex-1 flex items-center rounded-lg border px-3 py-2 ${opt.isCorrect ? "border-[#5a2dff] bg-[#5a2dff]/5" : "border-gray-200"}`}>
+                                          <input 
+                                              value={opt.content}
+                                              onChange={e => updateOptionText(qImg, oIdx, e.target.value)}
+                                              className="flex-1 bg-transparent border-none p-0 text-sm focus:ring-0"
+                                              placeholder={`Nhập đáp án...`}
+                                          />
+                                          {opt.isCorrect && <div className="text-[#5a2dff] ml-2 font-bold text-xs">ĐÚNG</div>}
+                                      </div>
+
+                                      {/* Delete Option Button */}
+                                      <button 
+                                        onClick={() => handleRemoveOption(qImg, oIdx)}
+                                        className="text-gray-400 hover:text-red-500 p-1"
+                                        title="Xóa đáp án này"
+                                        disabled={q.options.length <= 2}
+                                      >
+                                          <X size={16} />
+                                      </button>
+                                  </div>
+                              ))}
+
+                              {/* Add Option Button */}
+                              <button 
+                                onClick={() => handleAddOption(qImg)}
+                                className="mt-2 text-sm text-[#5a2dff] font-medium hover:underline flex items-center gap-1"
+                              >
+                                <PlusCircle size={14} /> Thêm đáp án
+                              </button>
                           </div>
 
                           <div className="mt-4 pt-4 border-t border-gray-100">
                              <label className="block text-sm font-semibold text-gray-700 mb-2">Giải thích (tùy chọn)</label>
                              <textarea 
-                                value={q.description || ""}
-                                onChange={e => updateQuestionField(idx, 'description', e.target.value)}
+                                value={q.explanation || ""}
+                                onChange={e => updateQuestionExplanation(qImg, e.target.value)}
                                 className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-[#5a2dff] focus:ring-1 focus:ring-[#5a2dff]"
-                                placeholder="Giải thích tại sao đây là đáp án đúng"
+                                placeholder="Giải thích tại sao đáp án trên là đúng..."
                                 rows={2}
                              />
                           </div>
