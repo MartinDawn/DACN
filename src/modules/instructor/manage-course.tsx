@@ -71,6 +71,7 @@ const ManageCoursePage: React.FC = () => {
     { question: "", key: "", description: "", a: "", b: "", c: "", d: "" }
   ]);
   const [quizLectureId, setQuizLectureId] = useState<string | null>(null);
+  const [editingQuizId, setEditingQuizId] = useState<string | null>(null); // New state
 
   const [showDeleteDocumentModal, setShowDeleteDocumentModal] = useState(false);
   const [docToDelete, setDocToDelete] = useState<{ lectureId: string; documentId: string } | null>(null);
@@ -82,7 +83,7 @@ const ManageCoursePage: React.FC = () => {
     lectures, fetchLectures, isCreating, uploadingLectureIds, createLecture, 
     uploadLectureVideo, deleteLecture, lecturesLoading, editLecture, editVideo, deleteVideo, getVideo,
     uploadLectureDocument, uploadingDocLectureIds, editDocument, deleteDocument, updateLectureOrders,
-    updateVideoOrders, addQuiz, isCreatingQuiz // Destructure
+    updateVideoOrders, addQuiz, isCreatingQuiz, updateQuiz, getQuizDetail // Destructure
   } = useCourseLectures(courseId ?? "");
 
   useEffect(() => {
@@ -269,10 +270,50 @@ const ManageCoursePage: React.FC = () => {
 
   const openQuizModal = (lectureId: string) => {
     setQuizLectureId(lectureId);
+    setEditingQuizId(null); // Reset editing ID
     setQuizName("");
     setQuizDescription("");
     setQuizQuestions([{ question: "", key: "A", description: "", a: "", b: "", c: "", d: "" }]);
     setShowQuizModal(true);
+  };
+
+  const openEditQuizModal = async (lectureId: string, quizId: string) => {
+    const toastId = toast.loading("Đang tải dữ liệu Quiz...");
+    try {
+        const quizData = await getQuizDetail(quizId);
+        if (!quizData) {
+            toast.error("Không tìm thấy thông tin Quiz.");
+            return;
+        }
+
+        setQuizLectureId(lectureId);
+        setEditingQuizId(quizId);
+        setQuizName(quizData.name || "");
+        setQuizDescription(quizData.description || "");
+        
+        // Map questions if available
+        if (Array.isArray(quizData.questions) && quizData.questions.length > 0) {
+            // Ensure compatibility
+            const mappedQuestions = quizData.questions.map((q: any) => ({
+                question: q.question || "",
+                key: q.key || "A",
+                description: q.description || "",
+                a: q.a || "",
+                b: q.b || "",
+                c: q.c || "",
+                d: q.d || ""
+            }));
+            setQuizQuestions(mappedQuestions);
+        } else {
+            setQuizQuestions([{ question: "", key: "A", description: "", a: "", b: "", c: "", d: "" }]);
+        }
+
+        setShowQuizModal(true);
+    } catch (e) {
+        toast.error("Lỗi khi tải Quiz.");
+    } finally {
+        toast.dismiss(toastId);
+    }
   };
 
   const handleAddQuestion = () => {
@@ -303,17 +344,32 @@ const ManageCoursePage: React.FC = () => {
         if (!q.key) { toast.error(`Vui lòng chọn đáp án đúng cho câu ${i+1}.`); return; }
     }
 
-    const success = await addQuiz({
-        lectureId: quizLectureId,
-        name: quizName,
-        description: quizDescription,
-        questions: quizQuestions,
-        testTime: 0,
-        attemptCount: 0
-    });
+    let success = false;
+    
+    if (editingQuizId) {
+        // Update mode
+        success = await updateQuiz(editingQuizId, {
+            name: quizName,
+            description: quizDescription,
+            questions: quizQuestions,
+            testTime: 0,
+            attemptCount: 0
+        });
+    } else {
+        // Create mode
+        success = await addQuiz({
+            lectureId: quizLectureId,
+            name: quizName,
+            description: quizDescription,
+            questions: quizQuestions,
+            testTime: 0,
+            attemptCount: 0
+        });
+    }
 
     if (success) {
         setShowQuizModal(false);
+        setEditingQuizId(null);
     }
   };
 
@@ -806,14 +862,6 @@ const ManageCoursePage: React.FC = () => {
                                   {/* Actions for Document */}
                                   {docId && (
                                     <div className="flex gap-2">
-                                        {/* <button 
-                                            type="button"
-                                            onClick={() => openEditDocument(lecture.id, doc)}
-                                            className="p-1.5 text-gray-500 hover:text-[#5a2dff] hover:bg-white rounded transition-colors"
-                                            title="Sửa tài liệu"
-                                        >
-                                            <Edit2 size={15} />
-                                        </button> */}
                                         <button 
                                             type="button"
                                             onClick={() => handleDeleteDocument(lecture.id, docId)}
@@ -831,12 +879,34 @@ const ManageCoursePage: React.FC = () => {
                                );
                              })}
 
-                             {lecture.quizNames?.map((quiz, i) => (
-                               <div key={`q-${i}`} className="flex items-center gap-3 rounded-lg border border-gray-100 bg-gray-50 p-3">
-                                  <HelpCircle size={16} className="text-[#5a2dff]"/>
-                                  <span className="flex-1 text-sm">{quiz}</span>
-                               </div>
-                             ))}
+                             {/* QUIZZES SECTION */}
+                             {(lecture.quizzes && lecture.quizzes.length > 0 ? lecture.quizzes : lecture.quizNames)?.map((quiz: any, i: number) => {
+                               const quizName = typeof quiz === 'string' ? quiz : (quiz.name || quiz.title || `Quiz ${i+1}`);
+                               // Use standardized ID from hook (or fallback check)
+                               const quizId = typeof quiz === 'object' ? (quiz.id || quiz.quizId || quiz.Id) : null;
+
+                               return (
+                                <div key={`q-${i}`} className="flex items-center gap-3 rounded-lg border border-gray-100 bg-gray-50 p-3 group hover:border-[#5a2dff]/30 transition-colors">
+                                   <HelpCircle size={16} className="text-[#5a2dff]"/>
+                                   <span className="flex-1 text-sm">{quizName}</span>
+                                   
+                                   {/* Actions for Quiz - EDIT BUTTON */}
+                                   {quizId && (
+                                     <div className="flex gap-2">
+                                        <button 
+                                            type="button"
+                                            onClick={() => openEditQuizModal(lecture.id, quizId)}
+                                            className="p-1.5 text-gray-500 hover:text-[#5a2dff] hover:bg-white rounded transition-colors"
+                                            title="Sửa Quiz"
+                                        >
+                                            <Edit2 size={15} />
+                                        </button>
+                                     </div>
+                                   )}
+                                   <span className="text-xs text-[#5a2dff] bg-[#5a2dff]/10 px-2 py-1 rounded border border-[#5a2dff]/20">Quiz</span>
+                                </div>
+                               );
+                             })}
                           </div>
 
                           {/* Actions: Add Content */}
@@ -987,7 +1057,7 @@ const ManageCoursePage: React.FC = () => {
                                     <>
                                         <UploadCloud className="w-8 h-8 mb-4 text-gray-500" />
                                         <p className="mb-2 text-sm text-gray-500"><span className="font-semibold">Click để tải lên</span> hoặc kéo thả</p>
-                                        <p className="text-xs text-gray-500">MP4, WebM, AVI, MKV (Max 50MB)</p>
+                                        <p className="text-xs text-gray-400 mt-1">MP4, WebM, AVI, MKV (Max 50MB)</p>
                                     </>
                                 )}
                             </div>
@@ -1548,7 +1618,7 @@ const ManageCoursePage: React.FC = () => {
                     disabled={isCreatingQuiz} 
                     className="flex items-center gap-2 rounded-lg bg-[#5a2dff] px-6 py-2.5 text-sm font-bold text-white shadow-lg shadow-[#5a2dff]/30 hover:bg-[#4b24cc] disabled:opacity-70"
                  >
-                    {isCreatingQuiz ? <Loader2 className="animate-spin h-4 w-4"/> : "Tạo Quiz"}
+                    {isCreatingQuiz ? <Loader2 className="animate-spin h-4 w-4"/> : (editingQuizId ? "Cập nhật" : "Tạo Quiz")}
                  </button>
               </div>
            </div>

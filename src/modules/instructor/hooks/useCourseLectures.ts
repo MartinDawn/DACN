@@ -1,7 +1,7 @@
 import { useState, useCallback, Dispatch, SetStateAction, useEffect } from "react";
 import { toast } from "react-hot-toast";
 import { lectureService } from "../services/lecture.service";
-import type { Lecture, CreateQuizPayload } from "../models/lecture";
+import type { Lecture, CreateQuizPayload, UpdateQuizPayload } from "../models/lecture";
 
 interface CreateLectureInput {
   name: string;
@@ -80,6 +80,15 @@ const mapCourseContentToLectures = (raw: any, fallbackCourseId: string): Lecture
         documentNames: Array.isArray(lesson?.documentNames) 
             ? lesson.documentNames 
             : (Array.isArray(lesson?.documents) ? lesson.documents.map((d: any) => d.name || d.fileName || d) : []),
+        
+        // Map quizzes (objects) if available, normalize ID
+        quizzes: Array.isArray(lesson?.quizzes) 
+            ? lesson.quizzes.map((q: any) => ({
+                ...q,
+                id: q.id || q.quizId || q.Id || q.ID,
+                name: q.name || q.title || q.Name
+              }))
+            : [],
         quizNames: Array.isArray(lesson?.quizNames) ? lesson.quizNames : [],
 
         // Legacy support
@@ -130,7 +139,7 @@ const normalizeLecture = (raw: any, fallbackCourseId: string): Lecture => {
   let mappedVideos = Array.isArray(raw?.videos) ? raw.videos.map((v: any) => ({
       ...v,
       id: v.id || v.videoId || v.videoid || v.Id || v.VideoId || v.ID,
-      name: v.name || v.title || v.fileName || v.Name || v.Title,
+      name: v.name || v.title || v.fileName || v.Name || v.Title || "Video",
       displayOrder: v.displayOrder ?? v.DisplayOrder,
       order: v.order ?? v.Order,
       createdAt: v.createdAt ?? v.CreatedAt
@@ -147,6 +156,13 @@ const normalizeLecture = (raw: any, fallbackCourseId: string): Lecture => {
     videos: mappedVideos,
     documents: Array.isArray(raw?.documents) ? raw.documents : [],
     documentNames: Array.isArray(raw?.documentNames) ? raw.documentNames : [],
+    quizzes: Array.isArray(raw?.quizzes) 
+        ? raw.quizzes.map((q: any) => ({
+            ...q,
+            id: q.id || q.quizId || q.Id || q.ID,
+            name: q.name || q.title || q.Name
+          }))
+        : [],
     quizNames: Array.isArray(raw?.quizNames) ? raw.quizNames : [],
     videoUrl: raw?.videoUrl ?? undefined,
     createdAt: raw?.createdAt ?? null,
@@ -348,6 +364,37 @@ export const useCourseLectures = (courseId: string) => {
       setIsCreatingQuiz(false);
     }
   }, [fetchLectures]);
+
+  const updateQuiz = useCallback(async (quizId: string, payload: UpdateQuizPayload) => {
+    setIsCreatingQuiz(true); // Reuse state
+    try {
+      const response = await lectureService.updateQuiz(quizId, payload);
+      // Check success based on response structure
+      if (response && (response.success || response.data)) {
+         toast.success("Cập nhật Quiz thành công!");
+         await fetchLectures();
+         return true;
+      }
+      toast.error(response?.message ?? "Không thể cập nhật Quiz.");
+      return false;
+    } catch (error) {
+      console.error(error);
+      toast.error("Lỗi khi cập nhật Quiz.");
+      return false;
+    } finally {
+      setIsCreatingQuiz(false);
+    }
+  }, [fetchLectures]);
+
+  const getQuizDetail = useCallback(async (quizId: string) => {
+    try {
+      const response = await lectureService.getQuizById(quizId);
+      return response?.data ?? response;
+    } catch (error) {
+      console.error(error);
+      return null;
+    }
+  }, []);
 
   const editLecture = useCallback(async (lectureId: string, payload: { name?: string; description?: string; displayOrder?: number }) => {
     try {
@@ -559,5 +606,7 @@ export const useCourseLectures = (courseId: string) => {
     updateLectureOrders,
     updateVideoOrders,
     addQuiz, 
+    updateQuiz,
+    getQuizDetail,
   };
 };
