@@ -5,10 +5,11 @@ import {
   ArrowLeft, Book, Camera, FileText, Lightbulb, UploadCloud, X, List, 
   LayoutDashboard, BarChart2, Activity, Users, DollarSign, Star, 
   MessageSquare, PlusCircle, UserPlus, MessageCircle, Settings, Trash2,
-  AlertTriangle 
+  AlertTriangle, Send 
 } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { useInstructorCourses } from "./hooks/useInstructorCourses";
+import { instructorService } from "./services/instructor.service";
 import type { InstructorCourse } from "./models/instructor";
 
 const InstructorDashboard: React.FC = () => {
@@ -42,6 +43,20 @@ const InstructorDashboard: React.FC = () => {
     tagsLoading, // Lấy trạng thái loading của tags
     fetchCourses, // Thêm fetchCourses từ hook
   } = useInstructorCourses();
+
+  const handleRequestPublish = async (courseId: string) => {
+    const confirm = window.confirm("Bạn có chắc chắn muốn gửi yêu cầu duyệt cho khóa học này?");
+    if (!confirm) return;
+
+    try {
+      await instructorService.requestPublishCourse(courseId);
+      toast.success("Gửi yêu cầu duyệt thành công!");
+      await fetchCourses();
+    } catch (error) {
+      console.error(error);
+      toast.error("Gửi yêu cầu thất bại. Vui lòng thử lại.");
+    }
+  };
 
   useEffect(() => {
     const loadCourses = async () => {
@@ -579,6 +594,18 @@ const InstructorDashboard: React.FC = () => {
                           <Settings size={18} />
                           Quản lý
                       </button>
+
+                      {/* Button Request Publish */}
+                      {!course.isPublished && (
+                        <button 
+                          onClick={() => handleRequestPublish(course.id)}
+                          className="flex items-center justify-center rounded-xl bg-green-50 px-3 py-2.5 text-green-600 transition hover:bg-green-100 hover:text-green-700 active:translate-y-0.5"
+                          title="Gửi yêu cầu duyệt"
+                        >
+                          <Send size={18} />
+                        </button>
+                      )}
+
                       <button 
                         onClick={() => handleDeleteCourse(course.id, course.name)}
                         className="flex items-center justify-center rounded-xl bg-red-50 px-3 py-2.5 text-red-500 transition hover:bg-red-100 hover:text-red-700 active:translate-y-0.5"
