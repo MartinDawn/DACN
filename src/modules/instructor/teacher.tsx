@@ -20,6 +20,10 @@ const InstructorDashboard: React.FC = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [courseToDelete, setCourseToDelete] = useState<{ id: string; name: string } | null>(null);
 
+  // State for Publish Confirmation Modal
+  const [showPublishModal, setShowPublishModal] = useState(false);
+  const [courseToPublish, setCourseToPublish] = useState<{ id: string; name: string } | null>(null);
+
   const [courseName, setCourseName] = useState("");
   const [coursePrice, setCoursePrice] = useState<number | string>("");
   const [courseDescription, setCourseDescription] = useState("");
@@ -44,17 +48,24 @@ const InstructorDashboard: React.FC = () => {
     fetchCourses, // Thêm fetchCourses từ hook
   } = useInstructorCourses();
 
-  const handleRequestPublish = async (courseId: string) => {
-    const confirm = window.confirm("Bạn có chắc chắn muốn gửi yêu cầu duyệt cho khóa học này?");
-    if (!confirm) return;
+  const handleRequestPublish = (courseId: string, courseName: string) => {
+    setCourseToPublish({ id: courseId, name: courseName });
+    setShowPublishModal(true);
+  };
+
+  const confirmRequestPublish = async () => {
+    if (!courseToPublish) return;
 
     try {
-      await instructorService.requestPublishCourse(courseId);
+      await instructorService.requestPublishCourse(courseToPublish.id);
       toast.success("Gửi yêu cầu duyệt thành công!");
       await fetchCourses();
     } catch (error) {
       console.error(error);
       toast.error("Gửi yêu cầu thất bại. Vui lòng thử lại.");
+    } finally {
+      setShowPublishModal(false);
+      setCourseToPublish(null);
     }
   };
 
@@ -595,16 +606,22 @@ const InstructorDashboard: React.FC = () => {
                           Quản lý
                       </button>
 
-                      {/* Button Request Publish */}
+                      {/* Button Request Publish: Vô hiệu hóa khi đã Public, đang chờ duyệt hoặc status là Public */}
                       <button 
-                        disabled={course.isPublished || course.status === 'Pending'}
-                        onClick={() => handleRequestPublish(course.id)}
+                        disabled={course.isPublished || course.status === 'Pending' || course.status === 'Public'}
+                        onClick={() => handleRequestPublish(course.id, course.name)}
                         className={`flex items-center justify-center rounded-xl px-3 py-2.5 transition active:translate-y-0.5 ${
-                          course.isPublished || course.status === 'Pending'
+                          course.isPublished || course.status === 'Pending' || course.status === 'Public'
                             ? "bg-gray-200 text-gray-400 cursor-not-allowed"
                             : "bg-green-50 text-green-600 hover:bg-green-100 hover:text-green-700"
                         }`}
-                        title={course.isPublished ? "Đã công khai" : course.status === 'Pending' ? "Đang chờ duyệt" : "Gửi yêu cầu duyệt"}
+                        title={
+                          course.isPublished || course.status === 'Public'
+                            ? "Đã công khai" 
+                            : course.status === 'Pending' 
+                              ? "Đang chờ duyệt" 
+                              : "Gửi yêu cầu duyệt"
+                        }
                       >
                         <Send size={18} />
                       </button>
@@ -686,6 +703,39 @@ const InstructorDashboard: React.FC = () => {
                 className="flex-1 rounded-xl bg-[#5a2dff] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-[#4a21eb] hover:shadow-lg hover:shadow-[#5a2dff]/30"
               >
                 Xóa ngay
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Publish Request Confirmation Modal */}
+      {showPublishModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4 backdrop-blur-sm transition-all">
+          <div className="w-full max-w-md transform overflow-hidden rounded-2xl bg-white p-6 shadow-2xl transition-all animate-in fade-in zoom-in duration-200">
+            <div className="text-center">
+              <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[#eef2ff]">
+                <Send className="h-8 w-8 text-[#5a2dff]" />
+              </div>
+              <h3 className="mb-2 text-xl font-bold text-gray-900">Gửi Yêu Cầu Duyệt?</h3>
+              <p className="text-sm text-gray-500">
+                Bạn có chắc chắn muốn gửi yêu cầu duyệt cho khóa học <span className="font-semibold text-gray-900">"{courseToPublish?.name}"</span>?
+                <br />Admin sẽ xem xét nội dung trước khi công khai.
+              </p>
+            </div>
+            
+            <div className="mt-8 flex gap-3">
+              <button
+                onClick={() => setShowPublishModal(false)}
+                className="flex-1 rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 shadow-sm transition-all hover:bg-gray-50 hover:text-[#5a2dff] hover:border-[#5a2dff]"
+              >
+                Hủy bỏ
+              </button>
+              <button
+                onClick={confirmRequestPublish}
+                className="flex-1 rounded-xl bg-[#5a2dff] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-[#4a21eb] hover:shadow-lg hover:shadow-[#5a2dff]/30"
+              >
+                Gửi ngay
               </button>
             </div>
           </div>
