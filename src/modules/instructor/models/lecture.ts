@@ -73,3 +73,23 @@ export interface UpdateOrderPayload {
   id: string;
   displayOrder: number;
 }
+
+export interface QuizQuestionPayload {
+  question: string;
+  key: string; // "A", "B", "C", "D"
+  description?: string;
+  // Specific answer fields implied by UI
+  a: string;
+  b: string;
+  c: string;
+  d: string;
+}
+
+export interface CreateQuizPayload {
+  lectureId: string;
+  name: string;
+  description?: string; // Mapped to API if possible, or part of logic
+  testTime?: number;    // Default 0
+  attemptCount?: number; // Default 0
+  questions: QuizQuestionPayload[];
+}

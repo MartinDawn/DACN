@@ -1,7 +1,7 @@
 import { useState, useCallback, Dispatch, SetStateAction, useEffect } from "react";
 import { toast } from "react-hot-toast";
 import { lectureService } from "../services/lecture.service";
-import type { Lecture } from "../models/lecture";
+import type { Lecture, CreateQuizPayload } from "../models/lecture";
 
 interface CreateLectureInput {
   name: string;
@@ -191,7 +191,8 @@ export const useCourseLectures = (courseId: string) => {
   const [isCreating, setIsCreating] = useState(false);
   const [uploadingLectureIds, setUploadingLectureIds] = useState<Record<string, boolean>>({});
   const [lecturesLoading, setLecturesLoading] = useState(false);
-  
+  const [isCreatingQuiz, setIsCreatingQuiz] = useState(false); // Add state
+
   // State for document uploading
   const [uploadingDocLectureIds, setUploadingDocLectureIds] = useState<Record<string, boolean>>({});
 
@@ -325,6 +326,27 @@ export const useCourseLectures = (courseId: string) => {
       setUploadingDocLectureIds((prev) => ({ ...prev, [lectureId]: false }));
     }
     return null;
+  }, [fetchLectures]);
+
+  const addQuiz = useCallback(async (payload: CreateQuizPayload) => {
+    setIsCreatingQuiz(true);
+    try {
+      const response = await lectureService.createQuiz(payload);
+      // Check success based on response structure
+      if (response && (response.success || response.data)) {
+         toast.success("Tạo Quiz thành công!");
+         await fetchLectures();
+         return true;
+      }
+      toast.error(response?.message ?? "Không thể tạo Quiz.");
+      return false;
+    } catch (error) {
+      console.error(error);
+      toast.error("Lỗi khi tạo Quiz.");
+      return false;
+    } finally {
+      setIsCreatingQuiz(false);
+    }
   }, [fetchLectures]);
 
   const editLecture = useCallback(async (lectureId: string, payload: { name?: string; description?: string; displayOrder?: number }) => {
@@ -522,6 +544,7 @@ export const useCourseLectures = (courseId: string) => {
     isCreating,
     uploadingLectureIds,
     lecturesLoading,
+    isCreatingQuiz,
     createLecture,
     uploadLectureVideo,  
     editLecture,
@@ -535,5 +558,6 @@ export const useCourseLectures = (courseId: string) => {
     deleteDocument,
     updateLectureOrders,
     updateVideoOrders,
+    addQuiz, 
   };
 };

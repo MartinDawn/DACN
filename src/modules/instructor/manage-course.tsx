@@ -10,7 +10,7 @@ import { useCourseLectures } from "./hooks/useCourseLectures";
 import { instructorService } from "./services/instructor.service";
 import type { InstructorCourse } from "./models/instructor";
 import { Confirm } from "react-confirm-box"; 
-import type { Lecture } from "./models/lecture"; // Ensure Lecture type is imported
+import type { Lecture, QuizQuestionPayload } from "./models/lecture"; // Ensure Lecture type is imported
 
 const ManageCoursePage: React.FC = () => {
   const params = useParams();
@@ -63,6 +63,15 @@ const ManageCoursePage: React.FC = () => {
   const [editDocName, setEditDocName] = useState("");
   const [editDocFile, setEditDocFile] = useState<File | null>(null);
 
+  // --- Quiz Modal States ---
+  const [showQuizModal, setShowQuizModal] = useState(false);
+  const [quizName, setQuizName] = useState("");
+  const [quizDescription, setQuizDescription] = useState("");
+  const [quizQuestions, setQuizQuestions] = useState<QuizQuestionPayload[]>([
+    { question: "", key: "", description: "", a: "", b: "", c: "", d: "" }
+  ]);
+  const [quizLectureId, setQuizLectureId] = useState<string | null>(null);
+
   const [showDeleteDocumentModal, setShowDeleteDocumentModal] = useState(false);
   const [docToDelete, setDocToDelete] = useState<{ lectureId: string; documentId: string } | null>(null);
 
@@ -73,7 +82,7 @@ const ManageCoursePage: React.FC = () => {
     lectures, fetchLectures, isCreating, uploadingLectureIds, createLecture, 
     uploadLectureVideo, deleteLecture, lecturesLoading, editLecture, editVideo, deleteVideo, getVideo,
     uploadLectureDocument, uploadingDocLectureIds, editDocument, deleteDocument, updateLectureOrders,
-    updateVideoOrders // Destructure new function
+    updateVideoOrders, addQuiz, isCreatingQuiz // Destructure
   } = useCourseLectures(courseId ?? "");
 
   useEffect(() => {
@@ -256,6 +265,56 @@ const ManageCoursePage: React.FC = () => {
     setCurrentLectureId(lectureId);
     setDocFile(null);
     setShowDocumentModal(true);
+  };
+
+  const openQuizModal = (lectureId: string) => {
+    setQuizLectureId(lectureId);
+    setQuizName("");
+    setQuizDescription("");
+    setQuizQuestions([{ question: "", key: "A", description: "", a: "", b: "", c: "", d: "" }]);
+    setShowQuizModal(true);
+  };
+
+  const handleAddQuestion = () => {
+    setQuizQuestions([...quizQuestions, { question: "", key: "A", description: "", a: "", b: "", c: "", d: "" }]);
+  };
+
+  const handleRemoveQuestion = (index: number) => {
+    if (quizQuestions.length > 1) {
+       setQuizQuestions(quizQuestions.filter((_, i) => i !== index));
+    }
+  };
+
+  const updateQuestionField = (index: number, field: keyof QuizQuestionPayload, value: string) => {
+    const newQuestions = [...quizQuestions];
+    newQuestions[index] = { ...newQuestions[index], [field]: value };
+    setQuizQuestions(newQuestions);
+  };
+
+  const handleCreateQuiz = async () => {
+    if (!quizLectureId) return;
+    if (!quizName.trim()) { toast.error("Vui lòng nhập tiêu đề Quiz"); return; }
+    
+    // Validate questions
+    for (let i = 0; i < quizQuestions.length; i++) {
+        const q = quizQuestions[i];
+        if (!q.question.trim()) { toast.error(`Câu hỏi ${i+1} chưa có nội dung.`); return; }
+        if (!q.a.trim() || !q.b.trim()) { toast.error(`Câu hỏi ${i+1} cần ít nhất đáp án A và B.`); return; }
+        if (!q.key) { toast.error(`Vui lòng chọn đáp án đúng cho câu ${i+1}.`); return; }
+    }
+
+    const success = await addQuiz({
+        lectureId: quizLectureId,
+        name: quizName,
+        description: quizDescription,
+        questions: quizQuestions,
+        testTime: 0,
+        attemptCount: 0
+    });
+
+    if (success) {
+        setShowQuizModal(false);
+    }
   };
 
   const handleUploadDocument = async (e: React.FormEvent) => {
@@ -791,8 +850,11 @@ const ManageCoursePage: React.FC = () => {
                                 Thêm Video
                              </button>
                              
-                             <button disabled className="flex items-center gap-2 rounded-md bg-gray-50 px-3 py-2 text-sm font-medium text-gray-400 cursor-not-allowed" title="Tính năng đang cập nhật">
-                                <HelpCircle size={16} /> Thêm Quiz (Sắp có)
+                             <button 
+                               onClick={() => openQuizModal(lecture.id)}
+                               className="flex items-center gap-2 rounded-md bg-[#5a2dff]/10 px-3 py-2 text-sm font-medium text-[#5a2dff] hover:bg-[#5a2dff]/20"
+                             >
+                                <HelpCircle size={16} /> Thêm Quiz
                              </button>
                              
                              <button 
@@ -978,7 +1040,7 @@ const ManageCoursePage: React.FC = () => {
                                 ) : (
                                     <>
                                         <UploadCloud className="w-8 h-8 mb-2 text-gray-400" />
-                                        <p className="mb-1 text-sm text-gray-500"><span className="font-semibold">Click để tải lên</span> hoặc kéo thả</p>
+                                        <span className="text-sm text-gray-500">Chọn file mới để thay thế</span>
                                         <p className="text-xs text-gray-400 mt-1">PDF, Word, Excel, PPT, TXT</p>
                                     </>
                                 )}
@@ -1374,6 +1436,119 @@ const ManageCoursePage: React.FC = () => {
                  >
                     {isVideoSavingOrder && <Loader2 className="animate-spin h-4 w-4"/>}
                     Lưu thứ tự
+                 </button>
+              </div>
+           </div>
+        </div>
+      )}
+
+      {/* --- ADD QUIZ MODAL --- */}
+      {showQuizModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+           <div className="w-full max-w-4xl rounded-xl bg-white shadow-xl animate-in fade-in zoom-in-95 flex flex-col max-h-[90vh]">
+              <div className="border-b px-6 py-4 flex justify-between items-center">
+                 <div>
+                    <h3 className="text-xl font-bold text-gray-900">Tạo Quiz Mới</h3>
+                    <p className="text-sm text-gray-500">Tạo bài kiểm tra trắc nghiệm cho học viên</p>
+                 </div>
+                 <button onClick={() => setShowQuizModal(false)}><X className="text-gray-400 hover:text-gray-700 transition"/></button>
+              </div>
+              
+              <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-gray-50">
+                 <div className="bg-white p-4 rounded-lg border shadow-sm">
+                    <label className="mb-1 block text-sm font-bold text-gray-700">Tiêu đề Quiz <span className="text-red-500">*</span></label>
+                    <input 
+                       value={quizName} onChange={e => setQuizName(e.target.value)} 
+                       className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#5a2dff] focus:ring-1 focus:ring-[#5a2dff] mb-4" 
+                       placeholder="Ví dụ: Kiểm tra kiến thức chương 1"
+                    />
+                    
+                    <label className="mb-1 block text-sm font-semibold text-gray-700">Mô tả (tùy chọn)</label>
+                    <input 
+                       value={quizDescription} onChange={e => setQuizDescription(e.target.value)}
+                       className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#5a2dff] focus:ring-1 focus:ring-[#5a2dff]" 
+                       placeholder="Mô tả ngắn về nội dung quiz"
+                    />
+                 </div>
+
+                 <div className="flex items-center justify-between">
+                    <h4 className="font-bold text-gray-800">Câu hỏi</h4>
+                    <button onClick={handleAddQuestion} className="flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50">
+                        <PlusCircle size={16}/> Thêm câu hỏi
+                    </button>
+                 </div>
+
+                 {/* Question List */}
+                 <div className="space-y-4">
+                    {quizQuestions.map((q, idx) => (
+                       <div key={idx} className="bg-white p-5 rounded-lg border border-gray-200 shadow-sm relative group">
+                          {idx > 0 && (
+                              <button onClick={() => handleRemoveQuestion(idx)} className="absolute top-4 right-4 text-gray-400 hover:text-red-500 p-1" title="Xóa câu hỏi">
+                                  <Trash size={18}/>
+                              </button>
+                          )}
+                          
+                          <div className="mb-4">
+                              <label className="block text-sm font-bold text-gray-800 mb-2">Câu {idx + 1}</label>
+                              <input 
+                                 value={q.question}
+                                 onChange={e => updateQuestionField(idx, 'question', e.target.value)}
+                                 className="w-full rounded-lg bg-gray-50 border border-gray-200 px-4 py-3 text-sm focus:bg-white focus:border-[#5a2dff] focus:ring-1 focus:ring-[#5a2dff] transition-colors"
+                                 placeholder="Nhập câu hỏi"
+                              />
+                          </div>
+
+                          <div className="space-y-3 mb-4">
+                              <p className="text-sm font-semibold text-gray-700">Đáp án (chọn đáp án đúng)</p>
+                              {['A','B','C','D'].map((optKey) => {
+                                  const fieldName = optKey.toLowerCase() as keyof QuizQuestionPayload;
+                                  return (
+                                    <div key={optKey} className="flex items-center gap-3">
+                                        <input 
+                                            type="radio" 
+                                            name={`q-${idx}-key`}
+                                            checked={q.key === optKey}
+                                            onChange={() => updateQuestionField(idx, 'key', optKey)}
+                                            className="h-5 w-5 border-gray-300 text-[#5a2dff] focus:ring-[#5a2dff] cursor-pointer"
+                                        />
+                                        <div className={`flex-1 flex items-center rounded-lg border px-3 py-2 ${q.key === optKey ? "border-[#5a2dff] bg-[#5a2dff]/5" : "border-gray-200"}`}>
+                                            <span className="text-gray-500 font-medium w-6">{optKey}.</span>
+                                            <input 
+                                                value={q[fieldName] as string}
+                                                onChange={e => updateQuestionField(idx, fieldName, e.target.value)}
+                                                className="flex-1 bg-transparent border-none p-0 text-sm focus:ring-0"
+                                                placeholder={`Đáp án ${optKey}`}
+                                            />
+                                            {q.key === optKey && <div className="text-[#5a2dff] ml-2">✔</div>}
+                                        </div>
+                                    </div>
+                                  );
+                              })}
+                          </div>
+
+                          <div className="mt-4 pt-4 border-t border-gray-100">
+                             <label className="block text-sm font-semibold text-gray-700 mb-2">Giải thích (tùy chọn)</label>
+                             <textarea 
+                                value={q.description || ""}
+                                onChange={e => updateQuestionField(idx, 'description', e.target.value)}
+                                className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-[#5a2dff] focus:ring-1 focus:ring-[#5a2dff]"
+                                placeholder="Giải thích tại sao đây là đáp án đúng"
+                                rows={2}
+                             />
+                          </div>
+                       </div>
+                    ))}
+                 </div>
+              </div>
+
+              <div className="border-t px-6 py-4 flex justify-end gap-2 bg-white rounded-b-xl z-10">
+                 <button onClick={() => setShowQuizModal(false)} className="rounded-lg border px-6 py-2.5 text-sm font-bold text-gray-600 hover:bg-gray-50">Hủy</button>
+                 <button 
+                    onClick={handleCreateQuiz}
+                    disabled={isCreatingQuiz} 
+                    className="flex items-center gap-2 rounded-lg bg-[#5a2dff] px-6 py-2.5 text-sm font-bold text-white shadow-lg shadow-[#5a2dff]/30 hover:bg-[#4b24cc] disabled:opacity-70"
+                 >
+                    {isCreatingQuiz ? <Loader2 className="animate-spin h-4 w-4"/> : "Tạo Quiz"}
                  </button>
               </div>
            </div>
