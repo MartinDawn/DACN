@@ -10,6 +10,8 @@ import type {
   UpdateLectureResponse,
   DeleteLectureResponse,
   UpdateOrderPayload, // Import struct
+  CreateQuizPayload, // Import
+  UpdateQuizPayload, // Import
 } from "../models/lecture";
 
 export const lectureService = {
@@ -169,6 +171,30 @@ export const lectureService = {
       headers: {
         "Accept-Language": lang,
       },
+    });
+    return response.data;
+  },
+
+  // Create Quiz
+  async createQuiz(payload: CreateQuizPayload, lang = "vi"): Promise<any> {
+    const response = await apiClient.post<any>("/Quiz/create", payload, {
+      headers: { "Accept-Language": lang },
+    });
+    return response.data;
+  },
+
+  // Get Quiz Detail
+  async getQuizById(quizId: string, lang = "vi"): Promise<any> {
+    const response = await apiClient.get<any>(`/Quiz/${quizId}`, {
+      headers: { "Accept-Language": lang },
+    });
+    return response.data;
+  },
+
+  // Update Quiz
+  async updateQuiz(quizId: string, payload: UpdateQuizPayload, lang = "vi"): Promise<any> {
+    const response = await apiClient.put<any>(`/Quiz/${quizId}`, payload, {
+      headers: { "Accept-Language": lang },
     });
     return response.data;
   },

@@ -11,6 +11,7 @@ export interface Lecture {
   videos: any[]; // Can be strings or objects depending on API
   documents?: any[]; // Array of document objects
   documentNames: string[];
+  quizzes?: any[]; // Array of quiz objects used for editing
   quizNames: string[];
   
   // Legacy or simplified properties
@@ -72,4 +73,32 @@ export interface UpdateVideoPayload {
 export interface UpdateOrderPayload {
   id: string;
   displayOrder: number;
+}
+
+export interface QuizQuestionPayload {
+  question: string;
+  key: string; // "A", "B", "C", "D"
+  description?: string;
+  // Specific answer fields implied by UI
+  a: string;
+  b: string;
+  c: string;
+  d: string;
+}
+
+export interface CreateQuizPayload {
+  lectureId: string;
+  name: string;
+  description?: string; // Mapped to API if possible, or part of logic
+  testTime?: number;    // Default 0
+  attemptCount?: number; // Default 0
+  questions: QuizQuestionPayload[];
+}
+
+export interface UpdateQuizPayload {
+  name: string;
+  description?: string;
+  testTime?: number;
+  attemptCount?: number;
+  questions: QuizQuestionPayload[];
 }

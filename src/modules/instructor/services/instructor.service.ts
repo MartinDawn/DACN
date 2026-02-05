@@ -70,6 +70,19 @@ export const instructorService = {
   },
 
   /**
+   * Requests to publish a course.
+   * @param courseId The ID of the course to publish.
+   */
+  async requestPublishCourse(courseId: string): Promise<any> {
+    const response = await apiClient.post(`/Course/request-publish/${courseId}`, {}, {
+      headers: {
+        "Accept-Language": "vi",
+      },
+    });
+    return response.data;
+  },
+
+  /**
    * Sends a request to become an instructor with required fields.
    * @param payload - { experience, expertise, certificate, introduction, socialLinks }
    * @param lang - optional Accept-Language header (default 'vi')

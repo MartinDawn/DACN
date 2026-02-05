@@ -12,6 +12,7 @@ export interface InstructorCourse {
   ratingCount: number;
   tagIds: string[];
   tags?: Tag[];
+  status?: string; // Thêm trường status để check 'Pending'
 }
 
 // Interface for the data returned by the create course API
