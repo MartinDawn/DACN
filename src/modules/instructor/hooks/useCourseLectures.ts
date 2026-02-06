@@ -523,8 +523,8 @@ export const useCourseLectures = (courseId: string) => {
 
   const deleteQuiz = useCallback(async (lectureId: string, quizId: string) => {
     try {
-      // Use quizService instead of lectureService for consistency
-      await quizService.deleteQuiz(quizId);
+      // Use lectureService instead of quizService (which was undefined)
+      await lectureService.deleteQuiz(quizId);
       
       setLectures((prev) => prev.map((l) => {
           if (l.id !== lectureId) return l;
