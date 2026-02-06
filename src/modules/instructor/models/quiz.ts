@@ -6,6 +6,7 @@ export interface QuizOptionPayload {
 
 export interface QuizQuestionPayload {
   content: string;
+  question?: string;
   displayOrder: number;
   explanation: string;
   options: QuizOptionPayload[];
