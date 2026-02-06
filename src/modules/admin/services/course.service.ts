@@ -1,16 +1,11 @@
-import axios from 'axios';
+import apiClient from '../../auth/services/apiClient';
 import type { Course } from '../models/course.model';
-
-const API_BASE_URL = 'http://dacn.runasp.net/api/Course';
 
 export const CourseService = {
   getPendingRequests: async (): Promise<Course[]> => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/pending-requests`, {
-        headers: {
-          'Accept-Language': 'vi'
-        }
-      });
+      // Use apiClient to automatically handle headers and base URL
+      const response = await apiClient.get('/Course/pending-requests');
       
       // Map API response to UI Model
       // Response structure is { success: true, data: [...] }
@@ -35,6 +30,24 @@ export const CourseService = {
       }));
     } catch (error) {
       console.error('Error fetching pending courses:', error);
+      throw error;
+    }
+  },
+
+  approveRequest: async (requestId: string): Promise<void> => {
+    try {
+      await apiClient.post(`/Course/approve-request/${requestId}`);
+    } catch (error) {
+      console.error('Error approving course request:', error);
+      throw error;
+    }
+  },
+
+  rejectRequest: async (requestId: string, reason: string): Promise<void> => {
+    try {
+      await apiClient.post(`/Course/reject-request/${requestId}`, { reason });
+    } catch (error) {
+      console.error('Error rejecting course request:', error);
       throw error;
     }
   }

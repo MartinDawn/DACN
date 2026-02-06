@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import AdminLayout from './layout/layout';
 import type { Course } from './models/course.model'; // Thêm 'type' vào đây
 import { useCourseRequests } from './hooks/useCourseRequests'; // Import hook
+import { CourseService } from './services/course.service';
 import { 
   CheckCircleIcon, 
   XCircleIcon, 
@@ -10,7 +11,8 @@ import {
   TrashIcon, 
   MagnifyingGlassIcon,
   BookOpenIcon,
-  ClockIcon
+  ClockIcon,
+  XMarkIcon // Thêm import icon X
 } from "@heroicons/react/24/outline";
 
 // Keep mock data only for Published courses until that API is connected
@@ -48,6 +50,13 @@ export default function AdminManageCourse() {
     const { courses: apiPendingCourses, setCourses: setApiCourses, loading } = useCourseRequests(activeTab);
     const [displayCourses, setDisplayCourses] = useState<Course[]>([]);
 
+    // Modal State
+    const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
+    const [isApproveModalOpen, setIsApproveModalOpen] = useState(false);
+    const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [rejectReason, setRejectReason] = useState('');
+
     // Combine data sources
     useEffect(() => {
         if (activeTab === 'pending') {
@@ -57,25 +66,72 @@ export default function AdminManageCourse() {
         }
     }, [activeTab, apiPendingCourses]);
 
-    const handleApprove = (id: string) => {
-        if(window.confirm('Bạn có chắc chắn muốn duyệt khóa học này?')) {
-            // Optimistic update for UI
-            setApiCourses(prev => prev.filter(c => c.id !== id));
-            // TODO: Call API to approve
-        }
+    // Open Modals
+    const openApproveModal = (course: Course) => {
+        setSelectedCourse(course);
+        setIsApproveModalOpen(true);
     };
 
-    const handleReject = (id: string) => {
-        if(window.confirm('Bạn có chắc chắn muốn từ chối khóa học này?')) {
-             setApiCourses(prev => prev.filter(c => c.id !== id));
-             // TODO: Call API to reject
-        }
+    const openRejectModal = (course: Course) => {
+        setSelectedCourse(course);
+        setRejectReason(''); // Reset reason
+        setIsRejectModalOpen(true);
     };
 
-    const handleDelete = (id: string) => {
-        if(window.confirm('Bạn có chắc chắn muốn xóa khóa học này không? Hành động này không thể hoàn tác.')) {
-            setDisplayCourses(prev => prev.filter(c => c.id !== id));
+    const openDeleteModal = (course: Course) => {
+        setSelectedCourse(course);
+        setIsDeleteModalOpen(true);
+    };
+
+    const closeModals = () => {
+        setIsApproveModalOpen(false);
+        setIsRejectModalOpen(false);
+        setIsDeleteModalOpen(false);
+        setSelectedCourse(null);
+    };
+
+    const handleConfirmApprove = async () => {
+        if (!selectedCourse) return;
+
+        if (activeTab === 'pending' && selectedCourse.requestId) {
+            try {
+                await CourseService.approveRequest(selectedCourse.requestId);
+                setApiCourses(prev => prev.filter(c => c.id !== selectedCourse.id));
+                // Có thể thêm thông báo toast tại đây
+            } catch (error) {
+                alert('Lỗi khi duyệt yêu cầu');
+            }
+        } else {
+             setApiCourses(prev => prev.filter(c => c.id !== selectedCourse.id));
         }
+        closeModals();
+    };
+
+    const handleConfirmReject = async () => {
+        if (!selectedCourse) return;
+        if (!rejectReason.trim()) {
+            alert("Vui lòng nhập lý do từ chối");
+            return;
+        }
+
+        if (activeTab === 'pending' && selectedCourse.requestId) {
+            try {
+                await CourseService.rejectRequest(selectedCourse.requestId, rejectReason);
+                setApiCourses(prev => prev.filter(c => c.id !== selectedCourse.id));
+            } catch (error) {
+                alert('Lỗi khi từ chối yêu cầu');
+            }
+        } else {
+             setApiCourses(prev => prev.filter(c => c.id !== selectedCourse.id));
+        }
+        closeModals();
+    };
+
+    const handleConfirmDelete = () => {
+        if (selectedCourse) {
+            setDisplayCourses(prev => prev.filter(c => c.id !== selectedCourse.id));
+        }
+        closeModals();
     };
 
     const filteredCourses = displayCourses.filter(course => 
@@ -192,14 +248,14 @@ export default function AdminManageCourse() {
                                                     {activeTab === 'pending' ? (
                                                         <>
                                                             <button 
-                                                                onClick={() => handleApprove(course.id)}
+                                                                onClick={() => openApproveModal(course)}
                                                                 className="group relative inline-flex items-center justify-center rounded-lg bg-green-50 p-2 text-green-600 transition-colors hover:bg-green-100"
                                                                 title="Duyệt khóa học"
                                                             >
                                                                 <CheckCircleIcon className="h-5 w-5" />
                                                             </button>
                                                             <button 
-                                                                onClick={() => handleReject(course.id)}
+                                                                onClick={() => openRejectModal(course)}
                                                                 className="group relative inline-flex items-center justify-center rounded-lg bg-red-50 p-2 text-red-600 transition-colors hover:bg-red-100"
                                                                 title="Từ chối"
                                                             >
@@ -209,7 +265,7 @@ export default function AdminManageCourse() {
                                                     ) : (
                                                         <>  
                                                             <button 
-                                                                onClick={() => handleDelete(course.id)}
+                                                                onClick={() => openDeleteModal(course)}
                                                                 className="group relative inline-flex items-center justify-center rounded-lg bg-red-50 p-2 text-red-600 transition-colors hover:bg-red-100"
                                                                 title="Xóa khóa học"
                                                             >
@@ -239,6 +295,101 @@ export default function AdminManageCourse() {
                     </div>
                 </div>
             </div>
+
+            {/* Modals */}
+            {isApproveModalOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 transition-opacity fade-in backdrop-blur-sm">
+                    <div className="w-full max-w-md scale-100 transform rounded-2xl bg-white p-6 shadow-2xl transition-all">
+                        <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[#5a2dff]/10 mx-auto">
+                            <CheckCircleIcon className="h-8 w-8 text-[#5a2dff]" />
+                        </div>
+                        <h3 className="text-xl font-bold text-center text-gray-900">Xác nhận duyệt</h3>
+                        <p className="mt-2 text-center text-gray-500 leading-relaxed">
+                            Bạn có chắc chắn muốn duyệt khóa học <br/> <span className="font-bold text-gray-900">{selectedCourse?.title}</span>?
+                        </p>
+                        <div className="mt-8 flex justify-center gap-3">
+                            <button 
+                                onClick={closeModals} 
+                                className="min-w-[100px] rounded-lg border border-gray-200 bg-white px-5 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 hover:text-gray-900 focus:outline-none transition-all"
+                            >
+                                Hủy bỏ
+                            </button>
+                            <button 
+                                onClick={handleConfirmApprove} 
+                                className="min-w-[100px] rounded-lg bg-[#5a2dff] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#4b24d6] focus:outline-none shadow-md shadow-[#5a2dff]/25 transition-all"
+                            >
+                                Duyệt ngay
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {isRejectModalOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 transition-opacity fade-in backdrop-blur-sm">
+                    <div className="w-full max-w-md scale-100 transform rounded-2xl bg-white p-6 shadow-2xl transition-all">
+                        <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[#5a2dff]/10 mx-auto">
+                            <XMarkIcon className="h-8 w-8 text-[#5a2dff]" />
+                        </div>
+                        <h3 className="text-xl font-bold text-center text-gray-900">Từ chối khóa học</h3>
+                        <p className="mt-2 text-center text-sm text-gray-500 leading-relaxed">
+                            Vui lòng nhập lý do từ chối cho khóa học <br/> <span className="font-bold text-gray-900">{selectedCourse?.title}</span>
+                        </p>
+                        <div className="mt-5">
+                            <label className="mb-2 block text-sm font-semibold text-gray-700">Lý do từ chối <span className="text-[#5a2dff]">*</span></label>
+                            <textarea 
+                                className="w-full rounded-xl border border-gray-200 p-3 text-sm focus:border-[#5a2dff] focus:ring-1 focus:ring-[#5a2dff] outline-none transition-all shadow-sm placeholder:text-gray-400"
+                                rows={4}
+                                placeholder="Nhập lý do chi tiết..."
+                                value={rejectReason}
+                                onChange={(e) => setRejectReason(e.target.value)}
+                            />
+                        </div>
+                        <div className="mt-8 flex justify-end gap-3">
+                            <button 
+                                onClick={closeModals} 
+                                className="rounded-lg border border-gray-200 bg-white px-5 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 hover:text-gray-900 focus:outline-none transition-all"
+                            >
+                                Hủy bỏ
+                            </button>
+                            <button 
+                                onClick={handleConfirmReject} 
+                                className="rounded-lg bg-[#5a2dff] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#4b24d6] focus:outline-none shadow-md shadow-[#5a2dff]/25 transition-all"
+                            >
+                                Xác nhận từ chối
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {isDeleteModalOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 transition-opacity fade-in backdrop-blur-sm">
+                    <div className="w-full max-w-md scale-100 transform rounded-2xl bg-white p-6 shadow-2xl transition-all">
+                        <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-red-50 mx-auto">
+                            <TrashIcon className="h-8 w-8 text-red-500" />
+                        </div>
+                        <h3 className="text-xl font-bold text-center text-gray-900">Xóa khóa học?</h3>
+                        <p className="mt-2 text-center text-gray-500 leading-relaxed">
+                            Hành động này không thể hoàn tác. Bạn có chắc chắn muốn xóa khóa học <br/> <span className="font-bold text-gray-900">{selectedCourse?.title}</span>?
+                        </p>
+                        <div className="mt-8 flex justify-center gap-3">
+                            <button 
+                                onClick={closeModals} 
+                                className="rounded-lg border border-gray-200 bg-white px-5 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 hover:text-gray-900 focus:outline-none transition-all"
+                            >
+                                Hủy bỏ
+                            </button>
+                            <button 
+                                onClick={handleConfirmDelete} 
+                                className="rounded-lg bg-red-500 px-5 py-2.5 text-sm font-semibold text-white hover:bg-red-600 focus:outline-none shadow-md shadow-red-200 transition-all"
+                            >
+                                Xóa vĩnh viễn
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </AdminLayout>
     );
 }
