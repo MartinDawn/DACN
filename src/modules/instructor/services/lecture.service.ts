@@ -244,4 +244,12 @@ export const lectureService = {
       return null;
     }
   },
+
+  // Delete Quiz
+  async deleteQuiz(quizId: string, lang = "vi"): Promise<any> {
+    const response = await apiClient.delete<any>(`/Quiz/${quizId}`, {
+      headers: { "Accept-Language": lang },
+    });
+    return response.data;
+  },
 };

@@ -69,6 +69,10 @@ const ManageCoursePage: React.FC = () => {
   const [quizLectureId, setQuizLectureId] = useState<string | null>(null);
   const [editingQuizId, setEditingQuizId] = useState<string | null>(null);
 
+  // --- Delete Quiz States ---
+  const [showDeleteQuizModal, setShowDeleteQuizModal] = useState(false);
+  const [quizToDelete, setQuizToDelete] = useState<{ lectureId: string; quizId: string } | null>(null);
+
   const [showDeleteDocumentModal, setShowDeleteDocumentModal] = useState(false);
   const [docToDelete, setDocToDelete] = useState<{ lectureId: string; documentId: string } | null>(null);
 
@@ -79,7 +83,7 @@ const ManageCoursePage: React.FC = () => {
     lectures, fetchLectures, isCreating, uploadingLectureIds, createLecture, 
     uploadLectureVideo, deleteLecture, lecturesLoading, editLecture, editVideo, deleteVideo, getVideo,
     uploadLectureDocument, uploadingDocLectureIds, editDocument, deleteDocument, updateLectureOrders,
-    updateVideoOrders // REMOVED quiz functions from destructuring
+    updateVideoOrders, deleteQuiz // Added deleteQuiz
   } = useCourseLectures(courseId ?? "");
 
   useEffect(() => {
@@ -365,6 +369,18 @@ const ManageCoursePage: React.FC = () => {
       await deleteDocument(docToDelete.lectureId, docToDelete.documentId);
       setShowDeleteDocumentModal(false);
       setDocToDelete(null);
+  };
+
+  const handleDeleteQuiz = (lectureId: string, quizId: string) => {
+    setQuizToDelete({ lectureId, quizId });
+    setShowDeleteQuizModal(true);
+  };
+
+  const confirmDeleteQuiz = async () => {
+    if (!quizToDelete) return;
+    await deleteQuiz(quizToDelete.lectureId, quizToDelete.quizId);
+    setShowDeleteQuizModal(false);
+    setQuizToDelete(null);
   };
 
   const handlePreviewVideo = async (video: any) => {
@@ -803,6 +819,14 @@ const ManageCoursePage: React.FC = () => {
                                             title="Sửa Quiz"
                                         >
                                             <Edit2 size={15} />
+                                        </button>
+                                        <button 
+                                            type="button"
+                                            onClick={() => handleDeleteQuiz(lecture.id, quizId)}
+                                            className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-white rounded transition-colors"
+                                            title="Xóa Quiz"
+                                        >
+                                            <Trash size={15} />
                                         </button>
                                      </div>
                                    )}
@@ -1257,6 +1281,37 @@ const ManageCoursePage: React.FC = () => {
                     </button>
                     <button
                        onClick={confirmDeleteDocument}
+                       className="rounded-lg bg-[#5a2dff] px-4 py-2 text-sm font-medium text-white hover:bg-[#4b24cc]"
+                    >
+                       Xóa ngay
+                    </button>
+                 </div>
+              </div>
+           </div>
+        </div>
+      )}
+
+      {/* --- DELETE QUIZ MODAL --- */}
+      {showDeleteQuizModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+           <div className="w-full max-w-sm rounded-xl bg-white shadow-xl animate-in fade-in zoom-in-95">
+              <div className="p-6 text-center">
+                 <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-[#5a2dff]/10">
+                    <Trash className="h-6 w-6 text-[#5a2dff]" />
+                 </div>
+                 <h3 className="mt-4 text-lg font-semibold text-gray-900">Xóa Bài Kiểm Tra?</h3>
+                 <p className="mt-2 text-sm text-gray-500">
+                    Bạn có chắc chắn muốn xóa bài kiểm tra này? hành động này không thể hoàn tác.
+                 </p>
+                 <div className="mt-6 flex justify-center gap-3">
+                    <button
+                       onClick={() => setShowDeleteQuizModal(false)}
+                       className="rounded-lg border px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                    >
+                       Hủy
+                    </button>
+                    <button
+                       onClick={confirmDeleteQuiz}
                        className="rounded-lg bg-[#5a2dff] px-4 py-2 text-sm font-medium text-white hover:bg-[#4b24cc]"
                     >
                        Xóa ngay

@@ -521,6 +521,36 @@ export const useCourseLectures = (courseId: string) => {
       }
   }, []);
 
+  const deleteQuiz = useCallback(async (lectureId: string, quizId: string) => {
+    try {
+      await lectureService.deleteQuiz(quizId);
+      
+      setLectures((prev) => prev.map((l) => {
+          if (l.id !== lectureId) return l;
+
+          // Lọc bỏ quiz đã xóa
+          let updatedQuizzes = l.quizzes ? l.quizzes.filter((q: any) => {
+              const qId = q.id || q.quizId || q.Id || q.ID;
+              return String(qId) !== String(quizId);
+          }) : [];
+
+          return { 
+             ...l, 
+             quizzes: updatedQuizzes,
+             // Update fallback names just in case
+             quizNames: updatedQuizzes.map((q: any) => q.name || q.title || "")
+          };
+      }));
+      
+      toast.success("Xóa bài kiểm tra thành công.");
+      return true;
+    } catch (error) {
+      console.error(error);
+      toast.error("Lỗi xóa bài kiểm tra.");
+      return false;
+    }
+  }, []);
+
   // Get Video content for preview
   const getVideo = useCallback(async (videoId: string) => {
     try {
@@ -554,5 +584,6 @@ export const useCourseLectures = (courseId: string) => {
     updateLectureOrders,
     updateVideoOrders,
     // Removed addQuiz, updateQuiz, getQuizDetail returns
+    deleteQuiz,
   };
 };
