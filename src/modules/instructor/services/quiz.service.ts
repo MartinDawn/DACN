@@ -1,5 +1,5 @@
 import apiClient from "../../auth/services/apiClient";
-import type { CreateQuizPayload, QuizDetailResponse } from "../models/quiz";
+import type { CreateQuizPayload, UpdateQuizPayload } from "../models/quiz";
 
 export const quizService = {
   // Create Quiz
@@ -10,11 +10,20 @@ export const quizService = {
     return response.data;
   },
 
+  // Update Quiz
+  async updateQuiz(quizId: string, payload: UpdateQuizPayload, lang = "vi"): Promise<any> {
+    // FIX: Changed from PUT to PATCH as shown in the Swagger screenshot
+    const response = await apiClient.patch<any>(`/Quiz/${quizId}`, payload, {
+      headers: { "Accept-Language": lang },
+    });
+    return response.data;
+  },
+
   // Get Quiz Detail
   async getQuizById(quizId: string, lang = "vi"): Promise<any> {
-    // FIX: Route /Quiz/{id} trả về 405 (Method Not Allowed) nghĩa là Server chỉ map PUT/DELETE cho URL này.
-    // Thử gọi action cụ thể theo pattern get-video của Lecture: /Quiz/get-quiz-by-id/{id}
-    const response = await apiClient.get<any>(`/Quiz/get-quiz-by-id/${quizId}`, {
+    // FIX: Switch to standard REST path matching PUT/DELETE (/Quiz/{id}).
+    // The previous path /Quiz/get-quiz/{id} caused 404 errors.
+    const response = await apiClient.get<any>(`/Quiz/${quizId}`, { //dumemi
       headers: { "Accept-Language": lang },
     });
 
@@ -25,8 +34,7 @@ export const quizService = {
 
   // Delete Quiz
   async deleteQuiz(quizId: string, lang = "vi"): Promise<any> {
-      // Fixed: Use explicit action route
-      const response = await apiClient.delete<any>(`/Quiz/delete-quiz/${quizId}`, {
+      const response = await apiClient.delete<any>(`/Quiz/${quizId}`, {
         headers: { "Accept-Language": lang },
       });
       return response.data;

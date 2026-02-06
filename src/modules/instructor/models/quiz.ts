@@ -21,6 +21,14 @@ export interface CreateQuizPayload {
   questions: QuizQuestionPayload[];
 }
 
+export interface UpdateQuizPayload {
+  name: string;
+  description?: string;
+  testTime: number;
+  attemptCount: number;
+  questions: QuizQuestionPayload[];
+}
+
 export interface QuizDetailResponse {
   id: string;
   name: string;

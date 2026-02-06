@@ -178,7 +178,6 @@ const QuizModal: React.FC<QuizModalProps> = ({ isOpen, onClose, lectureId, quizI
     // Strict Type Mapping
     const formattedQuestions = questions.map((q, i) => ({
         content: q.content.trim(),
-        question: q.content.trim(),
         displayOrder: i + 1,
         explanation: q.explanation ? q.explanation.trim() : "",
         options: q.options.map((o, j) => ({

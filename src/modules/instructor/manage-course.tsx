@@ -67,6 +67,7 @@ const ManageCoursePage: React.FC = () => {
   // --- Quiz Modal States (REDUCED) ---
   const [showQuizModal, setShowQuizModal] = useState(false);
   const [quizLectureId, setQuizLectureId] = useState<string | null>(null);
+  const [quizIdToEdit, setQuizIdToEdit] = useState<string | null>(null); // New state
 
   // --- Delete Quiz States ---
   const [showDeleteQuizModal, setShowDeleteQuizModal] = useState(false);
@@ -267,8 +268,9 @@ const ManageCoursePage: React.FC = () => {
     setShowDocumentModal(true);
   };
 
-  const openQuizModal = (lectureId: string) => {
+  const openQuizModal = (lectureId: string, quizId: string | null = null) => {
     setQuizLectureId(lectureId);
+    setQuizIdToEdit(quizId);
     setShowQuizModal(true);
   };
 
@@ -607,6 +609,8 @@ const ManageCoursePage: React.FC = () => {
         }
         
         // Đóng các modal khác
+        if (showDeleteQuizModal) { setShowDeleteQuizModal(false); return; } // Add: Close Delete Quiz
+        if (showQuizModal) { setShowQuizModal(false); return; } // Add: Close Add/Edit Quiz
         if (showReorderModal) { setShowReorderModal(false); return; } 
         if (showVideoReorderModal) { setShowVideoReorderModal(false); return; } // Add video reorder modal close
         if (showDeleteVideoModal) { setShowDeleteVideoModal(false); return; }
@@ -623,7 +627,7 @@ const ManageCoursePage: React.FC = () => {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [previewVideo, showReorderModal, showVideoReorderModal /*Add ref*/, showDeleteVideoModal, showDeleteDocumentModal, showDeleteLectureModal, showEditVideoModal, showEditDocumentModal, showVideoModal, showDocumentModal, showEditModal, showLectureModal]);
+  }, [previewVideo, showReorderModal, showVideoReorderModal, showDeleteQuizModal, showQuizModal, showDeleteVideoModal, showDeleteDocumentModal, showDeleteLectureModal, showEditVideoModal, showEditDocumentModal, showVideoModal, showDocumentModal, showEditModal, showLectureModal]);
 
   if (loadingCourse) return <InstructorLayout><div className="flex justify-center py-20"><Loader2 className="animate-spin text-[#5a2dff]" /></div></InstructorLayout>
 
@@ -1467,7 +1471,7 @@ const ManageCoursePage: React.FC = () => {
         isOpen={showQuizModal}
         onClose={() => setShowQuizModal(false)}
         lectureId={quizLectureId}
-        quizIdToEdit={null} // Always null, editing disabled
+        quizIdToEdit={quizIdToEdit} // Pass the state here
         onSuccess={() => {
             fetchLectures(); // Refresh list after create/update
         }}
