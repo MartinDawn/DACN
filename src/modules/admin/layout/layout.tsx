@@ -90,6 +90,8 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   };
 
   const userInitials = user?.fullName ? user.fullName[0].toUpperCase() : (user?.email ? user.email[0].toUpperCase() : 'A');
+  // Xử lý hiển thị role (nếu là mảng thì join lại, nếu không có thì để mặc định)
+  const displayRole = Array.isArray(user?.role) ? user.role.join(", ") : (user?.role || "Quản trị viên");
 
   const toggleSidebar = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -204,9 +206,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                     placeholder="Tìm kiếm hoặc nhập lệnh..."
                     className="w-full rounded-full border border-gray-200 bg-[#F4F7FF] py-2.5 pl-11 pr-16 text-sm font-medium text-gray-600 outline-none transition focus:border-[#5a2dff] focus:bg-white xl:w-125"
                   />
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full border border-gray-200 bg-white px-2 py-0.5 text-[10px] font-semibold text-gray-400">
-                    ⌘K
-                  </span>
+            
                 </div>
               </form>
             </div>
@@ -241,11 +241,21 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                   >
                     <span className="hidden text-right lg:block">
                         <span className="block text-sm font-medium text-black">{user?.fullName || "Admin"}</span>
-                        <span className="block text-xs font-medium text-gray-500">{user?.role || "Quản trị viên"}</span>
+                        <span className="block text-xs font-medium text-gray-500">{displayRole}</span>
                     </span>
-                    <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#efe7ff] text-[#5a2dff] font-semibold text-lg hover:bg-purple-100 transition-colors">
-                        {userInitials}
-                    </span>
+                    
+                    {user?.avatarUrl ? (
+                        <img 
+                            src={user.avatarUrl} 
+                            alt="User Avatar" 
+                            className="h-10 w-10 rounded-full object-cover border border-[#efe7ff]"
+                        />
+                    ) : (
+                        <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#efe7ff] text-[#5a2dff] font-semibold text-lg hover:bg-purple-100 transition-colors">
+                            {userInitials}
+                        </span>
+                    )}
+
                     <span className="text-gray-400">
                         <ChevronDown />
                     </span>
@@ -255,9 +265,17 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                   {isProfileOpen && (
                     <div className="absolute right-0 mt-4 w-62 rounded-xl border border-gray-100 bg-white p-3 shadow-14 z-50">
                         <div className="flex items-center gap-3 rounded-xl bg-[#f6f0ff] px-3 py-2 mb-2">
-                            <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#efe7ff] text-[#5a2dff] font-bold">
-                                {userInitials}
-                            </span>
+                            {user?.avatarUrl ? (
+                                <img 
+                                    src={user.avatarUrl} 
+                                    alt="User Avatar" 
+                                    className="h-10 w-10 rounded-full object-cover border border-white shadow-sm"
+                                />
+                            ) : (
+                                <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#efe7ff] text-[#5a2dff] font-bold">
+                                    {userInitials}
+                                </span>
+                            )}
                             <div className="text-sm overflow-hidden">
                                 <p className="font-semibold text-gray-900 truncate">{user?.fullName || "Admin"}</p>
                                 <p className="text-xs text-gray-500 truncate">{user?.email}</p>
