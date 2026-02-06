@@ -47,3 +47,22 @@ export const InstructorRoute: React.FC<InstructorRouteProps> = ({ children }) =>
 
   return <>{children}</>;
 };
+
+interface AdminRouteProps {
+  children: React.ReactNode;
+}
+
+export const AdminRoute: React.FC<AdminRouteProps> = ({ children }) => {
+  const { isAuthenticated, user } = useAuth();
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+
+  // Kiểm tra role có phải là Admin hoặc Administrator không
+  if (!user?.role?.includes('Admin') && !user?.role?.includes('Administrator')) {
+    return <Navigate to="/user/home" replace />;
+  }
+
+  return <>{children}</>;
+};

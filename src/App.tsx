@@ -21,7 +21,7 @@ import RegisterTeacherPage from './modules/instructor/register_teacher';
 import RegisterTeacherFormPage from './modules/instructor/register_teacher_form';
 import TeacherDashboard from './modules/instructor/teacher';
 import LoginSuccess from './modules/auth/login-success';
-import { ProtectedRoute, GuestRoute, InstructorRoute } from './modules/auth/components/AuthGuard';
+import { ProtectedRoute, GuestRoute, InstructorRoute, AdminRoute } from './modules/auth/components/AuthGuard';
 import ManageCoursePage from './modules/instructor/manage-course';
 import AdminDashboard from './modules/admin/dashboard_ad';
 import AdminManageCourse from './modules/admin/manage_course_ad';
@@ -65,9 +65,9 @@ function App() {
         <Route path="/instructor/courses/manage/:courseId" element={<InstructorRoute><ManageCoursePage /></InstructorRoute>} />
         
         {/* Admin Routes */}
-        <Route path="/admin/dashboard" element={<AdminDashboard />} />
-        <Route path="/admin/courses" element={<AdminManageCourse />} />
-        <Route path="/admin/users" element={<AdminManageUser />} />
+        <Route path="/admin/dashboard" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
+        <Route path="/admin/courses" element={<AdminRoute><AdminManageCourse /></AdminRoute>} />
+        <Route path="/admin/users" element={<AdminRoute><AdminManageUser /></AdminRoute>} />
       </Routes>
     </Router>
   );

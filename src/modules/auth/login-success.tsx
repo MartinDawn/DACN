@@ -19,7 +19,11 @@ const LoginSuccess: React.FC = () => {
           // Lấy profile
           const profileRes = await getProfile(accessToken);
           if (profileRes?.success && profileRes.data) {
-            navigate('/user/home');
+            if (profileRes.data.role === 'Admin') {
+              navigate('/admin/dashboard');
+            } else {
+              navigate('/user/home');
+            }
           } else {
             // If profile fails, still set a default user
             localStorage.setItem('user', JSON.stringify({ role: 'Student' }));

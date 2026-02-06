@@ -49,7 +49,11 @@ const LoginPage: React.FC = () => {
           localStorage.setItem("accessToken", accessToken);
           const profileRes = await getProfile(accessToken);
           if (profileRes?.success && profileRes.data) {
-            navigate("/user/home");
+            if (profileRes.data.role === 'Admin') {
+              navigate("/admin/dashboard");
+            } else {
+              navigate("/user/home");
+            }
           } else {
             setNotification({
               show: true,
@@ -87,7 +91,16 @@ const LoginPage: React.FC = () => {
         
         // Chuyển hướng sau khi thông báo thành công
         setTimeout(() => {
-          navigate("/user/home");
+          const userStr = localStorage.getItem('user');
+          const user = userStr ? JSON.parse(userStr) : null;
+          // Ưu tiên check localStorage, sau đó kiểm tra trong response nếu có
+          const role = user?.role || (response.data as any)?.role || (response.data as any)?.user?.role;
+
+          if (role === 'Admin') {
+            navigate("/admin/dashboard");
+          } else {
+            navigate("/user/home");
+          }
         }, 1500);
       } else {
         // Xử lý trường hợp response không thành công dù không có lỗi catch
