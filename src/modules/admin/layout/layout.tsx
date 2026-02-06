@@ -1,5 +1,7 @@
-import React, { useState, ReactNode } from 'react';
-import { NavLink, useLocation } from 'react-router-dom';
+import React, { useState, ReactNode, useRef, useEffect } from 'react';
+import { NavLink, useLocation, useNavigate, Link } from 'react-router-dom';
+import { useAuth } from '../../auth/hooks/useAuth';
+import { UserIcon, KeyIcon, ArrowLeftOnRectangleIcon } from "@heroicons/react/24/outline";
 
 // Icons for Layout
 const DashboardIcon = () => (<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>);
@@ -64,6 +66,32 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarExpanded, setSidebarExpanded] = useState(true);
   const location = useLocation();
+
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+  const [isProfileOpen, setProfileOpen] = useState(false);
+  const profileMenuRef = useRef<HTMLDivElement>(null);
+  const [isLogoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (profileMenuRef.current && !profileMenuRef.current.contains(event.target as Node)) {
+        setProfileOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const handleConfirmLogout = () => {
+    logout();
+    setLogoutConfirmOpen(false);
+    navigate("/login"); 
+  };
+
+  const userInitials = user?.fullName ? user.fullName[0].toUpperCase() : (user?.email ? user.email[0].toUpperCase() : 'A');
+  // Xử lý hiển thị role (nếu là mảng thì join lại, nếu không có thì để mặc định)
+  const displayRole = Array.isArray(user?.role) ? user.role.join(", ") : (user?.role || "Quản trị viên");
 
   const toggleSidebar = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -178,9 +206,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                     placeholder="Tìm kiếm hoặc nhập lệnh..."
                     className="w-full rounded-full border border-gray-200 bg-[#F4F7FF] py-2.5 pl-11 pr-16 text-sm font-medium text-gray-600 outline-none transition focus:border-[#5a2dff] focus:bg-white xl:w-125"
                   />
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full border border-gray-200 bg-white px-2 py-0.5 text-[10px] font-semibold text-gray-400">
-                    ⌘K
-                  </span>
+            
                 </div>
               </form>
             </div>
@@ -208,17 +234,72 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                </ul>
 
                {/* User Area */}
-               <div className="relative flex items-center gap-4">
-                  <span className="hidden text-right lg:block">
-                     <span className="block text-sm font-medium text-black">Nguyễn Văn A</span>
-                     <span className="block text-xs font-medium text-gray-500">Quản trị viên</span>
-                  </span>
-                  <div className="h-10 w-10 rounded-full overflow-hidden">
-                     <img src="https://ui-avatars.com/api/?name=Admin&background=0D8ABC&color=fff" alt="User" />
-                  </div>
-                  <span className="text-gray-400">
-                    <ChevronDown />
-                  </span>
+               <div className="relative" ref={profileMenuRef}>
+                  <button 
+                    onClick={() => setProfileOpen(!isProfileOpen)}
+                    className="flex items-center gap-4"
+                  >
+                    <span className="hidden text-right lg:block">
+                        <span className="block text-sm font-medium text-black">{user?.fullName || "Admin"}</span>
+                        <span className="block text-xs font-medium text-gray-500">{displayRole}</span>
+                    </span>
+                    
+                    {user?.avatarUrl ? (
+                        <img 
+                            src={user.avatarUrl} 
+                            alt="User Avatar" 
+                            className="h-10 w-10 rounded-full object-cover border border-[#efe7ff]"
+                        />
+                    ) : (
+                        <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#efe7ff] text-[#5a2dff] font-semibold text-lg hover:bg-purple-100 transition-colors">
+                            {userInitials}
+                        </span>
+                    )}
+
+                    <span className="text-gray-400">
+                        <ChevronDown />
+                    </span>
+                  </button>
+
+                  {/* Dropdown Menu */}
+                  {isProfileOpen && (
+                    <div className="absolute right-0 mt-4 w-62 rounded-xl border border-gray-100 bg-white p-3 shadow-14 z-50">
+                        <div className="flex items-center gap-3 rounded-xl bg-[#f6f0ff] px-3 py-2 mb-2">
+                            {user?.avatarUrl ? (
+                                <img 
+                                    src={user.avatarUrl} 
+                                    alt="User Avatar" 
+                                    className="h-10 w-10 rounded-full object-cover border border-white shadow-sm"
+                                />
+                            ) : (
+                                <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#efe7ff] text-[#5a2dff] font-bold">
+                                    {userInitials}
+                                </span>
+                            )}
+                            <div className="text-sm overflow-hidden">
+                                <p className="font-semibold text-gray-900 truncate">{user?.fullName || "Admin"}</p>
+                                <p className="text-xs text-gray-500 truncate">{user?.email}</p>
+                            </div>
+                        </div>
+                        <ul className="flex flex-col gap-1 text-sm text-gray-600">
+                            <li>
+                                <Link to="/admin/profile" className="flex items-center gap-2 rounded-lg px-3 py-2 hover:bg-[#efeaff] hover:text-[#5a2dff] transition-colors">
+                                    <UserIcon className="h-4 w-4" /> <span>Thông tin cá nhân</span>
+                                </Link>
+                            </li>
+                            <li>
+                                <Link to="/admin/change-password" className="flex items-center gap-2 rounded-lg px-3 py-2 hover:bg-[#efeaff] hover:text-[#5a2dff] transition-colors">
+                                    <KeyIcon className="h-4 w-4" /> <span>Đổi mật khẩu</span>
+                                </Link>
+                            </li>
+                            <li>
+                                <button onClick={() => setLogoutConfirmOpen(true)} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 hover:bg-[#ffeceb] hover:text-[#ff4b3a] transition-colors text-left">
+                                    <ArrowLeftOnRectangleIcon className="h-4 w-4" /> <span>Đăng xuất</span>
+                                </button>
+                            </li>
+                        </ul>
+                    </div>
+                  )}
                </div>
             </div>
           </div>
@@ -229,6 +310,32 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
            {children}
         </main>
       </div>
+
+       {/* Logout Modal */}
+       {isLogoutConfirmOpen && (
+            <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm">
+            <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl animate-in fade-in zoom-in duration-200">
+                <h3 className="text-lg font-semibold text-gray-900">Xác nhận đăng xuất</h3>
+                <p className="mt-2 text-sm text-gray-500">Bạn có chắc chắn muốn đăng xuất khỏi hệ thống quản trị không?</p>
+                <div className="mt-6 flex justify-end gap-3 text-sm font-semibold">
+                <button
+                    type="button"
+                    onClick={() => setLogoutConfirmOpen(false)}
+                    className="rounded-full border border-gray-200 px-4 py-2 text-gray-600 transition hover:bg-gray-100"
+                >
+                    Hủy
+                </button>
+                <button
+                    type="button"
+                    onClick={handleConfirmLogout}
+                    className="rounded-full bg-[#5a2dff] px-4 py-2 text-white transition hover:bg-[#4920d9]"
+                >
+                    Đăng xuất
+                </button>
+                </div>
+            </div>
+            </div>
+        )}
     </div>
   );
 }

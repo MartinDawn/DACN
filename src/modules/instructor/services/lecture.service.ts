@@ -9,9 +9,7 @@ import type {
   UpdateLecturePayload,
   UpdateLectureResponse,
   DeleteLectureResponse,
-  UpdateOrderPayload, // Import struct
-  CreateQuizPayload, // Import
-  UpdateQuizPayload, // Import
+  UpdateOrderPayload, 
 } from "../models/lecture";
 
 export const lectureService = {
@@ -175,30 +173,6 @@ export const lectureService = {
     return response.data;
   },
 
-  // Create Quiz
-  async createQuiz(payload: CreateQuizPayload, lang = "vi"): Promise<any> {
-    const response = await apiClient.post<any>("/Quiz/create", payload, {
-      headers: { "Accept-Language": lang },
-    });
-    return response.data;
-  },
-
-  // Get Quiz Detail
-  async getQuizById(quizId: string, lang = "vi"): Promise<any> {
-    const response = await apiClient.get<any>(`/Quiz/${quizId}`, {
-      headers: { "Accept-Language": lang },
-    });
-    return response.data;
-  },
-
-  // Update Quiz
-  async updateQuiz(quizId: string, payload: UpdateQuizPayload, lang = "vi"): Promise<any> {
-    const response = await apiClient.put<any>(`/Quiz/${quizId}`, payload, {
-      headers: { "Accept-Language": lang },
-    });
-    return response.data;
-  },
-
   // Update order of multiple lectures
   async updateLectureOrders(payload: UpdateOrderPayload[], lang = "vi"): Promise<any> {
     const response = await apiClient.patch<any>("/Lecture/update-orders", payload, {
@@ -269,5 +243,13 @@ export const lectureService = {
       console.error("API getVideo error:", error);
       return null;
     }
+  },
+
+  // Delete Quiz
+  async deleteQuiz(quizId: string, lang = "vi"): Promise<any> {
+    const response = await apiClient.delete<any>(`/Quiz/${quizId}`, {
+      headers: { "Accept-Language": lang },
+    });
+    return response.data;
   },
 };

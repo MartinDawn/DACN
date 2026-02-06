@@ -10,7 +10,8 @@ import { useCourseLectures } from "./hooks/useCourseLectures";
 import { instructorService } from "./services/instructor.service";
 import type { InstructorCourse } from "./models/instructor";
 import { Confirm } from "react-confirm-box"; 
-import type { Lecture, QuizQuestionPayload } from "./models/lecture"; // Ensure Lecture type is imported
+import type { Lecture } from "./models/lecture"; 
+import QuizModal from "./components/QuizModal"; // New Import
 
 const ManageCoursePage: React.FC = () => {
   const params = useParams();
@@ -63,15 +64,14 @@ const ManageCoursePage: React.FC = () => {
   const [editDocName, setEditDocName] = useState("");
   const [editDocFile, setEditDocFile] = useState<File | null>(null);
 
-  // --- Quiz Modal States ---
+  // --- Quiz Modal States (REDUCED) ---
   const [showQuizModal, setShowQuizModal] = useState(false);
-  const [quizName, setQuizName] = useState("");
-  const [quizDescription, setQuizDescription] = useState("");
-  const [quizQuestions, setQuizQuestions] = useState<QuizQuestionPayload[]>([
-    { question: "", key: "", description: "", a: "", b: "", c: "", d: "" }
-  ]);
   const [quizLectureId, setQuizLectureId] = useState<string | null>(null);
-  const [editingQuizId, setEditingQuizId] = useState<string | null>(null); // New state
+  const [quizIdToEdit, setQuizIdToEdit] = useState<string | null>(null); // New state
+
+  // --- Delete Quiz States ---
+  const [showDeleteQuizModal, setShowDeleteQuizModal] = useState(false);
+  const [quizToDelete, setQuizToDelete] = useState<{ lectureId: string; quizId: string } | null>(null);
 
   const [showDeleteDocumentModal, setShowDeleteDocumentModal] = useState(false);
   const [docToDelete, setDocToDelete] = useState<{ lectureId: string; documentId: string } | null>(null);
@@ -83,7 +83,7 @@ const ManageCoursePage: React.FC = () => {
     lectures, fetchLectures, isCreating, uploadingLectureIds, createLecture, 
     uploadLectureVideo, deleteLecture, lecturesLoading, editLecture, editVideo, deleteVideo, getVideo,
     uploadLectureDocument, uploadingDocLectureIds, editDocument, deleteDocument, updateLectureOrders,
-    updateVideoOrders, addQuiz, isCreatingQuiz, updateQuiz, getQuizDetail // Destructure
+    updateVideoOrders, deleteQuiz // Removed editQuiz
   } = useCourseLectures(courseId ?? "");
 
   useEffect(() => {
@@ -268,109 +268,10 @@ const ManageCoursePage: React.FC = () => {
     setShowDocumentModal(true);
   };
 
-  const openQuizModal = (lectureId: string) => {
+  const openQuizModal = (lectureId: string, quizId: string | null = null) => {
     setQuizLectureId(lectureId);
-    setEditingQuizId(null); // Reset editing ID
-    setQuizName("");
-    setQuizDescription("");
-    setQuizQuestions([{ question: "", key: "A", description: "", a: "", b: "", c: "", d: "" }]);
+    setQuizIdToEdit(quizId);
     setShowQuizModal(true);
-  };
-
-  const openEditQuizModal = async (lectureId: string, quizId: string) => {
-    const toastId = toast.loading("Đang tải dữ liệu Quiz...");
-    try {
-        const quizData = await getQuizDetail(quizId);
-        if (!quizData) {
-            toast.error("Không tìm thấy thông tin Quiz.");
-            return;
-        }
-
-        setQuizLectureId(lectureId);
-        setEditingQuizId(quizId);
-        setQuizName(quizData.name || "");
-        setQuizDescription(quizData.description || "");
-        
-        // Map questions if available
-        if (Array.isArray(quizData.questions) && quizData.questions.length > 0) {
-            // Ensure compatibility
-            const mappedQuestions = quizData.questions.map((q: any) => ({
-                question: q.question || "",
-                key: q.key || "A",
-                description: q.description || "",
-                a: q.a || "",
-                b: q.b || "",
-                c: q.c || "",
-                d: q.d || ""
-            }));
-            setQuizQuestions(mappedQuestions);
-        } else {
-            setQuizQuestions([{ question: "", key: "A", description: "", a: "", b: "", c: "", d: "" }]);
-        }
-
-        setShowQuizModal(true);
-    } catch (e) {
-        toast.error("Lỗi khi tải Quiz.");
-    } finally {
-        toast.dismiss(toastId);
-    }
-  };
-
-  const handleAddQuestion = () => {
-    setQuizQuestions([...quizQuestions, { question: "", key: "A", description: "", a: "", b: "", c: "", d: "" }]);
-  };
-
-  const handleRemoveQuestion = (index: number) => {
-    if (quizQuestions.length > 1) {
-       setQuizQuestions(quizQuestions.filter((_, i) => i !== index));
-    }
-  };
-
-  const updateQuestionField = (index: number, field: keyof QuizQuestionPayload, value: string) => {
-    const newQuestions = [...quizQuestions];
-    newQuestions[index] = { ...newQuestions[index], [field]: value };
-    setQuizQuestions(newQuestions);
-  };
-
-  const handleCreateQuiz = async () => {
-    if (!quizLectureId) return;
-    if (!quizName.trim()) { toast.error("Vui lòng nhập tiêu đề Quiz"); return; }
-    
-    // Validate questions
-    for (let i = 0; i < quizQuestions.length; i++) {
-        const q = quizQuestions[i];
-        if (!q.question.trim()) { toast.error(`Câu hỏi ${i+1} chưa có nội dung.`); return; }
-        if (!q.a.trim() || !q.b.trim()) { toast.error(`Câu hỏi ${i+1} cần ít nhất đáp án A và B.`); return; }
-        if (!q.key) { toast.error(`Vui lòng chọn đáp án đúng cho câu ${i+1}.`); return; }
-    }
-
-    let success = false;
-    
-    if (editingQuizId) {
-        // Update mode
-        success = await updateQuiz(editingQuizId, {
-            name: quizName,
-            description: quizDescription,
-            questions: quizQuestions,
-            testTime: 0,
-            attemptCount: 0
-        });
-    } else {
-        // Create mode
-        success = await addQuiz({
-            lectureId: quizLectureId,
-            name: quizName,
-            description: quizDescription,
-            questions: quizQuestions,
-            testTime: 0,
-            attemptCount: 0
-        });
-    }
-
-    if (success) {
-        setShowQuizModal(false);
-        setEditingQuizId(null);
-    }
   };
 
   const handleUploadDocument = async (e: React.FormEvent) => {
@@ -462,6 +363,18 @@ const ManageCoursePage: React.FC = () => {
       await deleteDocument(docToDelete.lectureId, docToDelete.documentId);
       setShowDeleteDocumentModal(false);
       setDocToDelete(null);
+  };
+
+  const handleDeleteQuiz = (lectureId: string, quizId: string) => {
+    setQuizToDelete({ lectureId, quizId });
+    setShowDeleteQuizModal(true);
+  };
+
+  const confirmDeleteQuiz = async () => {
+    if (!quizToDelete) return;
+    await deleteQuiz(quizToDelete.lectureId, quizToDelete.quizId);
+    setShowDeleteQuizModal(false);
+    setQuizToDelete(null);
   };
 
   const handlePreviewVideo = async (video: any) => {
@@ -696,6 +609,8 @@ const ManageCoursePage: React.FC = () => {
         }
         
         // Đóng các modal khác
+        if (showDeleteQuizModal) { setShowDeleteQuizModal(false); return; } // Add: Close Delete Quiz
+        if (showQuizModal) { setShowQuizModal(false); return; } // Add: Close Add/Edit Quiz
         if (showReorderModal) { setShowReorderModal(false); return; } 
         if (showVideoReorderModal) { setShowVideoReorderModal(false); return; } // Add video reorder modal close
         if (showDeleteVideoModal) { setShowDeleteVideoModal(false); return; }
@@ -712,7 +627,7 @@ const ManageCoursePage: React.FC = () => {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [previewVideo, showReorderModal, showVideoReorderModal /*Add ref*/, showDeleteVideoModal, showDeleteDocumentModal, showDeleteLectureModal, showEditVideoModal, showEditDocumentModal, showVideoModal, showDocumentModal, showEditModal, showLectureModal]);
+  }, [previewVideo, showReorderModal, showVideoReorderModal, showDeleteQuizModal, showQuizModal, showDeleteVideoModal, showDeleteDocumentModal, showDeleteLectureModal, showEditVideoModal, showEditDocumentModal, showVideoModal, showDocumentModal, showEditModal, showLectureModal]);
 
   if (loadingCourse) return <InstructorLayout><div className="flex justify-center py-20"><Loader2 className="animate-spin text-[#5a2dff]" /></div></InstructorLayout>
 
@@ -895,11 +810,19 @@ const ManageCoursePage: React.FC = () => {
                                      <div className="flex gap-2">
                                         <button 
                                             type="button"
-                                            onClick={() => openEditQuizModal(lecture.id, quizId)}
+                                            onClick={() => openQuizModal(lecture.id, quizId)}
                                             className="p-1.5 text-gray-500 hover:text-[#5a2dff] hover:bg-white rounded transition-colors"
                                             title="Sửa Quiz"
                                         >
                                             <Edit2 size={15} />
+                                        </button>
+                                        <button 
+                                            type="button"
+                                            onClick={() => handleDeleteQuiz(lecture.id, quizId)}
+                                            className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-white rounded transition-colors"
+                                            title="Xóa Quiz"
+                                        >
+                                            <Trash size={15} />
                                         </button>
                                      </div>
                                    )}
@@ -1364,6 +1287,37 @@ const ManageCoursePage: React.FC = () => {
         </div>
       )}
 
+      {/* --- DELETE QUIZ MODAL --- */}
+      {showDeleteQuizModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+           <div className="w-full max-w-sm rounded-xl bg-white shadow-xl animate-in fade-in zoom-in-95">
+              <div className="p-6 text-center">
+                 <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-[#5a2dff]/10">
+                    <Trash className="h-6 w-6 text-[#5a2dff]" />
+                 </div>
+                 <h3 className="mt-4 text-lg font-semibold text-gray-900">Xóa Bài Kiểm Tra?</h3>
+                 <p className="mt-2 text-sm text-gray-500">
+                    Bạn có chắc chắn muốn xóa bài kiểm tra này? hành động này không thể hoàn tác.
+                 </p>
+                 <div className="mt-6 flex justify-center gap-3">
+                    <button
+                       onClick={() => setShowDeleteQuizModal(false)}
+                       className="rounded-lg border px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                    >
+                       Hủy
+                    </button>
+                    <button
+                       onClick={confirmDeleteQuiz}
+                       className="rounded-lg bg-[#5a2dff] px-4 py-2 text-sm font-medium text-white hover:bg-[#4b24cc]"
+                    >
+                       Xóa ngay
+                    </button>
+                 </div>
+              </div>
+           </div>
+        </div>
+      )}
+
       {/* --- DELETE VIDEO MODAL --- */}
       {showDeleteVideoModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
@@ -1512,118 +1466,16 @@ const ManageCoursePage: React.FC = () => {
         </div>
       )}
 
-      {/* --- ADD QUIZ MODAL --- */}
-      {showQuizModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-           <div className="w-full max-w-4xl rounded-xl bg-white shadow-xl animate-in fade-in zoom-in-95 flex flex-col max-h-[90vh]">
-              <div className="border-b px-6 py-4 flex justify-between items-center">
-                 <div>
-                    <h3 className="text-xl font-bold text-gray-900">Tạo Quiz Mới</h3>
-                    <p className="text-sm text-gray-500">Tạo bài kiểm tra trắc nghiệm cho học viên</p>
-                 </div>
-                 <button onClick={() => setShowQuizModal(false)}><X className="text-gray-400 hover:text-gray-700 transition"/></button>
-              </div>
-              
-              <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-gray-50">
-                 <div className="bg-white p-4 rounded-lg border shadow-sm">
-                    <label className="mb-1 block text-sm font-bold text-gray-700">Tiêu đề Quiz <span className="text-red-500">*</span></label>
-                    <input 
-                       value={quizName} onChange={e => setQuizName(e.target.value)} 
-                       className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#5a2dff] focus:ring-1 focus:ring-[#5a2dff] mb-4" 
-                       placeholder="Ví dụ: Kiểm tra kiến thức chương 1"
-                    />
-                    
-                    <label className="mb-1 block text-sm font-semibold text-gray-700">Mô tả (tùy chọn)</label>
-                    <input 
-                       value={quizDescription} onChange={e => setQuizDescription(e.target.value)}
-                       className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#5a2dff] focus:ring-1 focus:ring-[#5a2dff]" 
-                       placeholder="Mô tả ngắn về nội dung quiz"
-                    />
-                 </div>
-
-                 <div className="flex items-center justify-between">
-                    <h4 className="font-bold text-gray-800">Câu hỏi</h4>
-                    <button onClick={handleAddQuestion} className="flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50">
-                        <PlusCircle size={16}/> Thêm câu hỏi
-                    </button>
-                 </div>
-
-                 {/* Question List */}
-                 <div className="space-y-4">
-                    {quizQuestions.map((q, idx) => (
-                       <div key={idx} className="bg-white p-5 rounded-lg border border-gray-200 shadow-sm relative group">
-                          {idx > 0 && (
-                              <button onClick={() => handleRemoveQuestion(idx)} className="absolute top-4 right-4 text-gray-400 hover:text-red-500 p-1" title="Xóa câu hỏi">
-                                  <Trash size={18}/>
-                              </button>
-                          )}
-                          
-                          <div className="mb-4">
-                              <label className="block text-sm font-bold text-gray-800 mb-2">Câu {idx + 1}</label>
-                              <input 
-                                 value={q.question}
-                                 onChange={e => updateQuestionField(idx, 'question', e.target.value)}
-                                 className="w-full rounded-lg bg-gray-50 border border-gray-200 px-4 py-3 text-sm focus:bg-white focus:border-[#5a2dff] focus:ring-1 focus:ring-[#5a2dff] transition-colors"
-                                 placeholder="Nhập câu hỏi"
-                              />
-                          </div>
-
-                          <div className="space-y-3 mb-4">
-                              <p className="text-sm font-semibold text-gray-700">Đáp án (chọn đáp án đúng)</p>
-                              {['A','B','C','D'].map((optKey) => {
-                                  const fieldName = optKey.toLowerCase() as keyof QuizQuestionPayload;
-                                  return (
-                                    <div key={optKey} className="flex items-center gap-3">
-                                        <input 
-                                            type="radio" 
-                                            name={`q-${idx}-key`}
-                                            checked={q.key === optKey}
-                                            onChange={() => updateQuestionField(idx, 'key', optKey)}
-                                            className="h-5 w-5 border-gray-300 text-[#5a2dff] focus:ring-[#5a2dff] cursor-pointer"
-                                        />
-                                        <div className={`flex-1 flex items-center rounded-lg border px-3 py-2 ${q.key === optKey ? "border-[#5a2dff] bg-[#5a2dff]/5" : "border-gray-200"}`}>
-                                            <span className="text-gray-500 font-medium w-6">{optKey}.</span>
-                                            <input 
-                                                value={q[fieldName] as string}
-                                                onChange={e => updateQuestionField(idx, fieldName, e.target.value)}
-                                                className="flex-1 bg-transparent border-none p-0 text-sm focus:ring-0"
-                                                placeholder={`Đáp án ${optKey}`}
-                                            />
-                                            {q.key === optKey && <div className="text-[#5a2dff] ml-2">✔</div>}
-                                        </div>
-                                    </div>
-                                  );
-                              })}
-                          </div>
-
-                          <div className="mt-4 pt-4 border-t border-gray-100">
-                             <label className="block text-sm font-semibold text-gray-700 mb-2">Giải thích (tùy chọn)</label>
-                             <textarea 
-                                value={q.description || ""}
-                                onChange={e => updateQuestionField(idx, 'description', e.target.value)}
-                                className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-[#5a2dff] focus:ring-1 focus:ring-[#5a2dff]"
-                                placeholder="Giải thích tại sao đây là đáp án đúng"
-                                rows={2}
-                             />
-                          </div>
-                       </div>
-                    ))}
-                 </div>
-              </div>
-
-              <div className="border-t px-6 py-4 flex justify-end gap-2 bg-white rounded-b-xl z-10">
-                 <button onClick={() => setShowQuizModal(false)} className="rounded-lg border px-6 py-2.5 text-sm font-bold text-gray-600 hover:bg-gray-50">Hủy</button>
-                 <button 
-                    onClick={handleCreateQuiz}
-                    disabled={isCreatingQuiz} 
-                    className="flex items-center gap-2 rounded-lg bg-[#5a2dff] px-6 py-2.5 text-sm font-bold text-white shadow-lg shadow-[#5a2dff]/30 hover:bg-[#4b24cc] disabled:opacity-70"
-                 >
-                    {isCreatingQuiz ? <Loader2 className="animate-spin h-4 w-4"/> : (editingQuizId ? "Cập nhật" : "Tạo Quiz")}
-                 </button>
-              </div>
-           </div>
-        </div>
-      )}
+      {/* --- ADD/EDIT QUIZ MODAL IS NOW SEPARATED --- */}
+      <QuizModal 
+        isOpen={showQuizModal}
+        onClose={() => setShowQuizModal(false)}
+        lectureId={quizLectureId}
+        quizIdToEdit={quizIdToEdit} // Pass the state here
+        onSuccess={() => {
+            fetchLectures(); // Refresh list after create/update
+        }}
+      />
 
     </InstructorLayout>
   );

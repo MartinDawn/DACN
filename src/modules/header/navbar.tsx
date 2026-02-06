@@ -134,17 +134,33 @@ const Navbar: React.FC = () => {
               onClick={() => setProfileOpen((prev) => !prev)}
               className="flex items-center gap-2 rounded-full border border-gray-200 px-2 py-1 text-sm font-semibold text-gray-600 transition hover:text-[#5a2dff]"
             >
-              <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#efe7ff] text-[#5a2dff]">
-                {userInitials} {/* Thay T bằng chữ cái đầu */}
-              </span>
+              {user?.avatarUrl ? (
+                <img 
+                    src={user.avatarUrl} 
+                    alt="User Avatar" 
+                    className="h-9 w-9 rounded-full object-cover border border-[#efe7ff]"
+                />
+              ) : (
+                <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#efe7ff] text-[#5a2dff]">
+                    {userInitials} {/* Thay T bằng chữ cái đầu */}
+                </span>
+              )}
               <ChevronDownIcon className="h-4 w-4" />
             </button>
             {isProfileOpen && (
               <div className="absolute right-0 mt-3 w-56 rounded-2xl border border-gray-100 bg-white p-3 shadow-xl">
                 <div className="flex items-center gap-3 rounded-xl bg-[#f6f0ff] px-3 py-2">
-                  <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#efe7ff] text-[#5a2dff]">
-                    {userInitials} {/* Thay T bằng chữ cái đầu */}
-                  </span>
+                  {user?.avatarUrl ? (
+                    <img 
+                        src={user.avatarUrl} 
+                        alt="User Avatar" 
+                        className="h-10 w-10 rounded-full object-cover border border-white shadow-sm"
+                    />
+                  ) : (
+                    <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#efe7ff] text-[#5a2dff]">
+                        {userInitials} {/* Thay T bằng chữ cái đầu */}
+                    </span>
+                  )}
                   <div className="text-sm overflow-hidden">
                     <p className="font-semibold text-gray-900 truncate">{user?.fullName || "Người dùng"}</p>
                     <p className="text-xs text-gray-500 truncate">{user?.email || "..."}</p>

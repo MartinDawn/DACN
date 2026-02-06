@@ -1,7 +1,7 @@
 import { useState, useCallback, Dispatch, SetStateAction, useEffect } from "react";
 import { toast } from "react-hot-toast";
 import { lectureService } from "../services/lecture.service";
-import type { Lecture, CreateQuizPayload, UpdateQuizPayload } from "../models/lecture";
+import type { Lecture } from "../models/lecture";
 
 interface CreateLectureInput {
   name: string;
@@ -207,7 +207,7 @@ export const useCourseLectures = (courseId: string) => {
   const [isCreating, setIsCreating] = useState(false);
   const [uploadingLectureIds, setUploadingLectureIds] = useState<Record<string, boolean>>({});
   const [lecturesLoading, setLecturesLoading] = useState(false);
-  const [isCreatingQuiz, setIsCreatingQuiz] = useState(false); // Add state
+  // REMOVED: isCreatingQuiz state
 
   // State for document uploading
   const [uploadingDocLectureIds, setUploadingDocLectureIds] = useState<Record<string, boolean>>({});
@@ -231,7 +231,7 @@ export const useCourseLectures = (courseId: string) => {
   useEffect(() => {
     fetchLectures();
   }, [fetchLectures]);
-
+  
   const createLecture = useCallback(
     async ({ name, description, courseId: inputCourseId }: CreateLectureInput) => {
       const targetCourseId = inputCourseId ?? courseId;
@@ -344,58 +344,6 @@ export const useCourseLectures = (courseId: string) => {
     return null;
   }, [fetchLectures]);
 
-  const addQuiz = useCallback(async (payload: CreateQuizPayload) => {
-    setIsCreatingQuiz(true);
-    try {
-      const response = await lectureService.createQuiz(payload);
-      // Check success based on response structure
-      if (response && (response.success || response.data)) {
-         toast.success("Tạo Quiz thành công!");
-         await fetchLectures();
-         return true;
-      }
-      toast.error(response?.message ?? "Không thể tạo Quiz.");
-      return false;
-    } catch (error) {
-      console.error(error);
-      toast.error("Lỗi khi tạo Quiz.");
-      return false;
-    } finally {
-      setIsCreatingQuiz(false);
-    }
-  }, [fetchLectures]);
-
-  const updateQuiz = useCallback(async (quizId: string, payload: UpdateQuizPayload) => {
-    setIsCreatingQuiz(true); // Reuse state
-    try {
-      const response = await lectureService.updateQuiz(quizId, payload);
-      // Check success based on response structure
-      if (response && (response.success || response.data)) {
-         toast.success("Cập nhật Quiz thành công!");
-         await fetchLectures();
-         return true;
-      }
-      toast.error(response?.message ?? "Không thể cập nhật Quiz.");
-      return false;
-    } catch (error) {
-      console.error(error);
-      toast.error("Lỗi khi cập nhật Quiz.");
-      return false;
-    } finally {
-      setIsCreatingQuiz(false);
-    }
-  }, [fetchLectures]);
-
-  const getQuizDetail = useCallback(async (quizId: string) => {
-    try {
-      const response = await lectureService.getQuizById(quizId);
-      return response?.data ?? response;
-    } catch (error) {
-      console.error(error);
-      return null;
-    }
-  }, []);
-
   const editLecture = useCallback(async (lectureId: string, payload: { name?: string; description?: string; displayOrder?: number }) => {
     try {
       const response = await lectureService.updateLecture(lectureId, payload);
@@ -417,7 +365,7 @@ export const useCourseLectures = (courseId: string) => {
     }
     return null;
   }, [courseId, fetchLectures, lectures]);
-
+  
   const deleteLecture = useCallback(async (lectureId: string) => {
     try {
       const response = await lectureService.deleteLecture(lectureId);
@@ -573,6 +521,37 @@ export const useCourseLectures = (courseId: string) => {
       }
   }, []);
 
+  const deleteQuiz = useCallback(async (lectureId: string, quizId: string) => {
+    try {
+      // Use lectureService instead of quizService (which was undefined)
+      await lectureService.deleteQuiz(quizId);
+      
+      setLectures((prev) => prev.map((l) => {
+          if (l.id !== lectureId) return l;
+
+          // Lọc bỏ quiz đã xóa
+          let updatedQuizzes = l.quizzes ? l.quizzes.filter((q: any) => {
+              const qId = q.id || q.quizId || q.Id || q.ID;
+              return String(qId) !== String(quizId);
+          }) : [];
+
+          return { 
+             ...l, 
+             quizzes: updatedQuizzes,
+             // Update fallback names just in case
+             quizNames: updatedQuizzes.map((q: any) => q.name || q.title || "")
+          };
+      }));
+      
+      toast.success("Xóa bài kiểm tra thành công.");
+      return true;
+    } catch (error) {
+      console.error(error);
+      toast.error("Lỗi xóa bài kiểm tra.");
+      return false;
+    }
+  }, []);
+
   // Get Video content for preview
   const getVideo = useCallback(async (videoId: string) => {
     try {
@@ -591,7 +570,7 @@ export const useCourseLectures = (courseId: string) => {
     isCreating,
     uploadingLectureIds,
     lecturesLoading,
-    isCreatingQuiz,
+    // Removed isCreatingQuiz
     createLecture,
     uploadLectureVideo,  
     editLecture,
@@ -605,8 +584,6 @@ export const useCourseLectures = (courseId: string) => {
     deleteDocument,
     updateLectureOrders,
     updateVideoOrders,
-    addQuiz, 
-    updateQuiz,
-    getQuizDetail,
+    deleteQuiz,
   };
 };
