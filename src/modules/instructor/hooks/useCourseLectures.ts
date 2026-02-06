@@ -1,7 +1,7 @@
 import { useState, useCallback, Dispatch, SetStateAction, useEffect } from "react";
 import { toast } from "react-hot-toast";
 import { lectureService } from "../services/lecture.service";
-import type { Lecture, CreateQuizPayload, UpdateQuizPayload } from "../models/lecture";
+import type { Lecture } from "../models/lecture";
 
 interface CreateLectureInput {
   name: string;
@@ -523,7 +523,8 @@ export const useCourseLectures = (courseId: string) => {
 
   const deleteQuiz = useCallback(async (lectureId: string, quizId: string) => {
     try {
-      await lectureService.deleteQuiz(quizId);
+      // Use quizService instead of lectureService for consistency
+      await quizService.deleteQuiz(quizId);
       
       setLectures((prev) => prev.map((l) => {
           if (l.id !== lectureId) return l;
@@ -583,7 +584,6 @@ export const useCourseLectures = (courseId: string) => {
     deleteDocument,
     updateLectureOrders,
     updateVideoOrders,
-    // Removed addQuiz, updateQuiz, getQuizDetail returns
     deleteQuiz,
   };
 };

@@ -67,7 +67,6 @@ const ManageCoursePage: React.FC = () => {
   // --- Quiz Modal States (REDUCED) ---
   const [showQuizModal, setShowQuizModal] = useState(false);
   const [quizLectureId, setQuizLectureId] = useState<string | null>(null);
-  const [editingQuizId, setEditingQuizId] = useState<string | null>(null);
 
   // --- Delete Quiz States ---
   const [showDeleteQuizModal, setShowDeleteQuizModal] = useState(false);
@@ -83,7 +82,7 @@ const ManageCoursePage: React.FC = () => {
     lectures, fetchLectures, isCreating, uploadingLectureIds, createLecture, 
     uploadLectureVideo, deleteLecture, lecturesLoading, editLecture, editVideo, deleteVideo, getVideo,
     uploadLectureDocument, uploadingDocLectureIds, editDocument, deleteDocument, updateLectureOrders,
-    updateVideoOrders, deleteQuiz // Added deleteQuiz
+    updateVideoOrders, deleteQuiz // Removed editQuiz
   } = useCourseLectures(courseId ?? "");
 
   useEffect(() => {
@@ -270,13 +269,6 @@ const ManageCoursePage: React.FC = () => {
 
   const openQuizModal = (lectureId: string) => {
     setQuizLectureId(lectureId);
-    setEditingQuizId(null);
-    setShowQuizModal(true);
-  };
-
-  const openEditQuizModal = (lectureId: string, quizId: string) => {
-    setQuizLectureId(lectureId);
-    setEditingQuizId(quizId);
     setShowQuizModal(true);
   };
 
@@ -814,7 +806,7 @@ const ManageCoursePage: React.FC = () => {
                                      <div className="flex gap-2">
                                         <button 
                                             type="button"
-                                            onClick={() => openEditQuizModal(lecture.id, quizId)}
+                                            onClick={() => openQuizModal(lecture.id, quizId)}
                                             className="p-1.5 text-gray-500 hover:text-[#5a2dff] hover:bg-white rounded transition-colors"
                                             title="Sửa Quiz"
                                         >
@@ -1475,7 +1467,7 @@ const ManageCoursePage: React.FC = () => {
         isOpen={showQuizModal}
         onClose={() => setShowQuizModal(false)}
         lectureId={quizLectureId}
-        quizIdToEdit={editingQuizId}
+        quizIdToEdit={null} // Always null, editing disabled
         onSuccess={() => {
             fetchLectures(); // Refresh list after create/update
         }}
