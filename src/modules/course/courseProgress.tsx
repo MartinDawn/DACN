@@ -1,4 +1,4 @@
-// src/modules/user/courseProgress.tsx
+// src/modules/course/courseProgress.tsx
 
 import React, { useMemo, useEffect, useState, useCallback } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
@@ -22,6 +22,7 @@ import { StarIcon as StarSolidIcon } from '@heroicons/react/20/solid';
 
 // 1. IMPORT HOOK
 import { useCourses } from './hooks/useCourses'; // Đảm bảo đường dẫn hook đúng
+import type { ApiLecture } from './models/course';
 
 // --- TYPES & CONSTANTS (ĐÃ SỬA) ---
 
@@ -34,6 +35,8 @@ export interface LessonItem {
   title: string;
   type: LessonType; // <-- Type đã được sửa
   duration: string;
+  url?: string;
+  videoId?: string;   // ID thực của video để gọi /api/Lecture/get-video/{videoId}
   isPreview?: boolean;
   isCompleted?: boolean;
 }
@@ -133,6 +136,83 @@ export const lessonFilterTabs: Array<{ label: string; value: LessonFilterValue }
   { label: 'Tài liệu', value: 'doc' },
 ];
 
+// --- HELPER: Chuyển đổi một lecture từ API thành danh sách LessonItem ---
+// Hỗ trợ 3 cấu trúc API có thể trả về:
+// 1. videoNames/documentNames/quizNames (string[])
+// 2. videos/documents/quizzes (object[] hoặc string[])
+// 3. lessons (array gộp chung với field 'type')
+const extractItemsFromLecture = (lecture: ApiLecture): LessonItem[] => {
+  const items: LessonItem[] = [];
+
+  const getName = (entry: { title?: string; name?: string } | string): string =>
+    typeof entry === 'string' ? entry : (entry.title ?? entry.name ?? 'Không có tiêu đề');
+
+  const getId = (entry: { id?: string } | string, fallback: string): string =>
+    typeof entry === 'string' ? fallback : (entry.id ?? fallback);
+
+  const LESSON_TYPE_MAP: Record<string | number, LessonType> = {
+    0: 'video', video: 'video', Video: 'video',
+    1: 'doc', doc: 'doc', document: 'doc', Document: 'doc',
+    2: 'quiz', quiz: 'quiz', Quiz: 'quiz',
+  };
+
+  // --- Cấu trúc 3: lessons gộp chung ---
+  if (Array.isArray(lecture.lessons) && lecture.lessons.length > 0) {
+    lecture.lessons.forEach((lesson, index) => {
+      const rawType = lesson.type ?? 'video';
+      const type: LessonType = LESSON_TYPE_MAP[rawType] ?? 'video';
+      const duration =
+        lesson.duration != null
+          ? typeof lesson.duration === 'number'
+            ? `${Math.floor(lesson.duration / 60)}:${String(lesson.duration % 60).padStart(2, '0')}`
+            : String(lesson.duration)
+          : 'N/A';
+      items.push({
+        id: lesson.id ?? `${lecture.id}-lesson-${index}`,
+        title: getName(lesson),
+        type,
+        duration,
+        url: lesson.url ?? lesson.videoUrl,
+        videoId: type === 'video' ? (lesson.videoId ?? lesson.id ?? undefined) : undefined,
+        isCompleted: false,
+        isPreview: false,
+      });
+    });
+    return items;
+  }
+
+  // --- Cấu trúc 2: videos/documents/quizzes (object[] hoặc string[]) ---
+  if (
+    (lecture.videos && lecture.videos.length > 0) ||
+    (lecture.documents && lecture.documents.length > 0) ||
+    (lecture.quizzes && lecture.quizzes.length > 0)
+  ) {
+    (lecture.videos ?? []).forEach((v, i) => {
+      items.push({ id: getId(v as { id?: string }, `${lecture.id}-video-${i}`), title: getName(v as string | { title?: string; name?: string }), type: 'video', duration: 'N/A', url: (v as { url?: string; videoUrl?: string }).url ?? (v as { url?: string; videoUrl?: string }).videoUrl, isCompleted: false, isPreview: false });
+    });
+    (lecture.documents ?? []).forEach((d, i) => {
+      items.push({ id: getId(d as { id?: string }, `${lecture.id}-doc-${i}`), title: getName(d as string | { title?: string; name?: string }), type: 'doc', duration: 'Tài liệu', isCompleted: false, isPreview: false });
+    });
+    (lecture.quizzes ?? []).forEach((q, i) => {
+      items.push({ id: getId(q as { id?: string }, `${lecture.id}-quiz-${i}`), title: getName(q as string | { title?: string; name?: string }), type: 'quiz', duration: 'N/A', isCompleted: false, isPreview: false });
+    });
+    return items;
+  }
+
+  // --- Cấu trúc 1: videoNames/documentNames/quizNames (string[]) ---
+  (lecture.videoNames ?? []).forEach((name, index) => {
+    items.push({ id: `${lecture.id}-video-${index}`, title: name, type: 'video', duration: 'N/A', url: lecture.videoUrls?.[index], isCompleted: false, isPreview: false });
+  });
+  (lecture.documentNames ?? []).forEach((name, index) => {
+    items.push({ id: `${lecture.id}-doc-${index}`, title: name, type: 'doc', duration: 'Tài liệu', isCompleted: false, isPreview: false });
+  });
+  (lecture.quizNames ?? []).forEach((name, index) => {
+    items.push({ id: `${lecture.id}-quiz-${index}`, title: name, type: 'quiz', duration: 'N/A', isCompleted: false, isPreview: false });
+  });
+
+  return items;
+};
+
 // --- COMPONENT CHÍNH ---
 
 const CourseProgressPage: React.FC = () => {
@@ -170,22 +250,12 @@ const CourseProgressPage: React.FC = () => {
     const transformedSections: CourseSection[] = courseContent.lectures
       .sort((a, b) => a.name.localeCompare(b.name)) // Sắp xếp chương
       .map(lecture => {
-      const items: LessonItem[] = []; // Type đã sửa
+      const items: LessonItem[] = extractItemsFromLecture(lecture);
 
-      lecture.videoNames.forEach((name, index) => {
-        items.push({ id: `${lecture.id}-video-${index}`, title: name, type: 'video', duration: 'N/A', isCompleted: false, isPreview: false });
-      });
-      lecture.documentNames.forEach((name, index) => {
-        items.push({ id: `${lecture.id}-doc-${index}`, title: name, type: 'doc', duration: 'Tài liệu', isCompleted: false, isPreview: false });
-      });
-      lecture.quizNames.forEach((name, index) => {
-        items.push({ id: `${lecture.id}-quiz-${index}`, title: name, type: 'quiz', duration: 'N/A', isCompleted: false, isPreview: false });
-      });
-      
       return {
         id: lecture.id,
         title: lecture.name,
-        summary: lecture.description,
+        summary: lecture.description ?? '',
         totalDuration: 'N/A', // courseContent không cấp
         items: items,
       };
@@ -375,9 +445,6 @@ const CourseProgressPage: React.FC = () => {
         <section className="rounded-3xl bg-white p-8 shadow-xl shadow-slate-900/5">
           <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
             <div className="space-y-3">
-              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-indigo-400">
-                Khóa học của tôi › Chi tiết khóa học
-              </p>
               <h1 className="text-3xl font-semibold text-slate-900">{course.title}</h1>
               <div className="flex flex-wrap items-center gap-3 text-sm text-slate-500">
                 <span className="inline-flex items-center gap-1 font-semibold text-amber-500">

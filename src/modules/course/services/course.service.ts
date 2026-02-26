@@ -85,6 +85,7 @@ export const courseService = {
     const response = await apiClient.get<ApiResponse<ApiCourseContent>>(
       `/Course/course-content/${courseId}`
     );
+    console.log('[getCourseContent] raw response:', JSON.stringify(response.data, null, 2));
     return response.data;
   },
 };
