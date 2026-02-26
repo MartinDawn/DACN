@@ -175,3 +175,54 @@ export interface ApiQuizAttempt {
   questions?: ApiQuizQuestion[];
   timeLimit?: number;
 }
+
+// GET /api/Quiz/{quizId}
+export interface ApiQuizDetail {
+  id?: string;
+  title?: string;
+  description?: string;
+  questions?: ApiQuizQuestion[];
+  timeLimit?: number;
+  passingScore?: number;
+}
+
+// POST /api/Quiz/submit  — request body
+export interface ApiQuizSubmitRequest {
+  attemptId: string;
+  answers: Array<{
+    questionId: string;
+    selectedOptionId: string;
+  }>;
+}
+
+// GET /api/Quiz/attempt/{attemptId}/result
+export interface ApiQuizResultAnswer {
+  questionId?: string;
+  selectedOptionId?: string;
+  correctAnswerId?: string;
+  isCorrect?: boolean;
+}
+
+export interface ApiQuizResult {
+  attemptId?: string;
+  score?: number;
+  totalQuestions?: number;
+  correctAnswers?: number;
+  percentage?: number;
+  passed?: boolean;
+  completedAt?: string;
+  answers?: ApiQuizResultAnswer[];
+}
+
+// GET /api/Quiz/{quizId}/attempts  — one entry in history list
+export interface ApiQuizAttemptSummary {
+  attemptId?: string;
+  id?: string;
+  score?: number;
+  totalQuestions?: number;
+  correctAnswers?: number;
+  percentage?: number;
+  passed?: boolean;
+  startedAt?: string;
+  completedAt?: string;
+}
