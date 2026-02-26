@@ -390,6 +390,7 @@ interface QuizContentProps {
   startError: string | null;
   currentAttemptId: string | null;
   quizDetail: ApiQuizDetail | null;
+  testTime?: number; // thời gian làm bài (phút), lấy từ quizAttempt.testTime
   // Submit state
   isSubmitting: boolean;
   submitError: string | null;
@@ -412,6 +413,7 @@ const QuizContent: React.FC<QuizContentProps> = ({
   startError,
   currentAttemptId,
   quizDetail,
+  testTime,
   isSubmitting,
   submitError,
   attemptResult,
@@ -426,12 +428,42 @@ const QuizContent: React.FC<QuizContentProps> = ({
 }) => {
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [showHistory, setShowHistory] = useState(false);
+  const [timeLeft, setTimeLeft] = useState<number | null>(null);
 
-  // Reset answers when a new attempt is started
+  // Refs to avoid stale closure in auto-submit
+  const answersRef = React.useRef(answers);
+  React.useEffect(() => { answersRef.current = answers; }, [answers]);
+  const onSubmitRef = React.useRef(onSubmit);
+  React.useEffect(() => { onSubmitRef.current = onSubmit; }, [onSubmit]);
+
+  // Reset answers and timer when a new attempt is started
   React.useEffect(() => {
     setAnswers({});
     setShowHistory(false);
+    const effectiveTime = testTime ?? quizDetail?.timeLimit;
+    if (currentAttemptId && effectiveTime && effectiveTime > 0) {
+      setTimeLeft(effectiveTime * 60);
+    } else {
+      setTimeLeft(null);
+    }
   }, [currentAttemptId]);
+
+  // Countdown interval — pauses when submitting or result is available
+  React.useEffect(() => {
+    if (timeLeft === null || timeLeft <= 0 || isSubmitting || !!attemptResult) return;
+    const id = setInterval(() => setTimeLeft((t) => (t !== null ? t - 1 : null)), 1000);
+    return () => clearInterval(id);
+  }, [timeLeft, isSubmitting, attemptResult]);
+
+  // Auto-submit when timer hits 0
+  React.useEffect(() => {
+    if (timeLeft !== 0) return;
+    const payload = Object.entries(answersRef.current).map(([questionId, selectedOptionId]) => ({
+      questionId,
+      selectedOptionId,
+    }));
+    onSubmitRef.current(payload);
+  }, [timeLeft]);
 
   // ── History panel ──
   if (showHistory) {
@@ -572,6 +604,7 @@ const QuizContent: React.FC<QuizContentProps> = ({
 
   // ── Start screen ──
   if (!currentAttemptId) {
+    const displayTime = testTime ?? quizDetail?.timeLimit;
     return (
       <div className="flex flex-col items-center justify-center gap-5 py-12">
         <span className="flex h-16 w-16 items-center justify-center rounded-full bg-amber-100">
@@ -580,6 +613,12 @@ const QuizContent: React.FC<QuizContentProps> = ({
         <div className="text-center space-y-1">
           <p className="text-base font-semibold text-slate-800">Sẵn sàng làm bài?</p>
           <p className="text-sm text-slate-500">Nhấn bắt đầu để nhận câu hỏi và làm bài quiz.</p>
+          {displayTime != null && displayTime > 0 && (
+            <p className="text-sm text-slate-500">
+              Thời gian làm bài:{' '}
+              <span className="font-semibold text-amber-600">{displayTime} phút</span>
+            </p>
+          )}
         </div>
         <div className="flex gap-3">
           <button
@@ -622,6 +661,15 @@ const QuizContent: React.FC<QuizContentProps> = ({
         ? attemptResult.percentage
         : attemptResult.correctAnswers != null && attemptResult.totalQuestions
         ? Math.round((attemptResult.correctAnswers / attemptResult.totalQuestions) * 100)
+        : attemptResult.score != null
+        ? attemptResult.score
+        : null;
+
+    const correctAnswerCount =
+      attemptResult.correctAnswers != null
+        ? attemptResult.correctAnswers
+        : pct != null && attemptResult.totalQuestions
+        ? Math.round((pct / 100) * attemptResult.totalQuestions)
         : null;
 
     // Build a map of per-question results for review
@@ -653,7 +701,11 @@ const QuizContent: React.FC<QuizContentProps> = ({
           <p className={`text-2xl font-bold ${
             attemptResult.passed == null ? 'text-amber-700' : attemptResult.passed ? 'text-emerald-700' : 'text-rose-700'
           }`}>
-            {pct != null ? `${pct}%` : `${attemptResult.correctAnswers ?? attemptResult.score ?? '-'}/${attemptResult.totalQuestions ?? '-'}`}
+            {correctAnswerCount != null && attemptResult.totalQuestions != null
+              ? `${correctAnswerCount}/${attemptResult.totalQuestions}`
+              : pct != null
+              ? `${pct}%`
+              : '-'}
           </p>
           <p className="text-sm font-semibold text-slate-600">
             {attemptResult.passed == null
@@ -780,13 +832,37 @@ const QuizContent: React.FC<QuizContentProps> = ({
     onSubmit(payload);
   };
 
+  const formatTime = (secs: number) => {
+    const m = Math.floor(secs / 60).toString().padStart(2, '0');
+    const s = (secs % 60).toString().padStart(2, '0');
+    return `${m}:${s}`;
+  };
+
+  const totalSecs = (testTime ?? quizDetail?.timeLimit ?? 0) * 60;
+  const timerColorClass =
+    timeLeft === null
+      ? ''
+      : timeLeft <= 60
+      ? 'text-rose-600'
+      : totalSecs > 0 && timeLeft / totalSecs <= 0.3
+      ? 'text-amber-500'
+      : 'text-emerald-600';
+
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between">
         <h3 className="text-base font-semibold text-slate-800">{total} câu hỏi</h3>
-        <span className="text-xs text-slate-500">
-          Đã trả lời: {answeredCount}/{total}
-        </span>
+        <div className="flex items-center gap-4">
+          {timeLeft !== null && (
+            <span className={`flex items-center gap-1 text-sm font-bold tabular-nums ${timerColorClass}`}>
+              <ClockIcon className="h-4 w-4" />
+              {formatTime(timeLeft)}
+            </span>
+          )}
+          <span className="text-xs text-slate-500">
+            Đã trả lời: {answeredCount}/{total}
+          </span>
+        </div>
       </div>
 
       {questions.map((question, index) => {
@@ -1267,6 +1343,7 @@ const LessonContentPage: React.FC = () => {
                 startError={quizError}
                 currentAttemptId={quizAttempt?.attemptId ?? quizAttempt?.id ?? null}
                 quizDetail={quizDetail}
+                testTime={quizAttempt?.testTime}
                 isSubmitting={isSubmitting}
                 submitError={submitError}
                 attemptResult={attemptResult}

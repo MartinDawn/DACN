@@ -170,10 +170,12 @@ export interface ApiQuizAttempt {
   attemptId?: string;
   id?: string;
   quizId?: string;
+  quizName?: string;
   title?: string;
   description?: string;
   questions?: ApiQuizQuestion[];
   timeLimit?: number;
+  testTime?: number; // thời gian làm bài theo phút (trả về từ API startAttempt)
 }
 
 // GET /api/Quiz/{quizId}
