@@ -1,12 +1,3 @@
-// export interface MyCourse {
-//   id: string;
-//   imageUrl: string;
-//   name: string;
-//   instructorName: string;
-//   rating: number;
-//   price: number;
-// }
-
 export interface RecommendedCourse {
   id: string;
   imageUrl: string;
@@ -59,8 +50,7 @@ export interface MyCourse {
   imageUrl: string;
   name: string;
   instructorName: string;
-  // Sửa 'rating' thành 'averageRating' để khớp với API mới
-  averageRating: number; 
+  averageRating: number;
   totalReviews: number;
   price: number;
   originalPrice?: number | null;
@@ -68,6 +58,7 @@ export interface MyCourse {
   totalStudents: number;
   isBestseller: boolean;
 }
+
 export interface PaginatedCourses {
   items: MyCourse[];
   page: number;
@@ -87,13 +78,6 @@ export interface FilterParams {
   MaxPrice?: number;
 }
 
-
-export interface ApiResponse<T> {
-  success: boolean;
-  code: string;
-  message: string;
-  data: T;
-}
 export interface CourseSearchItem {
   id: string;
   name: string;
@@ -108,9 +92,6 @@ export interface CourseSearchItem {
   isBestseller: boolean;
 }
 
-/**
- * Interface cho toàn bộ đối tượng 'data' trả về từ API search
- */
 export interface CourseSearchResponse {
   items: CourseSearchItem[];
   page: number;
@@ -126,13 +107,30 @@ export interface SearchParams {
   page: number;
   pageSize: number;
 }
+
+// Cấu trúc bài học dạng object (khi backend trả về lessons là array of objects)
+export interface ApiLesson {
+  id: string;
+  title?: string;
+  name?: string;
+  type?: string | number; // 'video' | 'doc' | 'quiz' hoặc 0 | 1 | 2
+  duration?: number | string;
+  order?: number;
+}
+
 export interface ApiLecture {
   id: string;
   name: string;
-  description: string;
-  videoNames: string[];
-  documentNames: string[];
-  quizNames: string[];
+  description?: string;
+  // Cấu trúc 1: API trả về tên theo từng loại (string[])
+  videoNames?: string[];
+  documentNames?: string[];
+  quizNames?: string[];
+  // Cấu trúc 2: API trả về mảng lessons gộp chung
+  lessons?: ApiLesson[];
+  videos?: (ApiLesson | string)[];
+  documents?: (ApiLesson | string)[];
+  quizzes?: (ApiLesson | string)[];
 }
 
 export interface ApiCourseContent {
