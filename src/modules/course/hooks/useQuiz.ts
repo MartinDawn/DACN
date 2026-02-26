@@ -142,7 +142,7 @@ export const useQuiz = (): UseQuizReturn => {
       setSubmitError(null);
       try {
         console.log('[submitQuiz] payload:', JSON.stringify({ attemptId, answers }, null, 2));
-        const submitRes = await quizService.submitQuiz({ attemptId, answers });
+        const submitRes = await quizService.submitQuiz({ quizAttemptId: attemptId, answers });
         if (submitRes.success === false) {
           setSubmitError(submitRes.message || 'Nộp bài thất bại.');
           return;
@@ -159,7 +159,10 @@ export const useQuiz = (): UseQuizReturn => {
         }
       } catch (err) {
         if (axios.isAxiosError(err)) {
-          console.error('[submitQuiz] 400 response body:', err.response?.data);
+          const errData = err.response?.data;
+          console.error('[submitQuiz] payload sent:', JSON.stringify({ attemptId, answers }, null, 2));
+          console.error('[submitQuiz] 400 errors:', JSON.stringify(errData?.errors, null, 2));
+          console.error('[submitQuiz] full response:', JSON.stringify(errData, null, 2));
         }
         setSubmitError(extractErrorMessage(err, 'Đã xảy ra lỗi khi nộp bài. Vui lòng thử lại.'));
         return;

@@ -188,7 +188,7 @@ export interface ApiQuizDetail {
 
 // POST /api/Quiz/submit  — request body
 export interface ApiQuizSubmitRequest {
-  attemptId: string;
+  quizAttemptId: string;
   answers: Array<{
     questionId: string;
     selectedOptionId: string;
