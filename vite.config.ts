@@ -8,7 +8,8 @@ export default defineConfig({
     proxy: {
       // Bất kỳ request nào bắt đầu bằng '/api' sẽ được chuyển hướng qua proxy
       '/api': {
-        target: 'http://dacn.runasp.net', // ĐIỀN URL BACKEND CỦA BẠN VÀO ĐÂY
+        // target: 'http://dacn.runasp.net', // ĐIỀN URL BACKEND CỦA BẠN VÀO ĐÂY
+        target: 'http://localhost:5223',
         changeOrigin: true,
         secure: false, // Thêm dòng này nếu backend dùng https self-signed hoặc http thường để tránh lỗi SSL
         rewrite: (path) => path.replace(/^\/api/, '/api') // Giữ nguyên '/api' trong path

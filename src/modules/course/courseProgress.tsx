@@ -172,13 +172,13 @@ const CourseProgressPage: React.FC = () => {
       .map(lecture => {
       const items: LessonItem[] = []; // Type đã sửa
 
-      lecture.videoNames.forEach((name, index) => {
+      (lecture.videoNames ?? []).forEach((name, index) => {
         items.push({ id: `${lecture.id}-video-${index}`, title: name, type: 'video', duration: 'N/A', isCompleted: false, isPreview: false });
       });
-      lecture.documentNames.forEach((name, index) => {
+      (lecture.documentNames ?? []).forEach((name, index) => {
         items.push({ id: `${lecture.id}-doc-${index}`, title: name, type: 'doc', duration: 'Tài liệu', isCompleted: false, isPreview: false });
       });
-      lecture.quizNames.forEach((name, index) => {
+      (lecture.quizNames ?? []).forEach((name, index) => {
         items.push({ id: `${lecture.id}-quiz-${index}`, title: name, type: 'quiz', duration: 'N/A', isCompleted: false, isPreview: false });
       });
       
