@@ -35,23 +35,23 @@ type CourseProgress = MyCourse & {
 // --- CONSTANTS ---
 
 const filters: { label: string; value: FilterValue }[] = [
-  { label: "All Courses", value: "all" },
-  { label: "In Progress", value: "inProgress" },
-  { label: "Completed", value: "completed" },
-  { label: "Not Started", value: "notStarted" },
+  { label: "Tất cả khóa học", value: "all" },
+  { label: "Đang học", value: "inProgress" },
+  { label: "Đã hoàn thành", value: "completed" },
+  { label: "Chưa bắt đầu", value: "notStarted" },
 ];
 
 const quickActions = [
-  { title: "Browse More Courses", icon: BookOpenIcon, href: "/courses" },
-  { title: "Set Learning Goals", icon: SparklesIcon, href: "#" },
-  { title: "Download Certificates", icon: DocumentArrowDownIcon, href: "#" },
+  { title: "Khám phá thêm khóa học", icon: BookOpenIcon, href: "/courses" },
+  { title: "Đặt mục tiêu học tập", icon: SparklesIcon, href: "#" },
+  { title: "Tải chứng chỉ", icon: DocumentArrowDownIcon, href: "#" },
 ];
 
 const achievements = [
-  { title: "First Course Completed", date: "Jan 18, 2024" },
-  { title: "5 Hours Learned", date: "Jan 15, 2024" },
-  { title: "JavaScript Expert", date: "Jan 18, 2024" },
-  { title: "Week Streak", date: "Jan 20, 2024" },
+  { title: "Hoàn thành khóa học đầu tiên", date: "18 tháng 1, 2024" },
+  { title: "Đã học 5 giờ", date: "15 tháng 1, 2024" },
+  { title: "Chuyên gia JavaScript", date: "18 tháng 1, 2024" },
+  { title: "Học liên tục một tuần", date: "20 tháng 1, 2024" },
 ];
 
 // --- COMPONENT ---
@@ -266,16 +266,16 @@ const MyCoursePage: React.FC = () => {
                     : "bg-gray-100 text-gray-500";
                 const statusText =
                   course.status === "completed"
-                    ? "Completed"
+                    ? "Đã hoàn thành"
                     : course.status === "inProgress"
-                    ? "In Progress"
-                    : "Not Started";
+                    ? "Đang học"
+                    : "Chưa bắt đầu";
                 const actionLabel =
                   course.status === "completed"
-                    ? "Review"
+                    ? "Xem lại"
                     : course.status === "inProgress"
-                    ? "Continue"
-                    : "Start";
+                    ? "Tiếp tục"
+                    : "Bắt đầu";
                 const actionVariant = "bg-[#5a2dff]"; // Luôn là màu chính
 
                 return (
@@ -371,10 +371,10 @@ const MyCoursePage: React.FC = () => {
           <aside className="space-y-6">
             <div className="rounded-3xl bg-white p-6 shadow-[0_24px_56px_rgba(15,23,42,0.08)]">
               <h3 className="text-lg font-semibold text-gray-900">
-                Overall Progress
+                Tiến độ tổng quan
               </h3>
               <p className="mt-1 text-sm text-gray-500">
-                Average completion across all courses
+                Mức độ hoàn thành trung bình của tất cả khóa học
               </p>
               <div className="mt-6 flex items-center gap-6">
                 <div className="relative flex h-28 w-28 items-center justify-center rounded-full bg-[#efe7ff]">
@@ -384,19 +384,19 @@ const MyCoursePage: React.FC = () => {
                 </div>
                 <div className="space-y-3 text-sm text-gray-500">
                   <div className="flex items-center justify-between">
-                    <span>Completed</span>
+                    <span>Đã hoàn thành</span>
                     <span className="font-semibold text-gray-900">
                       {completedCount}
                     </span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span>In Progress</span>
+                    <span>Đang học</span>
                     <span className="font-semibold text-gray-900">
                       {inProgressCount}
                     </span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span>Not Started</span>
+                    <span>Chưa bắt đầu</span>
                     <span className="font-semibold text-gray-900">
                       {notStartedCount}
                     </span>
@@ -408,7 +408,7 @@ const MyCoursePage: React.FC = () => {
             <div className="space-y-6">
               <div className="rounded-3xl bg-white p-6 shadow-[0_24px_56px_rgba(15,23,42,0.08)]">
                 <h3 className="text-lg font-semibold text-gray-900">
-                  Quick Actions
+                  Thao tác nhanh
                 </h3>
                 <div className="mt-4 space-y-3">
                   {quickActions.map(({ title, icon: Icon, href }) => (
@@ -431,7 +431,7 @@ const MyCoursePage: React.FC = () => {
 
               <div className="rounded-3xl bg-white p-6 shadow-[0_24px_56px_rgba(15,23,42,0.08)]">
                 <h3 className="text-lg font-semibold text-gray-900">
-                  Recent Achievements
+                  Thành tích gần đây
                 </h3>
                 <ul className="mt-4 space-y-4 text-sm text-gray-600">
                   {achievements.map((achievement) => (
