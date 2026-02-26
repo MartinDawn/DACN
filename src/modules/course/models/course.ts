@@ -142,3 +142,36 @@ export interface ApiCourseContent {
   name: string;
   lectures: ApiLecture[];
 }
+
+export interface ApiQuizAnswer {
+  id: string;
+  content?: string;
+  text?: string;
+  label?: string;
+  answerText?: string;
+  isCorrect?: boolean;
+}
+
+export interface ApiQuizQuestion {
+  id?: string;
+  questionText?: string;
+  content?: string;
+  question?: string;
+  text?: string;
+  questionType?: string;
+  answers?: ApiQuizAnswer[];
+  options?: ApiQuizAnswer[];
+  choices?: ApiQuizAnswer[];
+  correctAnswer?: string;
+  explanation?: string;
+}
+
+export interface ApiQuizAttempt {
+  attemptId?: string;
+  id?: string;
+  quizId?: string;
+  title?: string;
+  description?: string;
+  questions?: ApiQuizQuestion[];
+  timeLimit?: number;
+}

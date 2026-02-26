@@ -445,9 +445,6 @@ const CourseProgressPage: React.FC = () => {
         <section className="rounded-3xl bg-white p-8 shadow-xl shadow-slate-900/5">
           <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
             <div className="space-y-3">
-              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-indigo-400">
-                Khóa học của tôi › Chi tiết khóa học
-              </p>
               <h1 className="text-3xl font-semibold text-slate-900">{course.title}</h1>
               <div className="flex flex-wrap items-center gap-3 text-sm text-slate-500">
                 <span className="inline-flex items-center gap-1 font-semibold text-amber-500">

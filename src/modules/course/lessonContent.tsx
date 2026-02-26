@@ -23,6 +23,8 @@ import type { ApiLecture } from './models/course';
 
 import { useCourses } from './hooks/useCourses';
 import { useLecture } from './hooks/useLecture';
+import { useQuiz } from './hooks/useQuiz';
+import type { ApiQuizAttempt, ApiQuizQuestion } from './models/course';
 
 // --- TYPES ---
 
@@ -46,19 +48,6 @@ export interface CourseSection {
   totalDuration: string;
   items: LessonItem[];
 }
-
-type QuizQuestion = {
-  id: string;
-  question: string;
-  options: Array<{ id: string; label: string }>;
-  answer: string;
-  explanation: string;
-};
-
-type DocumentGuide = {
-  summary: string;
-  highlights: string[];
-};
 
 type LessonTimelineEntry = {
   section: CourseSection;
@@ -228,51 +217,6 @@ const extractItemsFromLecture = (lecture: ApiLecture): LessonItem[] => {
   return items;
 };
 
-// --- MOCK DATA ---
-
-const quizBank: Record<string, QuizQuestion[]> = {
-  default: [
-    {
-      id: 'react-definition',
-      question: 'React là gì?',
-      options: [
-        { id: 'library', label: 'Một thư viện JavaScript để xây dựng giao diện người dùng' },
-        { id: 'backend', label: 'Một framework backend' },
-        { id: 'database', label: 'Một cơ sở dữ liệu' },
-        { id: 'language', label: 'Một ngôn ngữ lập trình mới' },
-      ],
-      answer: 'library',
-      explanation: 'React là thư viện JavaScript do Meta phát triển để xây dựng UI component-based.',
-    },
-    {
-      id: 'jsx-definition',
-      question: 'JSX là viết tắt của?',
-      options: [
-        { id: 'javascript-xml', label: 'JavaScript XML' },
-        { id: 'java-syntax', label: 'Java Syntax Extension' },
-        { id: 'json-xml', label: 'JSON XML' },
-        { id: 'javascript-extra', label: 'JavaScript Extra' },
-      ],
-      answer: 'javascript-xml',
-      explanation: 'JSX là JavaScript XML, cho phép viết HTML-like syntax trong JavaScript.',
-    },
-  ],
-};
-
-const documentBank: Record<string, DocumentGuide> = {
-  default: {
-    summary: 'Tài liệu tổng hợp các khái niệm quan trọng trong bài học này, bao gồm definitions, best practices và tham khảo.',
-    highlights: [
-      'Các định nghĩa và thuật ngữ quan trọng cần nắm.',
-      'Checklist những việc cần thực hành sau bài học.',
-      'Links tham khảo thêm tài liệu ngoài.',
-    ],
-  },
-};
-
-const getQuizQuestions = (lessonId: string) => quizBank[lessonId] ?? quizBank.default;
-const getDocumentGuide = (lessonId: string) => documentBank[lessonId] ?? documentBank.default;
-
 // --- VIDEO URL HELPERS ---
 
 const getYouTubeEmbedUrl = (url: string): string | null => {
@@ -407,23 +351,114 @@ const VideoPlayer: React.FC<{
   );
 };
 
-const QuizContent: React.FC<{ questions: QuizQuestion[] }> = ({ questions }) => {
+// --- NORMALIZE QUIZ DATA FROM API ---
+
+type NormalizedQuestion = {
+  id: string;
+  question: string;
+  options: Array<{ id: string; label: string; isCorrect?: boolean }>;
+  correctAnswer?: string;
+  explanation?: string;
+};
+
+const normalizeQuizQuestions = (rawQuestions: ApiQuizQuestion[]): NormalizedQuestion[] =>
+  rawQuestions.map((q, idx) => {
+    const rawAnswers = q.answers ?? q.options ?? q.choices ?? [];
+    return {
+      id: q.id ?? `q-${idx}`,
+      question: q.questionText ?? q.content ?? q.question ?? q.text ?? `Câu ${idx + 1}`,
+      options: rawAnswers.map((a, i) => ({
+        id: a.id ?? `opt-${idx}-${i}`,
+        label: a.content ?? a.text ?? a.label ?? a.answerText ?? `Đáp án ${i + 1}`,
+        isCorrect: a.isCorrect,
+      })),
+      correctAnswer: q.correctAnswer,
+      explanation: q.explanation,
+    };
+  });
+
+// --- SUB-COMPONENTS ---
+
+const QuizContent: React.FC<{
+  attempt: ApiQuizAttempt | null;
+  isLoading: boolean;
+  error: string | null;
+  onStart: () => void;
+}> = ({ attempt, isLoading, error, onStart }) => {
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [submitted, setSubmitted] = useState(false);
 
-  const total = questions.length;
-  const score = useMemo(() => {
-    if (!submitted) return 0;
-    return questions.reduce(
-      (acc, q) => (answers[q.id] === q.answer ? acc + 1 : acc),
-      0
-    );
-  }, [submitted, answers, questions]);
+  // Reset state when a new attempt is loaded
+  React.useEffect(() => {
+    setAnswers({});
+    setSubmitted(false);
+  }, [attempt?.attemptId ?? attempt?.id]);
 
-  const handleSelect = (questionId: string, optionId: string) => {
-    if (submitted) return;
-    setAnswers((prev) => ({ ...prev, [questionId]: optionId }));
-  };
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-16">
+        <div className="text-center space-y-3">
+          <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-amber-500 border-t-transparent" />
+          <p className="text-sm font-semibold text-slate-500">Đang tải quiz...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="rounded-2xl border border-rose-200 bg-rose-50 p-6 text-sm font-semibold text-rose-600">
+        {error}
+      </div>
+    );
+  }
+
+  if (!attempt) {
+    return (
+      <div className="flex flex-col items-center justify-center gap-5 py-12">
+        <span className="flex h-16 w-16 items-center justify-center rounded-full bg-amber-100">
+          <QuestionMarkCircleIcon className="h-8 w-8 text-amber-500" />
+        </span>
+        <div className="text-center space-y-1">
+          <p className="text-base font-semibold text-slate-800">Sẵn sàng làm bài?</p>
+          <p className="text-sm text-slate-500">Nhấn bắt đầu để xem câu hỏi và làm bài quiz.</p>
+        </div>
+        <button
+          type="button"
+          onClick={onStart}
+          className="rounded-full bg-slate-900 px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-amber-500"
+        >
+          Bắt đầu làm quiz
+        </button>
+      </div>
+    );
+  }
+
+  const rawQuestions = attempt.questions ?? [];
+  const questions = normalizeQuizQuestions(rawQuestions);
+  const total = questions.length;
+
+  if (total === 0) {
+    return (
+      <div className="rounded-2xl border border-amber-100 bg-amber-50 p-6 text-sm font-semibold text-amber-700">
+        Quiz này chưa có câu hỏi.
+      </div>
+    );
+  }
+
+  const score = submitted
+    ? questions.reduce((acc, q) => {
+        const selected = answers[q.id];
+        const correct =
+          q.correctAnswer ??
+          q.options.find((o) => o.isCorrect)?.id;
+        return correct && selected === correct ? acc + 1 : acc;
+      }, 0)
+    : 0;
+
+  const canShowResult = questions.some(
+    (q) => q.correctAnswer || q.options.some((o) => o.isCorrect)
+  );
 
   const reset = () => {
     setAnswers({});
@@ -433,36 +468,44 @@ const QuizContent: React.FC<{ questions: QuizQuestion[] }> = ({ questions }) => 
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between">
-        <h3 className="text-base font-semibold text-slate-800">
-          {total} câu hỏi
-        </h3>
-        {submitted && (
-          <span className="inline-flex items-center gap-2 rounded-full bg-indigo-50 px-4 py-1.5 text-sm font-semibold text-indigo-600">
+        <h3 className="text-base font-semibold text-slate-800">{total} câu hỏi</h3>
+        {submitted && canShowResult && (
+          <span className="inline-flex items-center gap-2 rounded-full bg-amber-50 px-4 py-1.5 text-sm font-semibold text-amber-700">
             <AcademicCapIcon className="h-4 w-4" />
             Kết quả: {score}/{total}
+          </span>
+        )}
+        {submitted && !canShowResult && (
+          <span className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-4 py-1.5 text-sm font-semibold text-emerald-700">
+            <CheckCircleIcon className="h-4 w-4" />
+            Đã nộp bài
           </span>
         )}
       </div>
 
       {questions.map((question, index) => {
         const selected = answers[question.id];
+        const correctId =
+          question.correctAnswer ??
+          question.options.find((o) => o.isCorrect)?.id;
+
         return (
           <div
             key={question.id}
             className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
           >
-            <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-wide text-indigo-400">
+            <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-wide text-amber-500">
               <span>Câu {index + 1} / {total}</span>
-              {submitted && (
+              {submitted && canShowResult && (
                 <span
                   className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 ${
-                    answers[question.id] === question.answer
+                    selected === correctId
                       ? 'bg-emerald-100 text-emerald-600'
                       : 'bg-rose-100 text-rose-600'
                   }`}
                 >
                   <CheckCircleIcon className="h-3.5 w-3.5" />
-                  {answers[question.id] === question.answer ? 'Chính xác' : 'Sai'}
+                  {selected === correctId ? 'Chính xác' : 'Sai'}
                 </span>
               )}
             </div>
@@ -470,19 +513,19 @@ const QuizContent: React.FC<{ questions: QuizQuestion[] }> = ({ questions }) => 
             <div className="mt-3 grid gap-2">
               {question.options.map((option) => {
                 const isSelected = selected === option.id;
-                const isCorrect = submitted && question.answer === option.id;
-                const isWrong = submitted && isSelected && !isCorrect;
+                const isCorrectOpt = submitted && canShowResult && option.id === correctId;
+                const isWrong = submitted && canShowResult && isSelected && !isCorrectOpt;
                 return (
                   <label
                     key={option.id}
                     className={`flex cursor-pointer items-center gap-3 rounded-xl border px-4 py-2.5 text-sm font-medium transition ${
-                      isCorrect
+                      isCorrectOpt
                         ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
                         : isWrong
                         ? 'border-rose-200 bg-rose-50 text-rose-700'
                         : isSelected
-                        ? 'border-indigo-200 bg-indigo-50 text-indigo-700'
-                        : 'border-slate-200 bg-slate-50 text-slate-600 hover:border-indigo-200 hover:bg-white'
+                        ? 'border-amber-200 bg-amber-50 text-amber-700'
+                        : 'border-slate-200 bg-slate-50 text-slate-600 hover:border-amber-200 hover:bg-white'
                     }`}
                   >
                     <input
@@ -490,16 +533,19 @@ const QuizContent: React.FC<{ questions: QuizQuestion[] }> = ({ questions }) => 
                       name={question.id}
                       value={option.id}
                       checked={isSelected}
-                      onChange={() => handleSelect(question.id, option.id)}
-                      className="h-3.5 w-3.5 text-indigo-600"
+                      onChange={() => {
+                        if (!submitted)
+                          setAnswers((prev) => ({ ...prev, [question.id]: option.id }));
+                      }}
+                      className="h-3.5 w-3.5 text-amber-500"
                     />
                     <span className="flex-1">{option.label}</span>
                   </label>
                 );
               })}
             </div>
-            {submitted && (
-              <p className="mt-3 rounded-xl bg-indigo-50 p-3 text-xs text-indigo-700">
+            {submitted && question.explanation && (
+              <p className="mt-3 rounded-xl bg-amber-50 p-3 text-xs text-amber-800">
                 <strong>Giải thích:</strong> {question.explanation}
               </p>
             )}
@@ -512,14 +558,14 @@ const QuizContent: React.FC<{ questions: QuizQuestion[] }> = ({ questions }) => 
           type="button"
           onClick={() => setSubmitted(true)}
           disabled={submitted || Object.keys(answers).length !== total}
-          className="rounded-full bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-600 disabled:cursor-not-allowed disabled:bg-slate-300"
+          className="rounded-full bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-amber-500 disabled:cursor-not-allowed disabled:bg-slate-300"
         >
           Nộp bài
         </button>
         <button
           type="button"
           onClick={reset}
-          className="rounded-full border border-slate-300 px-5 py-2.5 text-sm font-semibold text-slate-600 transition hover:border-indigo-300 hover:text-indigo-600"
+          className="rounded-full border border-slate-300 px-5 py-2.5 text-sm font-semibold text-slate-600 transition hover:border-amber-300 hover:text-amber-600"
         >
           Làm lại
         </button>
@@ -528,38 +574,105 @@ const QuizContent: React.FC<{ questions: QuizQuestion[] }> = ({ questions }) => 
   );
 };
 
-const DocumentContent: React.FC<{
-  lesson: LessonItem;
-  guide: DocumentGuide;
+const DocumentViewer: React.FC<{
+  title: string;
+  url: string | null;
+  isLoading: boolean;
+  error: string | null;
   onDownload: () => void;
-}> = ({ lesson, guide, onDownload }) => (
-  <div className="space-y-4">
-    <div className="flex items-center gap-3 rounded-2xl border border-sky-100 bg-sky-50 p-4">
-      <DocumentTextIcon className="h-8 w-8 flex-shrink-0 text-sky-500" />
-      <div>
-        <p className="text-sm font-semibold text-slate-900">{lesson.title}</p>
-        <p className="text-xs text-slate-500">{lesson.duration}</p>
+}> = ({ title, url, isLoading, error, onDownload }) => {
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center gap-3 rounded-2xl border border-sky-100 bg-sky-50 py-10">
+        <div className="h-6 w-6 animate-spin rounded-full border-4 border-sky-400 border-t-transparent" />
+        <p className="text-sm font-semibold text-sky-600">Đang tải tài liệu...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="rounded-2xl border border-rose-200 bg-rose-50 p-6 text-sm font-semibold text-rose-600">
+        {error}
+      </div>
+    );
+  }
+
+  if (!url) {
+    return (
+      <div className="flex flex-col items-center justify-center gap-5 py-12">
+        <span className="flex h-16 w-16 items-center justify-center rounded-full bg-sky-100">
+          <DocumentTextIcon className="h-8 w-8 text-sky-500" />
+        </span>
+        <div className="text-center space-y-1">
+          <p className="text-base font-semibold text-slate-800">{title}</p>
+          <p className="text-sm text-slate-500">Tài liệu đang được tải về...</p>
+        </div>
+      </div>
+    );
+  }
+
+  const isPdf = /\.pdf(\?|$)/i.test(url);
+  const isImage = /\.(png|jpe?g|gif|webp|svg)(\?|$)/i.test(url);
+
+  return (
+    <div className="space-y-4">
+      {/* PDF embedded viewer */}
+      {isPdf && (
+        <div className="overflow-hidden rounded-2xl border border-sky-100 shadow-md">
+          <iframe
+            src={`${url}#toolbar=1&navpanes=0`}
+            title={title}
+            className="h-[600px] w-full border-0"
+          />
+        </div>
+      )}
+
+      {/* Image preview */}
+      {isImage && (
+        <div className="overflow-hidden rounded-2xl border border-sky-100 shadow-md">
+          <img src={url} alt={title} className="w-full object-contain" />
+        </div>
+      )}
+
+      {/* Non-embedable: show download card */}
+      {!isPdf && !isImage && (
+        <div className="flex items-center gap-4 rounded-2xl border border-sky-100 bg-sky-50 p-5">
+          <span className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-2xl bg-sky-100">
+            <DocumentTextIcon className="h-6 w-6 text-sky-500" />
+          </span>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-slate-900 truncate">{title}</p>
+            <p className="text-xs text-slate-500">Tài liệu đính kèm</p>
+          </div>
+        </div>
+      )}
+
+      {/* Download button */}
+      <div className="flex items-center gap-3">
+        <a
+          href={url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-2 rounded-full bg-sky-500 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-sky-600"
+        >
+          <ArrowDownTrayIcon className="h-4 w-4" />
+          Tải tài liệu
+        </a>
+        {!isPdf && !isImage && (
+          <button
+            type="button"
+            onClick={onDownload}
+            className="inline-flex items-center gap-2 rounded-full border border-slate-200 px-5 py-2.5 text-sm font-semibold text-slate-600 transition hover:border-sky-300 hover:text-sky-600"
+          >
+            <ArrowDownTrayIcon className="h-4 w-4" />
+            Lưu về máy
+          </button>
+        )}
       </div>
     </div>
-    <p className="text-sm text-slate-600">{guide.summary}</p>
-    <ul className="space-y-2">
-      {guide.highlights.map((highlight) => (
-        <li key={highlight} className="flex items-start gap-2 text-sm text-slate-600">
-          <span className="mt-0.5 h-4 w-4 flex-shrink-0 text-indigo-500">•</span>
-          {highlight}
-        </li>
-      ))}
-    </ul>
-    <button
-      type="button"
-      onClick={onDownload}
-      className="inline-flex items-center gap-2 rounded-full bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-600"
-    >
-      <ArrowDownTrayIcon className="h-4 w-4" />
-      Tải tài liệu
-    </button>
-  </div>
-);
+  );
+};
 
 // --- MAIN COMPONENT ---
 
@@ -578,7 +691,12 @@ const LessonContentPage: React.FC = () => {
     getCourseDetail,
   } = useCourses();
 
-  const { videoUrl, isVideoLoading, videoError, getVideoUrl, clearVideo } = useLecture();
+  const {
+    videoUrl, isVideoLoading, videoError, getVideoUrl, clearVideo,
+    documentUrl, isDocumentLoading, documentError, getDocumentUrl, clearDocument,
+  } = useLecture();
+
+  const { quizAttempt, isQuizLoading, quizError, startQuiz, clearQuiz } = useQuiz();
 
   useEffect(() => {
     if (courseId) {
@@ -642,12 +760,15 @@ const LessonContentPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'overview' | 'content'>('overview');
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({});
+  const [downloadPending, setDownloadPending] = useState(false);
 
   // Auto-expand the current section in sidebar
   useEffect(() => {
     if (currentEntry) {
       setMarkedDone(Boolean(currentEntry.lesson.isCompleted));
       setExpandedSections((prev) => ({ ...prev, [currentEntry.section.id]: true }));
+      setActiveTab('overview');
+      setDownloadPending(false);
     }
   }, [currentEntry]);
 
@@ -658,13 +779,21 @@ const LessonContentPage: React.FC = () => {
       if (vid) {
         getVideoUrl(vid);
       } else {
-        // No API videoId — clear any previous URL so fallback url prop is used
         clearVideo();
       }
-    } else {
+      clearDocument();
+      clearQuiz();
+    } else if (currentEntry?.lesson.type === 'doc') {
       clearVideo();
+      clearDocument();
+      clearQuiz();
+    } else {
+      // quiz or unknown
+      clearVideo();
+      clearDocument();
+      clearQuiz();
     }
-  }, [currentEntry?.lesson.videoId, currentEntry?.lesson.type, getVideoUrl, clearVideo]);
+  }, [currentEntry?.lesson.id, currentEntry?.lesson.type, getVideoUrl, clearVideo, clearDocument, clearQuiz]);
 
   // Redirect if no lessonId
   useEffect(() => {
@@ -689,16 +818,32 @@ const LessonContentPage: React.FC = () => {
   const handleDocumentDownload = useCallback(
     (lesson: LessonItem) => {
       if (lesson.type !== 'doc' || typeof document === 'undefined') return;
+      const href = documentUrl ?? DEFAULT_DOCUMENT_DOWNLOAD_PATH;
       const link = document.createElement('a');
-      link.href = DEFAULT_DOCUMENT_DOWNLOAD_PATH;
+      link.href = href;
       link.rel = 'noopener';
-      link.download = `${normalizeToFileName(lesson.title)}.txt`;
+      link.target = '_blank';
+      link.download = `${normalizeToFileName(lesson.title)}`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
     },
-    []
+    [documentUrl]
   );
+
+  // Trigger download sau khi URL được fetch về (khi người dùng nhấn nút Tải tài liệu)
+  useEffect(() => {
+    if (downloadPending && documentUrl && currentEntry?.lesson) {
+      handleDocumentDownload(currentEntry.lesson);
+      setDownloadPending(false);
+    }
+  }, [downloadPending, documentUrl, currentEntry?.lesson, handleDocumentDownload]);
+
+  const handleDownloadButtonClick = useCallback(() => {
+    if (!currentEntry?.lesson || currentEntry.lesson.type !== 'doc') return;
+    setDownloadPending(true);
+    getDocumentUrl(currentEntry.lesson.id);
+  }, [currentEntry?.lesson, getDocumentUrl]);
 
   const toggleSection = (sectionId: string) =>
     setExpandedSections((prev) => ({ ...prev, [sectionId]: !prev[sectionId] }));
@@ -766,13 +911,10 @@ const LessonContentPage: React.FC = () => {
   const { lesson, section } = currentEntry;
   const LessonIcon = lessonTypeIcons[lesson.type];
 
-  // Tabs available
+  // Tabs: only overview (quiz content is shown directly in main area above)
   const tabs: Array<{ id: 'overview' | 'content'; label: string; icon: React.ComponentType<React.SVGProps<SVGSVGElement>> }> =
     [
       { id: 'overview', label: 'Tổng quan', icon: ListBulletIcon },
-      ...(lesson.type !== 'video'
-        ? [{ id: 'content' as const, label: lesson.type === 'quiz' ? 'Quiz' : 'Tài liệu', icon: LessonIcon }]
-        : []),
     ];
 
   return (
@@ -810,17 +952,21 @@ const LessonContentPage: React.FC = () => {
             />
           )}
 
-          {/* Non-video: icon placeholder */}
-          {lesson.type !== 'video' && (
-            <div className="flex aspect-video w-full items-center justify-center rounded-2xl bg-gradient-to-br from-slate-800 to-slate-900 shadow-xl">
-              <div className="text-center space-y-4">
-                <span className={`mx-auto flex h-20 w-20 items-center justify-center rounded-full ${lessonIconWrappers[lesson.type]} bg-opacity-20`}>
-                  <LessonIcon className="h-10 w-10 text-white opacity-80" />
+          {/* Quiz Content — shown directly in main area */}
+          {lesson.type === 'quiz' && (
+            <div className="rounded-2xl bg-white p-6 shadow-md shadow-slate-900/5">
+              <div className="mb-5 flex items-center gap-2">
+                <span className="flex h-9 w-9 items-center justify-center rounded-2xl bg-amber-100">
+                  <QuestionMarkCircleIcon className="h-5 w-5 text-amber-500" />
                 </span>
-                <p className="text-sm font-semibold text-slate-300">
-                  {lessonTypeLabel[lesson.type]}
-                </p>
+                <h2 className="text-base font-semibold text-slate-800">Làm bài Quiz</h2>
               </div>
+              <QuizContent
+                attempt={quizAttempt}
+                isLoading={isQuizLoading}
+                error={quizError}
+                onStart={() => startQuiz(lesson.id)}
+              />
             </div>
           )}
 
@@ -846,8 +992,23 @@ const LessonContentPage: React.FC = () => {
                 <p className="text-sm text-slate-500">{section.title}</p>
               </div>
 
-              {/* Actions: Mark done + Prev/Next */}
+              {/* Actions: Mark done + Download (for doc) */}
               <div className="flex flex-wrap items-center gap-2 flex-shrink-0">
+                {lesson.type === 'doc' && (
+                  <button
+                    type="button"
+                    onClick={handleDownloadButtonClick}
+                    disabled={isDocumentLoading}
+                    className="inline-flex items-center gap-2 rounded-full border border-sky-200 bg-sky-50 px-4 py-2 text-sm font-semibold text-sky-600 transition hover:bg-sky-100 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {isDocumentLoading ? (
+                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-sky-500 border-t-transparent" />
+                    ) : (
+                      <ArrowDownTrayIcon className="h-4 w-4" />
+                    )}
+                    Tải tài liệu
+                  </button>
+                )}
                 <button
                   type="button"
                   onClick={() => setMarkedDone((prev) => !prev)}
@@ -902,24 +1063,26 @@ const LessonContentPage: React.FC = () => {
 
           {/* Tabs */}
           <div className="rounded-2xl bg-white shadow-md shadow-slate-900/5 overflow-hidden">
-            {/* Tab bar */}
-            <div className="flex border-b border-slate-100">
-              {tabs.map((tab) => (
-                <button
-                  key={tab.id}
-                  type="button"
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`inline-flex items-center gap-2 px-5 py-3.5 text-sm font-semibold transition border-b-2 ${
-                    activeTab === tab.id
-                      ? 'border-indigo-600 text-indigo-600'
-                      : 'border-transparent text-slate-500 hover:text-slate-700'
-                  }`}
-                >
-                  <tab.icon className="h-4 w-4" />
-                  {tab.label}
-                </button>
-              ))}
-            </div>
+            {/* Tab bar — chỉ hiển thị khi có nhiều hơn 1 tab */}
+            {tabs.length > 1 && (
+              <div className="flex border-b border-slate-100">
+                {tabs.map((tab) => (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`inline-flex items-center gap-2 px-5 py-3.5 text-sm font-semibold transition border-b-2 ${
+                      activeTab === tab.id
+                        ? 'border-indigo-600 text-indigo-600'
+                        : 'border-transparent text-slate-500 hover:text-slate-700'
+                    }`}
+                  >
+                    <tab.icon className="h-4 w-4" />
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
+            )}
 
             {/* Tab content */}
             <div className="p-6">
@@ -949,18 +1112,6 @@ const LessonContentPage: React.FC = () => {
                     ))}
                   </div>
                 </div>
-              )}
-
-              {activeTab === 'content' && lesson.type === 'quiz' && (
-                <QuizContent questions={getQuizQuestions(lesson.id)} />
-              )}
-
-              {activeTab === 'content' && lesson.type === 'doc' && (
-                <DocumentContent
-                  lesson={lesson}
-                  guide={getDocumentGuide(lesson.id)}
-                  onDownload={() => handleDocumentDownload(lesson)}
-                />
               )}
             </div>
           </div>
