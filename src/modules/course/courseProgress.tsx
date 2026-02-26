@@ -1,4 +1,4 @@
-// src/modules/user/courseProgress.tsx
+// src/modules/course/courseProgress.tsx
 
 import React, { useMemo, useEffect, useState, useCallback } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
@@ -35,6 +35,8 @@ export interface LessonItem {
   title: string;
   type: LessonType; // <-- Type đã được sửa
   duration: string;
+  url?: string;
+  videoId?: string;   // ID thực của video để gọi /api/Lecture/get-video/{videoId}
   isPreview?: boolean;
   isCompleted?: boolean;
 }
@@ -170,6 +172,8 @@ const extractItemsFromLecture = (lecture: ApiLecture): LessonItem[] => {
         title: getName(lesson),
         type,
         duration,
+        url: lesson.url ?? lesson.videoUrl,
+        videoId: type === 'video' ? (lesson.videoId ?? lesson.id ?? undefined) : undefined,
         isCompleted: false,
         isPreview: false,
       });
@@ -184,7 +188,7 @@ const extractItemsFromLecture = (lecture: ApiLecture): LessonItem[] => {
     (lecture.quizzes && lecture.quizzes.length > 0)
   ) {
     (lecture.videos ?? []).forEach((v, i) => {
-      items.push({ id: getId(v as { id?: string }, `${lecture.id}-video-${i}`), title: getName(v as string | { title?: string; name?: string }), type: 'video', duration: 'N/A', isCompleted: false, isPreview: false });
+      items.push({ id: getId(v as { id?: string }, `${lecture.id}-video-${i}`), title: getName(v as string | { title?: string; name?: string }), type: 'video', duration: 'N/A', url: (v as { url?: string; videoUrl?: string }).url ?? (v as { url?: string; videoUrl?: string }).videoUrl, isCompleted: false, isPreview: false });
     });
     (lecture.documents ?? []).forEach((d, i) => {
       items.push({ id: getId(d as { id?: string }, `${lecture.id}-doc-${i}`), title: getName(d as string | { title?: string; name?: string }), type: 'doc', duration: 'Tài liệu', isCompleted: false, isPreview: false });
@@ -197,7 +201,7 @@ const extractItemsFromLecture = (lecture: ApiLecture): LessonItem[] => {
 
   // --- Cấu trúc 1: videoNames/documentNames/quizNames (string[]) ---
   (lecture.videoNames ?? []).forEach((name, index) => {
-    items.push({ id: `${lecture.id}-video-${index}`, title: name, type: 'video', duration: 'N/A', isCompleted: false, isPreview: false });
+    items.push({ id: `${lecture.id}-video-${index}`, title: name, type: 'video', duration: 'N/A', url: lecture.videoUrls?.[index], isCompleted: false, isPreview: false });
   });
   (lecture.documentNames ?? []).forEach((name, index) => {
     items.push({ id: `${lecture.id}-doc-${index}`, title: name, type: 'doc', duration: 'Tài liệu', isCompleted: false, isPreview: false });

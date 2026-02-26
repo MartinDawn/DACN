@@ -116,6 +116,9 @@ export interface ApiLesson {
   type?: string | number; // 'video' | 'doc' | 'quiz' hoặc 0 | 1 | 2
   duration?: number | string;
   order?: number;
+  url?: string;       // URL của video/tài liệu (nếu backend trả về trong object)
+  videoUrl?: string;  // Alias cho url của video
+  videoId?: string;   // ID riêng của video để gọi /api/Lecture/get-video/{videoId}
 }
 
 export interface ApiLecture {
@@ -124,6 +127,7 @@ export interface ApiLecture {
   description?: string;
   // Cấu trúc 1: API trả về tên theo từng loại (string[])
   videoNames?: string[];
+  videoUrls?: string[];
   documentNames?: string[];
   quizNames?: string[];
   // Cấu trúc 2: API trả về mảng lessons gộp chung
