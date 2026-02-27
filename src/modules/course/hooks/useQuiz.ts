@@ -63,6 +63,18 @@ interface UseQuizReturn {
   historyError: string | null;
   getAttemptHistory: (quizId: string) => Promise<void>;
 
+  // --- Load quiz detail without starting an attempt ---
+  // GET /api/Quiz/{quizId}
+  loadQuizDetail: (quizId: string) => Promise<void>;
+
+  // --- Review a past attempt ---
+  // GET /api/Quiz/attempt/{attemptId}/result
+  reviewResult: ApiQuizResult | null;
+  isReviewLoading: boolean;
+  reviewError: string | null;
+  getAttemptReview: (attemptId: string) => Promise<void>;
+  clearReview: () => void;
+
   // Reset all quiz state (e.g. when navigating away)
   clearQuiz: () => void;
 }
@@ -85,6 +97,11 @@ export const useQuiz = (): UseQuizReturn => {
   const [attemptHistory, setAttemptHistory] = useState<ApiQuizAttemptSummary[]>([]);
   const [isHistoryLoading, setIsHistoryLoading] = useState(false);
   const [historyError, setHistoryError] = useState<string | null>(null);
+
+  // --- Review ---
+  const [reviewResult, setReviewResult] = useState<ApiQuizResult | null>(null);
+  const [isReviewLoading, setIsReviewLoading] = useState(false);
+  const [reviewError, setReviewError] = useState<string | null>(null);
 
   /**
    * Bắt đầu làm quiz:
@@ -147,16 +164,6 @@ export const useQuiz = (): UseQuizReturn => {
           setSubmitError(submitRes.message || 'Nộp bài thất bại.');
           return;
         }
-        // Nếu submit trả về kết quả luôn, dùng nó (tránh gọi thêm GET result)
-        if (
-          submitRes.data &&
-          (submitRes.data.score != null ||
-            submitRes.data.percentage != null ||
-            submitRes.data.correctAnswers != null)
-        ) {
-          setAttemptResult(submitRes.data);
-          return;
-        }
       } catch (err) {
         if (axios.isAxiosError(err)) {
           const errData = err.response?.data;
@@ -190,6 +197,22 @@ export const useQuiz = (): UseQuizReturn => {
   );
 
   /**
+   * Lấy danh sách câu hỏi mà không tạo attempt (dùng khi xem lại lịch sử).
+   * GET /api/Quiz/{quizId}
+   */
+  const loadQuizDetail = useCallback(async (quizId: string) => {
+    if (quizDetail) return; // đã có rồi, không cần gọi lại
+    try {
+      const detailRes = await quizService.getQuizDetail(quizId);
+      if (detailRes.success !== false && detailRes.data) {
+        setQuizDetail(detailRes.data);
+      }
+    } catch {
+      // Không có câu hỏi cũng không sao — trang xem lại vẫn hiển thị được
+    }
+  }, [quizDetail]);
+
+  /**
    * Lấy lịch sử tất cả các lần làm quiz.
    * GET /api/Quiz/{quizId}/attempts
    */
@@ -202,7 +225,9 @@ export const useQuiz = (): UseQuizReturn => {
         setHistoryError(res.message || 'Không thể tải lịch sử làm bài.');
         return;
       }
-      setAttemptHistory(Array.isArray(res.data) ? res.data : []);
+      const list = Array.isArray(res.data) ? res.data : [];
+      console.log('[getAttemptHistory] raw list:', JSON.stringify(list, null, 2));
+      setAttemptHistory(list);
     } catch (err) {
       setHistoryError(extractErrorMessage(err, 'Đã xảy ra lỗi khi tải lịch sử. Vui lòng thử lại.'));
     } finally {
@@ -223,6 +248,39 @@ export const useQuiz = (): UseQuizReturn => {
     setAttemptHistory([]);
     setIsHistoryLoading(false);
     setHistoryError(null);
+    setReviewResult(null);
+    setIsReviewLoading(false);
+    setReviewError(null);
+  }, []);
+
+  /**
+   * Lấy kết quả chi tiết của một lần làm cụ thể (dùng để xem lại).
+   * GET /api/Quiz/attempt/{attemptId}/result
+   */
+  const getAttemptReview = useCallback(async (attemptId: string) => {
+    console.log('[getAttemptReview] calling with attemptId:', attemptId);
+    setIsReviewLoading(true);
+    setReviewError(null);
+    setReviewResult(null);
+    try {
+      const res = await quizService.getAttemptResult(attemptId);
+      console.log('[getAttemptReview] result:', JSON.stringify(res.data, null, 2));
+      if (res.success === false || !res.data) {
+        setReviewError(res.message || 'Không thể tải kết quả lần làm này.');
+        return;
+      }
+      setReviewResult(res.data);
+    } catch (err) {
+      setReviewError(extractErrorMessage(err, 'Đã xảy ra lỗi khi tải kết quả. Vui lòng thử lại.'));
+    } finally {
+      setIsReviewLoading(false);
+    }
+  }, []);
+
+  const clearReview = useCallback(() => {
+    setReviewResult(null);
+    setIsReviewLoading(false);
+    setReviewError(null);
   }, []);
 
   return {
@@ -243,6 +301,14 @@ export const useQuiz = (): UseQuizReturn => {
     isHistoryLoading,
     historyError,
     getAttemptHistory,
+
+    loadQuizDetail,
+
+    reviewResult,
+    isReviewLoading,
+    reviewError,
+    getAttemptReview,
+    clearReview,
 
     clearQuiz,
   };

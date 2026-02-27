@@ -202,29 +202,39 @@ export interface ApiQuizResultAnswer {
   questionId?: string;
   selectedOptionId?: string;
   correctAnswerId?: string;
+  correctOptionId?: string;   // actual API field name
   isCorrect?: boolean;
+  explanation?: string;       // from detailedResults
 }
 
 export interface ApiQuizResult {
   attemptId?: string;
+  quizAttemptId?: string;       // actual API field name
   score?: number;
   totalQuestions?: number;
   correctAnswers?: number;
+  correctAnswersCount?: number; // actual API field name
   percentage?: number;
   passed?: boolean;
   completedAt?: string;
   answers?: ApiQuizResultAnswer[];
+  detailedResults?: ApiQuizResultAnswer[]; // actual API field name
 }
 
 // GET /api/Quiz/{quizId}/attempts  — one entry in history list
 export interface ApiQuizAttemptSummary {
   attemptId?: string;
   id?: string;
+  quizAttemptId?: string;       // field thay thế có thể có
   score?: number;
   totalQuestions?: number;
   correctAnswers?: number;
+  correctAnswersCount?: number; // field thực tế API trả về
   percentage?: number;
   passed?: boolean;
   startedAt?: string;
+  attemptedAt?: string;         // field thực tế API trả về
   completedAt?: string;
+  // cho phép các field không biết trước từ backend
+  [key: string]: unknown;
 }

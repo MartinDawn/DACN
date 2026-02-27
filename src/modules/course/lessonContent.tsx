@@ -402,10 +402,16 @@ interface QuizContentProps {
   attemptHistory: ApiQuizAttemptSummary[];
   isHistoryLoading: boolean;
   historyError: string | null;
+  // Review a past attempt
+  reviewResult: ApiQuizResult | null;
+  isReviewLoading: boolean;
+  reviewError: string | null;
   // Actions
   onStart: () => void;
   onSubmit: (answers: Array<{ questionId: string; selectedOptionId: string }>) => void;
   onViewHistory: () => void;
+  onViewAttempt: (attemptId: string) => void;
+  onClearReview: () => void;
 }
 
 const QuizContent: React.FC<QuizContentProps> = ({
@@ -422,12 +428,18 @@ const QuizContent: React.FC<QuizContentProps> = ({
   attemptHistory,
   isHistoryLoading,
   historyError,
+  reviewResult,
+  isReviewLoading,
+  reviewError,
   onStart,
   onSubmit,
   onViewHistory,
+  onViewAttempt,
+  onClearReview,
 }) => {
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [showHistory, setShowHistory] = useState(false);
+  const [showReview, setShowReview] = useState(false);
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
 
   // Refs to avoid stale closure in auto-submit
@@ -499,50 +511,51 @@ const QuizContent: React.FC<QuizContentProps> = ({
         )}
 
         {!isHistoryLoading && attemptHistory.length > 0 && (
-          <div className="overflow-hidden rounded-2xl border border-slate-200">
+          <div className="overflow-x-auto overflow-hidden rounded-2xl border border-slate-200">
             <table className="w-full text-sm">
               <thead className="bg-slate-50 text-xs font-semibold uppercase text-slate-500">
                 <tr>
                   <th className="px-4 py-3 text-left">#</th>
                   <th className="px-4 py-3 text-left">Ngày làm</th>
-                  <th className="px-4 py-3 text-center">Điểm</th>
+                  <th className="px-4 py-3 text-left">Thời gian nộp</th>
                   <th className="px-4 py-3 text-center">Đúng / Tổng</th>
                   <th className="px-4 py-3 text-center">Kết quả</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 bg-white">
                 {attemptHistory.map((entry, i) => {
-                  const id = entry.attemptId ?? entry.id ?? `row-${i}`;
-                  const date = entry.completedAt ?? entry.startedAt;
-                  const pct =
-                    entry.percentage != null
-                      ? `${entry.percentage}%`
-                      : entry.score != null && entry.totalQuestions
-                      ? `${Math.round((entry.score / entry.totalQuestions) * 100)}%`
-                      : '-';
+                  // Thử tất cả field name có thể chứa attempt ID
+                  const id =
+                    (entry.attemptId as string | undefined) ??
+                    (entry.quizAttemptId as string | undefined) ??
+                    (entry.id as string | undefined) ??
+                    (entry['attempt_id'] as string | undefined) ??
+                    (entry['AttemptId'] as string | undefined) ??
+                    `row-${i}`;
+                  console.log(`[History] entry[${i}] extracted id="${id}"`, entry);
+                  const startDate = entry.attemptedAt ?? entry.startedAt;
+                  const submitDate = entry.completedAt;
+                  const correct = entry.correctAnswersCount ?? entry.correctAnswers ?? entry.score;
                   return (
                     <tr key={id} className="hover:bg-slate-50 transition">
                       <td className="px-4 py-3 text-slate-500">{i + 1}</td>
                       <td className="px-4 py-3 text-slate-600">
-                        {date ? new Date(date).toLocaleString('vi-VN') : '-'}
+                        {startDate ? new Date(startDate).toLocaleString('vi-VN') : '-'}
                       </td>
-                      <td className="px-4 py-3 text-center font-semibold text-slate-800">{pct}</td>
-                      <td className="px-4 py-3 text-center text-slate-600">
-                        {entry.correctAnswers ?? entry.score ?? '-'} / {entry.totalQuestions ?? '-'}
+                      <td className="px-4 py-3 text-slate-600">
+                        {submitDate ? new Date(submitDate).toLocaleString('vi-VN') : '-'}
+                      </td>
+                      <td className="px-4 py-3 text-center font-semibold text-slate-800">
+                        {correct ?? '-'} / {entry.totalQuestions ?? '-'}
                       </td>
                       <td className="px-4 py-3 text-center">
-                        {entry.passed == null ? (
-                          <span className="text-slate-400">-</span>
-                        ) : entry.passed ? (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-semibold text-emerald-700">
-                            <CheckCircleIcon className="h-3.5 w-3.5" />
-                            Đạt
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-rose-100 px-2.5 py-1 text-xs font-semibold text-rose-700">
-                            Chưa đạt
-                          </span>
-                        )}
+                        <button
+                          type="button"
+                          onClick={() => { onViewAttempt(id); setShowReview(true); setShowHistory(false); }}
+                          className="inline-flex items-center gap-1 rounded-full bg-amber-50 border border-amber-200 px-3 py-1 text-xs font-semibold text-amber-700 transition hover:bg-amber-100"
+                        >
+                          Xem lại
+                        </button>
                       </td>
                     </tr>
                   );
@@ -559,6 +572,233 @@ const QuizContent: React.FC<QuizContentProps> = ({
         >
           Làm lại quiz
         </button>
+      </div>
+    );
+  }
+
+  // ── Full review page ──
+  if (showReview) {
+    return (
+      <div className="space-y-5">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <h3 className="text-base font-semibold text-slate-800">Chi tiết lần làm bài</h3>
+          <button
+            type="button"
+            onClick={() => { setShowReview(false); onClearReview(); setShowHistory(true); }}
+            className="rounded-full border border-slate-200 px-4 py-1.5 text-xs font-semibold text-slate-600 transition hover:border-indigo-200 hover:text-indigo-600"
+          >
+            ← Quay lại lịch sử
+          </button>
+        </div>
+
+        {/* Loading */}
+        {isReviewLoading && (
+          <div className="flex items-center justify-center py-16">
+            <div className="text-center space-y-3">
+              <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-amber-500 border-t-transparent" />
+              <p className="text-sm font-semibold text-slate-500">Đang tải kết quả...</p>
+            </div>
+          </div>
+        )}
+
+        {/* Error */}
+        {reviewError && !isReviewLoading && (
+          <div className="rounded-2xl border border-rose-200 bg-rose-50 p-5 text-sm font-semibold text-rose-600">
+            {reviewError}
+          </div>
+        )}
+
+        {/* Review result */}
+        {reviewResult && !isReviewLoading && (
+          <div className="space-y-5">
+            {/* Score banner */}
+            <div className={`flex flex-col items-center gap-3 rounded-2xl p-6 ${
+              reviewResult.passed == null
+                ? 'bg-amber-50'
+                : reviewResult.passed
+                ? 'bg-emerald-50'
+                : 'bg-rose-50'
+            }`}>
+              <AcademicCapIcon className={`h-12 w-12 ${
+                reviewResult.passed == null ? 'text-amber-400' : reviewResult.passed ? 'text-emerald-500' : 'text-rose-500'
+              }`} />
+              <p className={`text-3xl font-bold ${
+                reviewResult.passed == null ? 'text-amber-700' : reviewResult.passed ? 'text-emerald-700' : 'text-rose-700'
+              }`}>
+                {(() => {
+                  const correct = reviewResult.correctAnswers ?? reviewResult.correctAnswersCount;
+                  const total = reviewResult.totalQuestions;
+                  const pct = reviewResult.percentage ?? reviewResult.score;
+                  if (correct != null && total != null) return `${correct}/${total}`;
+                  if (pct != null) return `${pct}%`;
+                  return '-';
+                })()}
+              </p>
+              <p className="text-sm font-semibold text-slate-600">
+                {reviewResult.passed == null
+                  ? 'Đã hoàn thành'
+                  : reviewResult.passed
+                  ? 'Chúc mừng! Bạn đạt yêu cầu'
+                  : 'Chưa đạt yêu cầu'}
+              </p>
+              {reviewResult.completedAt && (
+                <div className="flex items-center gap-1.5 rounded-full bg-white/70 px-3 py-1 text-xs text-slate-500">
+                  <ClockIcon className="h-3.5 w-3.5" />
+                  Nộp lúc: {new Date(reviewResult.completedAt).toLocaleString('vi-VN')}
+                </div>
+              )}
+            </div>
+
+            {/* Per-answer detail — full question view if quizDetail available, otherwise summary */}
+            {(() => {
+              const questions = normalizeQuizQuestions(quizDetail?.questions ?? []);
+              const allAnswers = reviewResult.answers ?? reviewResult.detailedResults ?? [];
+              const resultMap: Record<string, { correctAnswerId?: string; isCorrect?: boolean; explanation?: string }> = {};
+              allAnswers.forEach((a) => {
+                if (a.questionId) {
+                  resultMap[a.questionId] = {
+                    correctAnswerId: a.correctAnswerId ?? a.correctOptionId,
+                    isCorrect: a.isCorrect,
+                    explanation: a.explanation,
+                  };
+                }
+              });
+
+              if (questions.length > 0) {
+                return (
+                  <div className="space-y-3">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Xem lại từng câu</p>
+                    {questions.map((q, idx) => {
+                      const apiInfo = resultMap[q.id];
+                      const correctId =
+                        apiInfo?.correctAnswerId ??
+                        q.correctAnswer ??
+                        q.options.find((o) => o.isCorrect)?.id;
+                      const selectedId = allAnswers.find(
+                        (a) => a.questionId === q.id
+                      )?.selectedOptionId;
+                      // Ưu tiên so sánh ID (đáng tin hơn apiInfo.isCorrect từ backend)
+                      const isCorrect: boolean | null =
+                        correctId != null && selectedId != null
+                          ? selectedId === correctId
+                          : apiInfo?.isCorrect != null
+                          ? apiInfo.isCorrect
+                          : null;
+
+                      return (
+                        <div key={q.id} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                          <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-wide text-amber-500">
+                            <span>Câu {idx + 1}</span>
+                            {isCorrect !== null && (
+                              <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 ${
+                                isCorrect ? 'bg-emerald-100 text-emerald-600' : 'bg-rose-100 text-rose-600'
+                              }`}>
+                                <CheckCircleIcon className="h-3.5 w-3.5" />
+                                {isCorrect ? 'Chính xác' : 'Sai'}
+                              </span>
+                            )}
+                          </div>
+                          <p className="mt-2 text-sm font-semibold text-slate-900">{q.question}</p>
+                          <div className="mt-2 grid gap-1.5">
+                            {q.options.map((opt) => {
+                              const isSelected = opt.id === selectedId;
+                              const isCorrectOpt = opt.id === correctId;
+                              return (
+                                <div
+                                  key={opt.id}
+                                  className={`rounded-xl border px-3 py-2 text-sm ${
+                                    isCorrectOpt
+                                      ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+                                      : isSelected && !isCorrectOpt
+                                      ? 'border-rose-200 bg-rose-50 text-rose-700'
+                                      : 'border-slate-100 bg-slate-50 text-slate-500'
+                                  }`}
+                                >
+                                  {isCorrectOpt && '✓ '}
+                                  {isSelected && !isCorrectOpt && '✗ '}
+                                  {opt.label}
+                                </div>
+                              );
+                            })}
+                          </div>
+                          {(q.explanation || apiInfo?.explanation) && (
+                            <p className="mt-2 rounded-xl bg-amber-50 p-2.5 text-xs text-amber-800">
+                              <strong>Giải thích:</strong> {q.explanation || apiInfo?.explanation}
+                            </p>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              }
+
+              // Fallback: chỉ có dữ liệu Đúng/Sai, không có câu hỏi
+              if (allAnswers.length > 0) {
+                return (
+                  <div className="space-y-3">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Kết quả từng câu</p>
+                    <div className="grid gap-2">
+                      {allAnswers.map((a, idx) => {
+                        const answerCorrect =
+                          a.isCorrect === true
+                            ? true
+                            : a.isCorrect === false
+                            ? false
+                            : null;
+                        return (
+                        <div
+                          key={a.questionId ?? idx}
+                          className={`flex items-center justify-between rounded-2xl border px-4 py-3 text-sm ${
+                            answerCorrect === true
+                              ? 'border-emerald-100 bg-emerald-50 text-emerald-700'
+                              : answerCorrect === false
+                              ? 'border-rose-100 bg-rose-50 text-rose-700'
+                              : 'border-slate-100 bg-slate-50 text-slate-600'
+                          }`}
+                        >
+                          <span className="font-medium">Câu {idx + 1}</span>
+                          <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold ${
+                            answerCorrect === true
+                              ? 'bg-emerald-100 text-emerald-700'
+                              : answerCorrect === false
+                              ? 'bg-rose-100 text-rose-700'
+                              : 'bg-slate-100 text-slate-500'
+                          }`}>
+                            <CheckCircleIcon className="h-3.5 w-3.5" />
+                            {answerCorrect === true ? 'Đúng' : answerCorrect === false ? 'Sai' : 'N/A'}
+                          </span>
+                        </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              }
+
+              return null;
+            })()}
+          </div>
+        )}
+
+        {/* Actions */}
+        <div className="flex flex-wrap items-center gap-3 pt-2 border-t border-slate-100">
+          <button
+            type="button"
+            onClick={onStart}
+            className="rounded-full bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-amber-500"
+          >
+            Làm lại quiz
+          </button>
+          <button
+            type="button"
+            onClick={() => { setShowReview(false); onClearReview(); setShowHistory(true); }}
+            className="rounded-full border border-slate-200 px-5 py-2.5 text-sm font-semibold text-slate-600 transition hover:border-amber-200 hover:text-amber-600"
+          >
+            Xem lịch sử làm bài
+          </button>
+        </div>
       </div>
     );
   }
@@ -1072,6 +1312,12 @@ const LessonContentPage: React.FC = () => {
     isHistoryLoading,
     historyError,
     getAttemptHistory,
+    loadQuizDetail,
+    reviewResult,
+    isReviewLoading,
+    reviewError,
+    getAttemptReview,
+    clearReview,
     clearQuiz,
   } = useQuiz();
 
@@ -1352,12 +1598,17 @@ const LessonContentPage: React.FC = () => {
                 attemptHistory={attemptHistory}
                 isHistoryLoading={isHistoryLoading}
                 historyError={historyError}
+                reviewResult={reviewResult}
+                isReviewLoading={isReviewLoading}
+                reviewError={reviewError}
                 onStart={() => startQuiz(lesson.id)}
                 onSubmit={(answers) => {
                   const id = quizAttempt?.attemptId ?? quizAttempt?.id ?? '';
                   submitQuiz(id, answers);
                 }}
-                onViewHistory={() => getAttemptHistory(lesson.id)}
+                onViewHistory={() => { getAttemptHistory(lesson.id); loadQuizDetail(lesson.id); }}
+                onViewAttempt={(attemptId) => getAttemptReview(attemptId)}
+                onClearReview={clearReview}
               />
             </div>
           )}
