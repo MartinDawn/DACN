@@ -170,8 +170,71 @@ export interface ApiQuizAttempt {
   attemptId?: string;
   id?: string;
   quizId?: string;
+  quizName?: string;
   title?: string;
   description?: string;
   questions?: ApiQuizQuestion[];
   timeLimit?: number;
+  testTime?: number; // thời gian làm bài theo phút (trả về từ API startAttempt)
+}
+
+// GET /api/Quiz/{quizId}
+export interface ApiQuizDetail {
+  id?: string;
+  title?: string;
+  description?: string;
+  questions?: ApiQuizQuestion[];
+  timeLimit?: number;
+  passingScore?: number;
+}
+
+// POST /api/Quiz/submit  — request body
+export interface ApiQuizSubmitRequest {
+  quizAttemptId: string;
+  answers: Array<{
+    questionId: string;
+    selectedOptionId: string;
+  }>;
+}
+
+// GET /api/Quiz/attempt/{attemptId}/result
+export interface ApiQuizResultAnswer {
+  questionId?: string;
+  selectedOptionId?: string;
+  correctAnswerId?: string;
+  correctOptionId?: string;   // actual API field name
+  isCorrect?: boolean;
+  explanation?: string;       // from detailedResults
+}
+
+export interface ApiQuizResult {
+  attemptId?: string;
+  quizAttemptId?: string;       // actual API field name
+  score?: number;
+  totalQuestions?: number;
+  correctAnswers?: number;
+  correctAnswersCount?: number; // actual API field name
+  percentage?: number;
+  passed?: boolean;
+  completedAt?: string;
+  answers?: ApiQuizResultAnswer[];
+  detailedResults?: ApiQuizResultAnswer[]; // actual API field name
+}
+
+// GET /api/Quiz/{quizId}/attempts  — one entry in history list
+export interface ApiQuizAttemptSummary {
+  attemptId?: string;
+  id?: string;
+  quizAttemptId?: string;       // field thay thế có thể có
+  score?: number;
+  totalQuestions?: number;
+  correctAnswers?: number;
+  correctAnswersCount?: number; // field thực tế API trả về
+  percentage?: number;
+  passed?: boolean;
+  startedAt?: string;
+  attemptedAt?: string;         // field thực tế API trả về
+  completedAt?: string;
+  // cho phép các field không biết trước từ backend
+  [key: string]: unknown;
 }

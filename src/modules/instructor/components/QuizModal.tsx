@@ -90,64 +90,82 @@ const QuizModal: React.FC<QuizModalProps> = ({ isOpen, onClose, lectureId, quizI
 
   // --- Handlers ---
   const handleAddQuestion = () => {
-    setQuestions([
-        ...questions, 
-        { 
-            content: "", explanation: "", displayOrder: questions.length + 1,
+    setQuestions(prev => [
+        ...prev,
+        {
+            content: "", explanation: "", displayOrder: prev.length + 1,
             options: [{ content: "", isCorrect: true, displayOrder: 1 }, { content: "", isCorrect: false, displayOrder: 2 }]
         }
     ]);
   };
 
   const handleRemoveQuestion = (index: number) => {
-      const newQs = [...questions];
-      newQs.splice(index, 1);
-      newQs.forEach((q, i) => q.displayOrder = i + 1);
-      setQuestions(newQs);
+    setQuestions(prev =>
+        prev.filter((_, i) => i !== index)
+            .map((q, i) => ({ ...q, displayOrder: i + 1 }))
+    );
   };
 
   const updateQuestionText = (index: number, val: string) => {
-    const newQs = [...questions];
-    newQs[index].content = val;
-    setQuestions(newQs);
+    setQuestions(prev =>
+        prev.map((q, i) => i !== index ? q : { ...q, content: val })
+    );
   };
 
   const updateQuestionExplanation = (index: number, val: string) => {
-    const newQs = [...questions];
-    newQs[index].explanation = val;
-    setQuestions(newQs);
+    setQuestions(prev =>
+        prev.map((q, i) => i !== index ? q : { ...q, explanation: val })
+    );
   };
 
   const handleAddOption = (qIndex: number) => {
-    const newQs = [...questions];
-    newQs[qIndex].options.push({
-        content: "", isCorrect: false, displayOrder: newQs[qIndex].options.length + 1
-    });
-    setQuestions(newQs);
+    setQuestions(prev =>
+        prev.map((q, i) => i !== qIndex ? q : {
+            ...q,
+            options: [
+                ...q.options,
+                { content: "", isCorrect: false, displayOrder: q.options.length + 1 }
+            ]
+        })
+    );
   };
 
   const handleRemoveOption = (qIndex: number, oIndex: number) => {
-    const newQs = [...questions];
-    if (newQs[qIndex].options.length <= 2) {
+    if (questions[qIndex].options.length <= 2) {
         toast.error("Một câu hỏi cần tối thiểu 2 đáp án.");
         return;
     }
-    newQs[qIndex].options.splice(oIndex, 1);
-    newQs[qIndex].options.forEach((opt, i) => opt.displayOrder = i + 1);
-    setQuestions(newQs);
+    setQuestions(prev =>
+        prev.map((q, i) => i !== qIndex ? q : {
+            ...q,
+            options: q.options
+                .filter((_, oi) => oi !== oIndex)
+                .map((opt, oi) => ({ ...opt, displayOrder: oi + 1 }))
+        })
+    );
   };
 
   const updateOptionText = (qIndex: number, oIndex: number, text: string) => {
-    const newQs = [...questions];
-    newQs[qIndex].options[oIndex].content = text;
-    setQuestions(newQs);
+    setQuestions(prev =>
+        prev.map((q, i) => i !== qIndex ? q : {
+            ...q,
+            options: q.options.map((opt, oi) =>
+                oi !== oIndex ? opt : { ...opt, content: text }
+            )
+        })
+    );
   };
 
   const setCorrectOption = (qIndex: number, oIndex: number) => {
-    const newQs = [...questions];
-    newQs[qIndex].options.forEach(opt => opt.isCorrect = false);
-    newQs[qIndex].options[oIndex].isCorrect = true;
-    setQuestions(newQs);
+    setQuestions(prev =>
+        prev.map((q, i) => i !== qIndex ? q : {
+            ...q,
+            options: q.options.map((opt, oi) => ({
+                ...opt,
+                isCorrect: oi === oIndex
+            }))
+        })
+    );
   };
 
   const handleSubmit = async () => {
