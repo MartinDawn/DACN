@@ -16,7 +16,6 @@ const QuizModal: React.FC<QuizModalProps> = ({ isOpen, onClose, lectureId, quizI
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [testTime, setTestTime] = useState(0);
-  const [attemptCount, setAttemptCount] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [questions, setQuestions] = useState<QuizQuestionPayload[]>([
     { 
@@ -45,7 +44,6 @@ const QuizModal: React.FC<QuizModalProps> = ({ isOpen, onClose, lectureId, quizI
     setName("");
     setDescription("");
     setTestTime(0);
-    setAttemptCount(0);
     setQuestions([{ 
       content: "", explanation: "", displayOrder: 1,
       options: [{ content: "", isCorrect: true, displayOrder: 1 }, { content: "", isCorrect: false, displayOrder: 2 }] 
@@ -62,7 +60,6 @@ const QuizModal: React.FC<QuizModalProps> = ({ isOpen, onClose, lectureId, quizI
             setName(data.name || "");
             setDescription(data.description || "");
             setTestTime(data.testTime || 0);
-            setAttemptCount(data.attemptCount || 0);
 
             if (Array.isArray(data.questions) && data.questions.length > 0) {
                 const mappedQuestions = data.questions.map((q: any, index: number) => ({
@@ -207,7 +204,6 @@ const QuizModal: React.FC<QuizModalProps> = ({ isOpen, onClose, lectureId, quizI
 
     // Ensure integers
     const finalTestTime = Math.max(0, Math.floor(testTime || 0));
-    const finalAttemptCount = Math.max(0, Math.floor(attemptCount || 0));
 
     try {
         if (quizIdToEdit) {
@@ -216,7 +212,6 @@ const QuizModal: React.FC<QuizModalProps> = ({ isOpen, onClose, lectureId, quizI
                 name: name.trim(),
                 description: description.trim(),
                 testTime: finalTestTime,
-                attemptCount: finalAttemptCount,
                 questions: formattedQuestions
             };
             result = await quizService.updateQuiz(quizIdToEdit, payload);
@@ -228,7 +223,6 @@ const QuizModal: React.FC<QuizModalProps> = ({ isOpen, onClose, lectureId, quizI
                 lectureId,
                 description: description.trim(), // Include description to avoid 500 if mandatory
                 testTime: finalTestTime,
-                attemptCount: finalAttemptCount,
                 questions: formattedQuestions
             };
             
@@ -289,19 +283,10 @@ const QuizModal: React.FC<QuizModalProps> = ({ isOpen, onClose, lectureId, quizI
                     <div className="grid grid-cols-2 gap-4">
                         <div>
                             <label className="mb-1 block text-sm font-semibold text-gray-700">Thời gian (phút)</label>
-                            <input 
+                            <input
                                type="number" min="0" onWheel={(e) => (e.target as HTMLInputElement).blur()}
                                value={testTime} onChange={e => setTestTime(Number(e.target.value))}
-                               className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#5a2dff] focus:ring-1 focus:ring-[#5a2dff]" 
-                               placeholder="0 = Không giới hạn"
-                            />
-                        </div>
-                        <div>
-                            <label className="mb-1 block text-sm font-semibold text-gray-700">Số lần làm lại</label>
-                            <input 
-                               type="number" min="0" onWheel={(e) => (e.target as HTMLInputElement).blur()}
-                               value={attemptCount} onChange={e => setAttemptCount(Number(e.target.value))}
-                               className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#5a2dff] focus:ring-1 focus:ring-[#5a2dff]" 
+                               className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#5a2dff] focus:ring-1 focus:ring-[#5a2dff]"
                                placeholder="0 = Không giới hạn"
                             />
                         </div>
