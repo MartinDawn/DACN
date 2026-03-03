@@ -247,6 +247,9 @@ export const lectureService = {
 
   // Delete Quiz
   async deleteQuiz(quizId: string, lang = "vi"): Promise<any> {
+    if (!quizId || quizId === "undefined" || quizId === "null") {
+      throw new Error("Quiz ID không hợp lệ.");
+    }
     const response = await apiClient.delete<any>(`/Quiz/${quizId}`, {
       headers: { "Accept-Language": lang },
     });

@@ -6,16 +6,18 @@ export interface QuizOptionPayload {
 
 export interface QuizQuestionPayload {
   content: string;
-  // question?: string; // Removed: API Schema uses 'content'
   displayOrder: number;
   explanation: string;
+  imageUrl?: string;
+  imagePublicId?: string;
+  image?: string;
   options: QuizOptionPayload[];
 }
 
 export interface CreateQuizPayload {
   name: string;
-  lectureId: string;
   description?: string;
+  lectureId: string;
   testTime: number;
   questions: QuizQuestionPayload[];
 }
