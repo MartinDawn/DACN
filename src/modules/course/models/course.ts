@@ -159,6 +159,7 @@ export interface ApiQuizQuestion {
   question?: string;
   text?: string;
   questionType?: string;
+  imageUrl?: string;
   answers?: ApiQuizAnswer[];
   options?: ApiQuizAnswer[];
   choices?: ApiQuizAnswer[];

@@ -361,6 +361,7 @@ const VideoPlayer: React.FC<{
 type NormalizedQuestion = {
   id: string;
   question: string;
+  imageUrl?: string;
   options: Array<{ id: string; label: string; isCorrect?: boolean }>;
   correctAnswer?: string;
   explanation?: string;
@@ -372,6 +373,7 @@ const normalizeQuizQuestions = (rawQuestions: ApiQuizQuestion[]): NormalizedQues
     return {
       id: q.id ?? `q-${idx}`,
       question: q.questionText ?? q.content ?? q.question ?? q.text ?? `Câu ${idx + 1}`,
+      imageUrl: q.imageUrl,
       options: rawAnswers.map((a, i) => ({
         id: a.id ?? `opt-${idx}-${i}`,
         label: a.content ?? a.text ?? a.label ?? a.answerText ?? `Đáp án ${i + 1}`,
@@ -700,6 +702,11 @@ const QuizContent: React.FC<QuizContentProps> = ({
                             )}
                           </div>
                           <p className="mt-2 text-sm font-semibold text-slate-900">{q.question}</p>
+                          {q.imageUrl && (
+                            <div className="mt-2 overflow-hidden rounded-xl border border-slate-200">
+                              <img src={q.imageUrl} alt="Hình ảnh câu hỏi" className="w-full object-contain max-h-72" />
+                            </div>
+                          )}
                           <div className="mt-2 grid gap-1.5">
                             {q.options.map((opt) => {
                               const isSelected = opt.id === selectedId;
@@ -997,6 +1004,11 @@ const QuizContent: React.FC<QuizContentProps> = ({
                     )}
                   </div>
                   <p className="mt-2 text-sm font-semibold text-slate-900">{q.question}</p>
+                  {q.imageUrl && (
+                    <div className="mt-2 overflow-hidden rounded-xl border border-slate-200">
+                      <img src={q.imageUrl} alt="Hình ảnh câu hỏi" className="w-full object-contain max-h-72" />
+                    </div>
+                  )}
                   <div className="mt-2 grid gap-1.5">
                     {q.options.map((opt) => {
                       const isUser = opt.id === userAnswerId;
@@ -1116,6 +1128,11 @@ const QuizContent: React.FC<QuizContentProps> = ({
               Câu {index + 1} / {total}
             </p>
             <h4 className="mt-3 text-sm font-semibold text-slate-900">{question.question}</h4>
+            {question.imageUrl && (
+              <div className="mt-3 overflow-hidden rounded-xl border border-slate-200">
+                <img src={question.imageUrl} alt="Hình ảnh câu hỏi" className="w-full object-contain max-h-72" />
+              </div>
+            )}
             <div className="mt-3 grid gap-2">
               {question.options.map((option) => {
                 const isSelected = selected === option.id;

@@ -85,7 +85,7 @@ const mapCourseContentToLectures = (raw: any, fallbackCourseId: string): Lecture
         quizzes: Array.isArray(lesson?.quizzes) 
             ? lesson.quizzes.map((q: any) => ({
                 ...q,
-                id: q.id || q.quizId || q.Id || q.ID,
+                id: q.id || q.quizId || q.QuizId || q.Id || q.ID,
                 name: q.name || q.title || q.Name
               }))
             : [],
@@ -159,7 +159,7 @@ const normalizeLecture = (raw: any, fallbackCourseId: string): Lecture => {
     quizzes: Array.isArray(raw?.quizzes) 
         ? raw.quizzes.map((q: any) => ({
             ...q,
-            id: q.id || q.quizId || q.Id || q.ID,
+            id: q.id || q.quizId || q.QuizId || q.Id || q.ID,
             name: q.name || q.title || q.Name
           }))
         : [],
@@ -531,7 +531,7 @@ export const useCourseLectures = (courseId: string) => {
 
           // Lọc bỏ quiz đã xóa
           let updatedQuizzes = l.quizzes ? l.quizzes.filter((q: any) => {
-              const qId = q.id || q.quizId || q.Id || q.ID;
+              const qId = q.id || q.quizId || q.QuizId || q.Id || q.ID;
               return String(qId) !== String(quizId);
           }) : [];
 
@@ -545,9 +545,22 @@ export const useCourseLectures = (courseId: string) => {
       
       toast.success("Xóa bài kiểm tra thành công.");
       return true;
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
-      toast.error("Lỗi xóa bài kiểm tra.");
+      const responseData = error?.response?.data;
+      let msg = "Lỗi xóa bài kiểm tra.";
+      if (responseData) {
+        if (typeof responseData === "string") msg = responseData;
+        else if (responseData.message) msg = responseData.message;
+        else if (responseData.title) msg = responseData.title;
+        else if (responseData.errors) {
+          const errs = Object.values(responseData.errors).flat() as string[];
+          msg = errs.join(" | ");
+        }
+      } else if (error?.message) {
+        msg = error.message;
+      }
+      toast.error(msg);
       return false;
     }
   }, []);

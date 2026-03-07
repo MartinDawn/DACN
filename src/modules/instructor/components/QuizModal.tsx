@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { X, PlusCircle, Trash, Loader2 } from "lucide-react";
+import { X, PlusCircle, Trash, Loader2, ImageIcon } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { quizService } from "../services/quiz.service";
 import type { CreateQuizPayload, QuizQuestionPayload } from "../models/quiz";
@@ -16,17 +16,19 @@ const QuizModal: React.FC<QuizModalProps> = ({ isOpen, onClose, lectureId, quizI
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [testTime, setTestTime] = useState(0);
-  const [attemptCount, setAttemptCount] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [questions, setQuestions] = useState<QuizQuestionPayload[]>([
-    { 
-      content: "", 
-      explanation: "", 
+    {
+      content: "",
+      explanation: "",
       displayOrder: 1,
+      imageUrl: "",
+      imagePublicId: "",
+      image: "",
       options: [
         { content: "", isCorrect: true, displayOrder: 1 },
         { content: "", isCorrect: false, displayOrder: 2 }
-      ] 
+      ]
     }
   ]);
 
@@ -45,10 +47,10 @@ const QuizModal: React.FC<QuizModalProps> = ({ isOpen, onClose, lectureId, quizI
     setName("");
     setDescription("");
     setTestTime(0);
-    setAttemptCount(0);
-    setQuestions([{ 
+    setQuestions([{
       content: "", explanation: "", displayOrder: 1,
-      options: [{ content: "", isCorrect: true, displayOrder: 1 }, { content: "", isCorrect: false, displayOrder: 2 }] 
+      imageUrl: "", imagePublicId: "", image: "",
+      options: [{ content: "", isCorrect: true, displayOrder: 1 }, { content: "", isCorrect: false, displayOrder: 2 }]
     }]);
   };
 
@@ -62,14 +64,16 @@ const QuizModal: React.FC<QuizModalProps> = ({ isOpen, onClose, lectureId, quizI
             setName(data.name || "");
             setDescription(data.description || "");
             setTestTime(data.testTime || 0);
-            setAttemptCount(data.attemptCount || 0);
 
             if (Array.isArray(data.questions) && data.questions.length > 0) {
                 const mappedQuestions = data.questions.map((q: any, index: number) => ({
                     content: q.content || q.question || "",
                     explanation: q.explanation || q.description || "",
                     displayOrder: q.displayOrder || index + 1,
-                    options: Array.isArray(q.options) 
+                    imageUrl: q.imageUrl || "",
+                    imagePublicId: q.imagePublicId || "",
+                    image: "",
+                    options: Array.isArray(q.options)
                       ? q.options.map((o: any, oIdx: number) => ({
                           content: o.content || "",
                           isCorrect: o.isCorrect || false,
@@ -94,6 +98,7 @@ const QuizModal: React.FC<QuizModalProps> = ({ isOpen, onClose, lectureId, quizI
         ...prev,
         {
             content: "", explanation: "", displayOrder: prev.length + 1,
+            imageUrl: "", imagePublicId: "", image: "",
             options: [{ content: "", isCorrect: true, displayOrder: 1 }, { content: "", isCorrect: false, displayOrder: 2 }]
         }
     ]);
@@ -168,6 +173,27 @@ const QuizModal: React.FC<QuizModalProps> = ({ isOpen, onClose, lectureId, quizI
     );
   };
 
+  const handleQuestionImage = (qIndex: number, e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const base64 = reader.result as string;
+      setQuestions(prev =>
+        prev.map((q, i) => i !== qIndex ? q : { ...q, image: base64, imageUrl: "", imagePublicId: "" })
+      );
+    };
+    reader.readAsDataURL(file);
+    // Reset input so same file can be re-selected
+    e.target.value = "";
+  };
+
+  const removeQuestionImage = (qIndex: number) => {
+    setQuestions(prev =>
+      prev.map((q, i) => i !== qIndex ? q : { ...q, image: "", imageUrl: "", imagePublicId: "" })
+    );
+  };
+
   const handleSubmit = async () => {
     if (!lectureId && !quizIdToEdit) return;
     if (!name.trim()) { toast.error("Vui lòng nhập tiêu đề Quiz"); return; }
@@ -194,20 +220,26 @@ const QuizModal: React.FC<QuizModalProps> = ({ isOpen, onClose, lectureId, quizI
     let result;
     
     // Strict Type Mapping
-    const formattedQuestions = questions.map((q, i) => ({
-        content: q.content.trim(),
-        displayOrder: i + 1,
-        explanation: q.explanation ? q.explanation.trim() : "",
-        options: q.options.map((o, j) => ({
-            content: o.content.trim(),
-            isCorrect: o.isCorrect,
-            displayOrder: j + 1
-        }))
-    }));
+    const formattedQuestions = questions.map((q, i) => {
+        const questionPayload: any = {
+            content: q.content.trim(),
+            displayOrder: i + 1,
+            explanation: q.explanation ? q.explanation.trim() : "",
+            options: q.options.map((o, j) => ({
+                content: o.content.trim(),
+                isCorrect: o.isCorrect,
+                displayOrder: j + 1
+            }))
+        };
+        // Only include image fields when they have actual values
+        if (q.imageUrl) questionPayload.imageUrl = q.imageUrl;
+        if (q.imagePublicId) questionPayload.imagePublicId = q.imagePublicId;
+        if (q.image) questionPayload.image = q.image;
+        return questionPayload;
+    });
 
     // Ensure integers
     const finalTestTime = Math.max(0, Math.floor(testTime || 0));
-    const finalAttemptCount = Math.max(0, Math.floor(attemptCount || 0));
 
     try {
         if (quizIdToEdit) {
@@ -216,7 +248,6 @@ const QuizModal: React.FC<QuizModalProps> = ({ isOpen, onClose, lectureId, quizI
                 name: name.trim(),
                 description: description.trim(),
                 testTime: finalTestTime,
-                attemptCount: finalAttemptCount,
                 questions: formattedQuestions
             };
             result = await quizService.updateQuiz(quizIdToEdit, payload);
@@ -225,10 +256,9 @@ const QuizModal: React.FC<QuizModalProps> = ({ isOpen, onClose, lectureId, quizI
             if (!lectureId) return;
             const payload: CreateQuizPayload = {
                 name: name.trim(),
+                description: description.trim() || undefined,
                 lectureId,
-                description: description.trim(), // Include description to avoid 500 if mandatory
                 testTime: finalTestTime,
-                attemptCount: finalAttemptCount,
                 questions: formattedQuestions
             };
             
@@ -244,7 +274,25 @@ const QuizModal: React.FC<QuizModalProps> = ({ isOpen, onClose, lectureId, quizI
         }
     } catch (e: any) {
         console.error("API Error Saving Quiz:", e);
-        const errorMessage = e?.response?.data?.message || e?.message || "Lỗi API khi lưu Quiz.";
+        const responseData = e?.response?.data;
+        console.error("[QuizModal] Full error response:", JSON.stringify(responseData, null, 2));
+        // Extract detailed validation errors from ASP.NET ModelState or custom errors
+        let errorMessage = "Lỗi API khi lưu Quiz.";
+        if (responseData) {
+            if (typeof responseData === "string") {
+                errorMessage = responseData;
+            } else if (responseData.message) {
+                errorMessage = responseData.message;
+            } else if (responseData.errors) {
+                // ASP.NET ModelState errors: { errors: { FieldName: ["msg"] } }
+                const errs = Object.values(responseData.errors).flat() as string[];
+                errorMessage = errs.join(" | ");
+            } else if (responseData.title) {
+                errorMessage = responseData.title;
+            }
+        } else {
+            errorMessage = e?.message || errorMessage;
+        }
         toast.error(errorMessage);
     } finally {
         setIsLoading(false);
@@ -289,19 +337,10 @@ const QuizModal: React.FC<QuizModalProps> = ({ isOpen, onClose, lectureId, quizI
                     <div className="grid grid-cols-2 gap-4">
                         <div>
                             <label className="mb-1 block text-sm font-semibold text-gray-700">Thời gian (phút)</label>
-                            <input 
+                            <input
                                type="number" min="0" onWheel={(e) => (e.target as HTMLInputElement).blur()}
                                value={testTime} onChange={e => setTestTime(Number(e.target.value))}
-                               className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#5a2dff] focus:ring-1 focus:ring-[#5a2dff]" 
-                               placeholder="0 = Không giới hạn"
-                            />
-                        </div>
-                        <div>
-                            <label className="mb-1 block text-sm font-semibold text-gray-700">Số lần làm lại</label>
-                            <input 
-                               type="number" min="0" onWheel={(e) => (e.target as HTMLInputElement).blur()}
-                               value={attemptCount} onChange={e => setAttemptCount(Number(e.target.value))}
-                               className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#5a2dff] focus:ring-1 focus:ring-[#5a2dff]" 
+                               className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#5a2dff] focus:ring-1 focus:ring-[#5a2dff]"
                                placeholder="0 = Không giới hạn"
                             />
                         </div>
@@ -326,12 +365,69 @@ const QuizModal: React.FC<QuizModalProps> = ({ isOpen, onClose, lectureId, quizI
                           
                           <div className="mb-4">
                               <label className="block text-sm font-bold text-gray-800 mb-2">Câu {qImg + 1}</label>
-                              <input 
+                              <input
                                  value={q.content}
                                  onChange={e => updateQuestionText(qImg, e.target.value)}
                                  className="w-full rounded-lg bg-gray-50 border border-gray-200 px-4 py-3 text-sm focus:bg-white focus:border-[#5a2dff] focus:ring-1 focus:ring-[#5a2dff] transition-colors"
                                  placeholder="Nhập nội dung câu hỏi..."
                               />
+
+                              {/* Image preview or upload button */}
+                              {(q.image || q.imageUrl) ? (
+                                <div className="mt-2">
+                                  <div className="relative inline-block">
+                                    <img
+                                      src={q.image || q.imageUrl}
+                                      alt="Ảnh câu hỏi"
+                                      className="max-h-48 max-w-full rounded-lg border border-gray-200 object-contain"
+                                    />
+                                    {!q.image && q.imageUrl && (
+                                      <span className="absolute bottom-1 left-1 bg-black/50 text-white text-xs px-1.5 py-0.5 rounded">
+                                        Ảnh đã lưu
+                                      </span>
+                                    )}
+                                    <button
+                                      type="button"
+                                      onClick={() => removeQuestionImage(qImg)}
+                                      className="absolute top-1 right-1 bg-white rounded-full p-0.5 shadow border border-gray-200 hover:border-red-400"
+                                      title="Xóa ảnh"
+                                    >
+                                      <X size={14} className="text-red-500" />
+                                    </button>
+                                  </div>
+                                  <div className="mt-1.5">
+                                    <input
+                                      type="file"
+                                      id={`img-${qImg}`}
+                                      accept="image/*"
+                                      className="hidden"
+                                      onChange={e => handleQuestionImage(qImg, e)}
+                                    />
+                                    <label
+                                      htmlFor={`img-${qImg}`}
+                                      className="cursor-pointer inline-flex items-center gap-1.5 text-xs text-gray-500 border border-dashed border-gray-300 rounded-lg px-2.5 py-1 hover:text-[#5a2dff] hover:border-[#5a2dff] transition-colors"
+                                    >
+                                      <ImageIcon size={12} /> Thay thế ảnh
+                                    </label>
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className="mt-2">
+                                  <input
+                                    type="file"
+                                    id={`img-${qImg}`}
+                                    accept="image/*"
+                                    className="hidden"
+                                    onChange={e => handleQuestionImage(qImg, e)}
+                                  />
+                                  <label
+                                    htmlFor={`img-${qImg}`}
+                                    className="cursor-pointer inline-flex items-center gap-1.5 text-sm text-gray-500 border border-dashed border-gray-300 rounded-lg px-3 py-1.5 hover:text-[#5a2dff] hover:border-[#5a2dff] transition-colors"
+                                  >
+                                    <ImageIcon size={14} /> Thêm ảnh
+                                  </label>
+                                </div>
+                              )}
                           </div>
 
                           <div className="space-y-3 mb-4">
