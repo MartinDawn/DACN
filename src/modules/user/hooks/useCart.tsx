@@ -46,7 +46,24 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   // Tự động gọi API khi Provider được tải lần đầu
   useEffect(() => {
-    fetchCart();
+    const token = localStorage.getItem('accessToken');
+    const userStr = localStorage.getItem('user');
+    if (token && userStr) {
+      try {
+        const userData = JSON.parse(userStr);
+        const roles: string[] = Array.isArray(userData.role) ? userData.role : [userData.role];
+        // Chỉ fetch cart cho user có role Student
+        if (roles.some((r: string) => r === 'Student')) {
+          fetchCart();
+        } else {
+          setLoading(false);
+        }
+      } catch {
+        setLoading(false);
+      }
+    } else {
+      setLoading(false);
+    }
   }, [fetchCart]);
 
   // Hàm thêm vào giỏ hàng

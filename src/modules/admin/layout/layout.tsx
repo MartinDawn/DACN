@@ -2,6 +2,7 @@ import React, { useState, ReactNode, useRef, useEffect } from 'react';
 import { NavLink, useLocation, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../auth/hooks/useAuth';
 import { UserIcon, KeyIcon, ArrowLeftOnRectangleIcon } from "@heroicons/react/24/outline";
+import { useNotifications } from '../hooks/useNotifications';
 
 // Icons for Layout
 const DashboardIcon = () => (<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>);
@@ -17,7 +18,7 @@ const SearchIcon = () => (<svg className="w-5 h-5" fill="none" stroke="currentCo
 const BellIcon = () => (<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>);
 const MenuIcon = () => (<svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>);
 const ChevronDown = () => (<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>);
-const MoonIcon = () => (<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeMax="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" /></svg>);
+const MoonIcon = () => (<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" /></svg>);
 const MessageIcon = () => (<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" /></svg>);
 
 interface SidebarItemProps {
@@ -73,10 +74,17 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   const profileMenuRef = useRef<HTMLDivElement>(null);
   const [isLogoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
 
+  const { notifications, unreadCount, loading: notifLoading, error: notifError, markAllAsRead } = useNotifications();
+  const [isNotificationOpen, setNotificationOpen] = useState(false);
+  const notificationMenuRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (profileMenuRef.current && !profileMenuRef.current.contains(event.target as Node)) {
         setProfileOpen(false);
+      }
+      if (notificationMenuRef.current && !notificationMenuRef.current.contains(event.target as Node)) {
+        setNotificationOpen(false);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
@@ -219,11 +227,67 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                        <MoonIcon />
                      </button>
                   </li>
-                  <li>
-                    <button className="relative flex h-10 w-10 items-center justify-center rounded-full bg-[#EEF2FF] text-gray-500 transition hover:text-[#5a2dff]">
-                      <span className="absolute -top-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-red-500"></span>
+                  <li className="relative" ref={notificationMenuRef}>
+                    <button
+                      onClick={() => {
+                        const opening = !isNotificationOpen;
+                        setNotificationOpen(opening);
+                        if (opening) markAllAsRead();
+                      }}
+                      className="relative flex h-10 w-10 items-center justify-center rounded-full bg-[#EEF2FF] text-gray-500 transition hover:text-[#5a2dff]"
+                    >
+                      {unreadCount > 0 && (
+                        <span className="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
+                          {unreadCount > 9 ? '9+' : unreadCount}
+                        </span>
+                      )}
                       <BellIcon />
-                     </button>
+                    </button>
+
+                    {/* Notification Dropdown */}
+                    {isNotificationOpen && (
+                      <div className="absolute right-0 mt-3 w-80 rounded-2xl border border-gray-100 bg-white shadow-xl z-50">
+                        <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+                          <h5 className="font-semibold text-gray-900 text-sm">Thông báo</h5>
+                          {unreadCount > 0 && (
+                            <span className="rounded-full bg-red-50 px-2 py-0.5 text-xs font-semibold text-red-500">
+                              {unreadCount} chưa đọc
+                            </span>
+                          )}
+                        </div>
+                        <ul className="max-h-80 overflow-y-auto divide-y divide-gray-50">
+                          {notifLoading ? (
+                            <li className="px-4 py-8 text-center text-sm text-gray-400">
+                              <svg className="animate-spin h-5 w-5 mx-auto text-[#5a2dff]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                              </svg>
+                              <span className="mt-2 block">Đang tải thông báo...</span>
+                            </li>
+                          ) : notifError ? (
+                            <li className="px-4 py-8 text-center text-sm text-red-400">{notifError}</li>
+                          ) : notifications.length === 0 ? (
+                            <li className="px-4 py-8 text-center text-sm text-gray-400">Không có thông báo nào</li>
+                          ) : (
+                            notifications.map((notif) => (
+                              <li
+                                key={notif.id}
+                                className={`flex items-start gap-3 px-4 py-3 hover:bg-gray-50 transition-colors cursor-pointer ${!notif.isRead ? 'bg-purple-50/50' : ''}`}
+                              >
+                                <div className={`mt-1 h-2 w-2 flex-shrink-0 rounded-full ${!notif.isRead ? 'bg-[#5a2dff]' : 'bg-gray-300'}`} />
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-sm font-medium text-gray-900 truncate">{notif.title}</p>
+                                  <p className="text-xs text-gray-500 mt-0.5 line-clamp-2">{notif.message}</p>
+                                  <p className="text-xs text-gray-400 mt-1">
+                                    {new Date(notif.createdAt).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                                  </p>
+                                </div>
+                              </li>
+                            ))
+                          )}
+                        </ul>
+                      </div>
+                    )}
                   </li>
                   <li>
                     <button className="relative flex h-10 w-10 items-center justify-center rounded-full bg-[#EEF2FF] text-gray-500 transition hover:text-[#5a2dff]">

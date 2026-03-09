@@ -45,3 +45,23 @@ export interface DashboardResponse {
     message: string;
     data: DashboardData;
 }
+
+export interface Notification {
+    id: string;
+    title: string;
+    message: string;
+    isRead?: boolean;
+    createdAt: string;
+    type?: string;
+}
+
+export interface NotificationsData {
+    notifications: Notification[];
+}
+
+export interface NotificationsResponse {
+    success: boolean;
+    code: string;
+    message: string;
+    data: NotificationsData;
+}
