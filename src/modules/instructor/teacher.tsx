@@ -76,16 +76,24 @@ const InstructorDashboard: React.FC = () => {
     loadCourses();
   }, [fetchCourses]);
 
-  // Thêm xử lý phím ESC để đóng form tạo khóa học
+  // Xử lý phím ESC để đóng tất cả popup/form
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && showCreateCourseForm) {
-        setShowCreateCourseForm(false);
+      if (e.key === "Escape") {
+        if (showDeleteModal) {
+          setShowDeleteModal(false);
+          setCourseToDelete(null);
+        } else if (showPublishModal) {
+          setShowPublishModal(false);
+          setCourseToPublish(null);
+        } else if (showCreateCourseForm) {
+          setShowCreateCourseForm(false);
+        }
       }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [showCreateCourseForm]);
+  }, [showDeleteModal, showPublishModal, showCreateCourseForm]);
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
