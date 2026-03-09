@@ -1,54 +1,35 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AdminLayout from './layout/layout';
-import type { Course } from './models/course.model'; // Thêm 'type' vào đây
-import { useCourseRequests } from './hooks/useCourseRequests'; // Import hook
+import type { Course } from './models/course.model';
+import { useCourseRequests } from './hooks/useCourseRequests';
 import { CourseService } from './services/course.service';
-import { 
-  CheckCircleIcon, 
-  XCircleIcon, 
-  EyeIcon, 
-  TrashIcon, 
+import {
+  CheckCircleIcon,
+  XCircleIcon,
+  EyeIcon,
+  TrashIcon,
   MagnifyingGlassIcon,
   BookOpenIcon,
   ClockIcon,
-  XMarkIcon // Thêm import icon X
+  XMarkIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon
 } from "@heroicons/react/24/outline";
-
-// Keep mock data only for Published courses until that API is connected
-const mockPublishedCourses: Course[] = [
-  {
-    id: '1',
-    title: 'Complete React Developer Course 2024',
-    instructor: 'Nguyen Van A',
-    category: 'Web Development',
-    price: 599000,
-    status: 'published',
-    submittedDate: '2023-12-01',
-    image: 'https://images.unsplash.com/photo-1633356122544-f134324a6cee?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&q=80',
-    lessons: 45
-  },
-  {
-    id: '3',
-    title: 'Digital Marketing Zero to Hero',
-    instructor: 'Tran Van C',
-    category: 'Marketing',
-    price: 399000,
-    status: 'published',
-    submittedDate: '2023-11-20',
-    image: 'https://images.unsplash.com/photo-1533750516457-a7f992034fec?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&q=80',
-    lessons: 28
-  }
-];
 
 export default function AdminManageCourse() {
     const navigate = useNavigate();
     const [activeTab, setActiveTab] = useState<'published' | 'pending'>('published');
     const [searchTerm, setSearchTerm] = useState('');
-    
-    // Use the hook for fetching requests
-    const { courses: apiPendingCourses, setCourses: setApiCourses, loading } = useCourseRequests(activeTab);
-    const [displayCourses, setDisplayCourses] = useState<Course[]>([]);
+
+    const {
+        courses,
+        setCourses,
+        loading,
+        pagination,
+        currentPage,
+        goToPage
+    } = useCourseRequests(activeTab);
 
     // Modal State
     const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
@@ -56,15 +37,6 @@ export default function AdminManageCourse() {
     const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [rejectReason, setRejectReason] = useState('');
-
-    // Combine data sources
-    useEffect(() => {
-        if (activeTab === 'pending') {
-            setDisplayCourses(apiPendingCourses);
-        } else {
-            setDisplayCourses(mockPublishedCourses);
-        }
-    }, [activeTab, apiPendingCourses]);
 
     // Open Modals
     const openApproveModal = (course: Course) => {
@@ -74,7 +46,7 @@ export default function AdminManageCourse() {
 
     const openRejectModal = (course: Course) => {
         setSelectedCourse(course);
-        setRejectReason(''); // Reset reason
+        setRejectReason('');
         setIsRejectModalOpen(true);
     };
 
@@ -90,19 +62,28 @@ export default function AdminManageCourse() {
         setSelectedCourse(null);
     };
 
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') closeModals();
+        };
+        if (isApproveModalOpen || isRejectModalOpen || isDeleteModalOpen) {
+            document.addEventListener('keydown', handleKeyDown);
+        }
+        return () => document.removeEventListener('keydown', handleKeyDown);
+    }, [isApproveModalOpen, isRejectModalOpen, isDeleteModalOpen]);
+
     const handleConfirmApprove = async () => {
         if (!selectedCourse) return;
 
         if (activeTab === 'pending' && selectedCourse.requestId) {
             try {
                 await CourseService.approveRequest(selectedCourse.requestId);
-                setApiCourses(prev => prev.filter(c => c.id !== selectedCourse.id));
-                // Có thể thêm thông báo toast tại đây
+                setCourses(prev => prev.filter(c => c.id !== selectedCourse.id));
             } catch (error) {
                 alert('Lỗi khi duyệt yêu cầu');
             }
         } else {
-             setApiCourses(prev => prev.filter(c => c.id !== selectedCourse.id));
+            setCourses(prev => prev.filter(c => c.id !== selectedCourse.id));
         }
         closeModals();
     };
@@ -117,27 +98,47 @@ export default function AdminManageCourse() {
         if (activeTab === 'pending' && selectedCourse.requestId) {
             try {
                 await CourseService.rejectRequest(selectedCourse.requestId, rejectReason);
-                setApiCourses(prev => prev.filter(c => c.id !== selectedCourse.id));
+                setCourses(prev => prev.filter(c => c.id !== selectedCourse.id));
             } catch (error) {
                 alert('Lỗi khi từ chối yêu cầu');
             }
         } else {
-             setApiCourses(prev => prev.filter(c => c.id !== selectedCourse.id));
+            setCourses(prev => prev.filter(c => c.id !== selectedCourse.id));
         }
         closeModals();
     };
 
     const handleConfirmDelete = () => {
         if (selectedCourse) {
-            setDisplayCourses(prev => prev.filter(c => c.id !== selectedCourse.id));
+            setCourses(prev => prev.filter(c => c.id !== selectedCourse.id));
         }
         closeModals();
     };
 
-    const filteredCourses = displayCourses.filter(course => 
-        (course.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    const filteredCourses = courses.filter(course =>
+        (course.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
          course.instructor.toLowerCase().includes(searchTerm.toLowerCase()))
     );
+
+    const [publishedCount, setPublishedCount] = useState(0);
+    const [pendingCount, setPendingCount] = useState(0);
+
+    // Fetch pending count on mount so the badge shows correctly before switching tabs
+    useEffect(() => {
+        CourseService.getPendingRequests().then(data => {
+            setPendingCount(data.length);
+        }).catch(() => {});
+    }, []);
+
+    useEffect(() => {
+        if (!loading) {
+            if (activeTab === 'published') {
+                setPublishedCount(pagination.totalCount || courses.length);
+            } else {
+                setPendingCount(courses.length);
+            }
+        }
+    }, [activeTab, loading, pagination.totalCount, courses.length]);
 
     return (
         <AdminLayout>
@@ -146,9 +147,9 @@ export default function AdminManageCourse() {
                     <h2 className="text-xl font-bold text-gray-900">Quản lý khóa học</h2>
                     <div className="relative">
                          <MagnifyingGlassIcon className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
-                         <input 
-                            type="text" 
-                            placeholder="Tìm kiếm khóa học/giảng viên..." 
+                         <input
+                            type="text"
+                            placeholder="Tìm kiếm khóa học/giảng viên..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                             className="w-full rounded-full border border-gray-200 bg-white py-2.5 pl-10 pr-4 text-sm font-medium outline-none focus:border-[#5a2dff] sm:w-80"
@@ -156,34 +157,34 @@ export default function AdminManageCourse() {
                     </div>
                 </div>
 
-                {/* Tabs - 2 chức năng chính */}
+                {/* Tabs */}
                 <div className="mb-6 flex space-x-2 rounded-xl bg-gray-100 p-1 w-fit">
                     <button
                         onClick={() => setActiveTab('published')}
                         className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-all duration-200 ${
-                            activeTab === 'published' 
-                            ? 'bg-white text-[#5a2dff] shadow-sm' 
+                            activeTab === 'published'
+                            ? 'bg-white text-[#5a2dff] shadow-sm'
                             : 'text-gray-500 hover:text-gray-700'
                         }`}
                     >
                         <BookOpenIcon className="h-4 w-4" />
-                        Đã Public
+                        Tất cả khóa học
                         <span className="ml-2 rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600">
-                            {mockPublishedCourses.length}
+                            {loading && activeTab === 'published' ? '...' : publishedCount}
                         </span>
                     </button>
                     <button
                         onClick={() => setActiveTab('pending')}
                         className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-all duration-200 ${
-                            activeTab === 'pending' 
-                            ? 'bg-white text-[#5a2dff] shadow-sm' 
+                            activeTab === 'pending'
+                            ? 'bg-white text-[#5a2dff] shadow-sm'
                             : 'text-gray-500 hover:text-gray-700'
                         }`}
                     >
                         <ClockIcon className="h-4 w-4" />
-                        Chờ duyệt
+                        Duyệt khóa học
                         <span className="ml-2 rounded-full bg-red-100 px-2 py-0.5 text-xs text-red-600">
-                             {loading ? '...' : apiPendingCourses.length}
+                            {loading && activeTab === 'pending' ? '...' : pendingCount}
                         </span>
                     </button>
                 </div>
@@ -198,15 +199,18 @@ export default function AdminManageCourse() {
                                     <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-gray-500">Giảng viên</th>
                                     <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-gray-500">Danh mục</th>
                                     <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-gray-500">Giá</th>
+                                    {activeTab === 'published' && (
+                                        <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-gray-500">Trạng thái</th>
+                                    )}
                                     <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-gray-500">Kiểm tra</th>
-                                    <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-gray-500">Ngày gửi</th>
+                                    <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-gray-500">Ngày tạo</th>
                                     <th className="px-6 py-4 text-end text-xs font-semibold uppercase tracking-wider text-gray-500">Hành động</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-100 text-sm">
-                                {loading && activeTab === 'pending' ? (
+                                {loading ? (
                                     <tr>
-                                        <td colSpan={7} className="px-6 py-12 text-center text-gray-500">
+                                        <td colSpan={activeTab === 'published' ? 8 : 7} className="px-6 py-12 text-center text-gray-500">
                                             Đang tải dữ liệu...
                                         </td>
                                     </tr>
@@ -220,7 +224,12 @@ export default function AdminManageCourse() {
                                                     </div>
                                                     <div>
                                                         <p className="font-semibold text-gray-900 line-clamp-1 max-w-[200px]" title={course.title}>{course.title}</p>
-                                                        <p className="text-xs text-gray-500">{course.lessons} bài học</p>
+                                                        {activeTab === 'published' && course.totalStudents !== undefined && (
+                                                            <p className="text-xs text-gray-500">{course.totalStudents} học viên</p>
+                                                        )}
+                                                        {activeTab === 'pending' && (
+                                                            <p className="text-xs text-gray-500">{course.lessons} bài học</p>
+                                                        )}
                                                     </div>
                                                 </div>
                                             </td>
@@ -231,15 +240,29 @@ export default function AdminManageCourse() {
                                                 </span>
                                             </td>
                                             <td className="px-6 py-4 font-semibold text-gray-900">
-                                                {course.price.toLocaleString('vi-VN')}đ
+                                                {course.price > 0
+                                                    ? `${course.price.toLocaleString('vi-VN')}đ`
+                                                    : <span className="text-green-600 font-medium">Miễn phí</span>
+                                                }
                                             </td>
+                                            {activeTab === 'published' && (
+                                                <td className="px-6 py-4">
+                                                    <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                                                        course.status === 'Public'
+                                                            ? 'bg-green-100 text-green-700'
+                                                            : 'bg-gray-100 text-gray-600'
+                                                    }`}>
+                                                        {course.status === 'Public' ? 'Công khai' : 'Riêng tư'}
+                                                    </span>
+                                                </td>
+                                            )}
                                             <td className="px-6 py-4 text-gray-600">
                                                 <button
                                                     onClick={() => navigate(`/courses/${course.id}`)}
-                                                    className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-600 transition hover:border-[#5a2dff] hover:text-[#5a2dff] hover:shadow-sm"
+                                                    className="inline-flex items-center justify-center rounded-lg bg-blue-50 p-2 text-blue-600 transition-colors hover:bg-blue-100"
+                                                    title="Xem chi tiết"
                                                 >
-                                                    <EyeIcon className="h-4 w-4" />
-                                                    Xem chi tiết
+                                                    <EyeIcon className="h-5 w-5" />
                                                 </button>
                                             </td>
                                             <td className="px-6 py-4 text-gray-600">{course.submittedDate}</td>
@@ -247,14 +270,14 @@ export default function AdminManageCourse() {
                                                 <div className="flex items-center justify-end gap-2">
                                                     {activeTab === 'pending' ? (
                                                         <>
-                                                            <button 
+                                                            <button
                                                                 onClick={() => openApproveModal(course)}
                                                                 className="group relative inline-flex items-center justify-center rounded-lg bg-green-50 p-2 text-green-600 transition-colors hover:bg-green-100"
                                                                 title="Duyệt khóa học"
                                                             >
                                                                 <CheckCircleIcon className="h-5 w-5" />
                                                             </button>
-                                                            <button 
+                                                            <button
                                                                 onClick={() => openRejectModal(course)}
                                                                 className="group relative inline-flex items-center justify-center rounded-lg bg-red-50 p-2 text-red-600 transition-colors hover:bg-red-100"
                                                                 title="Từ chối"
@@ -263,15 +286,13 @@ export default function AdminManageCourse() {
                                                             </button>
                                                         </>
                                                     ) : (
-                                                        <>  
-                                                            <button 
-                                                                onClick={() => openDeleteModal(course)}
-                                                                className="group relative inline-flex items-center justify-center rounded-lg bg-red-50 p-2 text-red-600 transition-colors hover:bg-red-100"
-                                                                title="Xóa khóa học"
-                                                            >
-                                                                <TrashIcon className="h-5 w-5" />
-                                                            </button>
-                                                        </>
+                                                        <button
+                                                            onClick={() => openDeleteModal(course)}
+                                                            className="group relative inline-flex items-center justify-center rounded-lg bg-red-50 p-2 text-red-600 transition-colors hover:bg-red-100"
+                                                            title="Xóa khóa học"
+                                                        >
+                                                            <TrashIcon className="h-5 w-5" />
+                                                        </button>
                                                     )}
                                                 </div>
                                             </td>
@@ -279,7 +300,7 @@ export default function AdminManageCourse() {
                                     ))
                                 ) : (
                                     <tr>
-                                        <td colSpan={7} className="px-6 py-12 text-center text-gray-500">
+                                        <td colSpan={activeTab === 'published' ? 8 : 7} className="px-6 py-12 text-center text-gray-500">
                                             <div className="flex flex-col items-center justify-center">
                                                 <div className="rounded-full bg-gray-50 p-4 mb-3">
                                                     <MagnifyingGlassIcon className="h-8 w-8 text-gray-300"/>
@@ -293,14 +314,65 @@ export default function AdminManageCourse() {
                             </tbody>
                         </table>
                     </div>
+
+                    {/* Pagination - only show for published tab */}
+                    {activeTab === 'published' && pagination.totalPages > 1 && (
+                        <div className="flex items-center justify-between border-t border-gray-100 px-6 py-4">
+                            <p className="text-sm text-gray-500">
+                                Trang <span className="font-medium text-gray-900">{pagination.page}</span> / <span className="font-medium text-gray-900">{pagination.totalPages}</span>
+                                &nbsp;·&nbsp; Tổng <span className="font-medium text-gray-900">{pagination.totalCount}</span> khóa học
+                            </p>
+                            <div className="flex items-center gap-1">
+                                <button
+                                    onClick={() => goToPage(currentPage - 1)}
+                                    disabled={!pagination.hasPreviousPage}
+                                    className="inline-flex items-center justify-center rounded-lg border border-gray-200 p-2 text-gray-500 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                                >
+                                    <ChevronLeftIcon className="h-4 w-4" />
+                                </button>
+                                {Array.from({ length: pagination.totalPages }, (_, i) => i + 1)
+                                    .filter(p => p === 1 || p === pagination.totalPages || Math.abs(p - currentPage) <= 1)
+                                    .reduce<(number | 'ellipsis')[]>((acc, p, idx, arr) => {
+                                        if (idx > 0 && p - (arr[idx - 1] as number) > 1) acc.push('ellipsis');
+                                        acc.push(p);
+                                        return acc;
+                                    }, [])
+                                    .map((item, idx) =>
+                                        item === 'ellipsis' ? (
+                                            <span key={`ellipsis-${idx}`} className="px-2 text-gray-400">…</span>
+                                        ) : (
+                                            <button
+                                                key={item}
+                                                onClick={() => goToPage(item as number)}
+                                                className={`min-w-[36px] rounded-lg border px-3 py-2 text-sm font-medium transition-colors ${
+                                                    currentPage === item
+                                                        ? 'border-[#5a2dff] bg-[#5a2dff] text-white'
+                                                        : 'border-gray-200 text-gray-600 hover:bg-gray-50'
+                                                }`}
+                                            >
+                                                {item}
+                                            </button>
+                                        )
+                                    )
+                                }
+                                <button
+                                    onClick={() => goToPage(currentPage + 1)}
+                                    disabled={!pagination.hasNextPage}
+                                    className="inline-flex items-center justify-center rounded-lg border border-gray-200 p-2 text-gray-500 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                                >
+                                    <ChevronRightIcon className="h-4 w-4" />
+                                </button>
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
 
             {/* Modals */}
             {isApproveModalOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 transition-opacity fade-in backdrop-blur-sm">
-                    <div className="w-full max-w-md scale-100 transform rounded-2xl bg-white p-6 shadow-2xl transition-all">
-                        <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[#5a2dff]/10 mx-auto">
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+                    <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
+                        <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[#ede8ff] mx-auto">
                             <CheckCircleIcon className="h-8 w-8 text-[#5a2dff]" />
                         </div>
                         <h3 className="text-xl font-bold text-center text-gray-900">Xác nhận duyệt</h3>
@@ -308,15 +380,15 @@ export default function AdminManageCourse() {
                             Bạn có chắc chắn muốn duyệt khóa học <br/> <span className="font-bold text-gray-900">{selectedCourse?.title}</span>?
                         </p>
                         <div className="mt-8 flex justify-center gap-3">
-                            <button 
-                                onClick={closeModals} 
-                                className="min-w-[100px] rounded-lg border border-gray-200 bg-white px-5 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 hover:text-gray-900 focus:outline-none transition-all"
+                            <button
+                                onClick={closeModals}
+                                className="min-w-[100px] rounded-lg border border-gray-200 bg-white px-5 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 focus:outline-none transition-all"
                             >
                                 Hủy bỏ
                             </button>
-                            <button 
-                                onClick={handleConfirmApprove} 
-                                className="min-w-[100px] rounded-lg bg-[#5a2dff] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#4b24d6] focus:outline-none shadow-md shadow-[#5a2dff]/25 transition-all"
+                            <button
+                                onClick={handleConfirmApprove}
+                                className="min-w-[100px] rounded-lg bg-[#5a2dff] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#4a22e8] focus:outline-none shadow-md shadow-[#c4b5fd] transition-all"
                             >
                                 Duyệt ngay
                             </button>
@@ -326,9 +398,9 @@ export default function AdminManageCourse() {
             )}
 
             {isRejectModalOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 transition-opacity fade-in backdrop-blur-sm">
-                    <div className="w-full max-w-md scale-100 transform rounded-2xl bg-white p-6 shadow-2xl transition-all">
-                        <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[#5a2dff]/10 mx-auto">
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+                    <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
+                        <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[#ede8ff] mx-auto">
                             <XMarkIcon className="h-8 w-8 text-[#5a2dff]" />
                         </div>
                         <h3 className="text-xl font-bold text-center text-gray-900">Từ chối khóa học</h3>
@@ -337,7 +409,7 @@ export default function AdminManageCourse() {
                         </p>
                         <div className="mt-5">
                             <label className="mb-2 block text-sm font-semibold text-gray-700">Lý do từ chối <span className="text-[#5a2dff]">*</span></label>
-                            <textarea 
+                            <textarea
                                 className="w-full rounded-xl border border-gray-200 p-3 text-sm focus:border-[#5a2dff] focus:ring-1 focus:ring-[#5a2dff] outline-none transition-all shadow-sm placeholder:text-gray-400"
                                 rows={4}
                                 placeholder="Nhập lý do chi tiết..."
@@ -346,15 +418,15 @@ export default function AdminManageCourse() {
                             />
                         </div>
                         <div className="mt-8 flex justify-end gap-3">
-                            <button 
-                                onClick={closeModals} 
-                                className="rounded-lg border border-gray-200 bg-white px-5 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 hover:text-gray-900 focus:outline-none transition-all"
+                            <button
+                                onClick={closeModals}
+                                className="rounded-lg border border-gray-200 bg-white px-5 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 focus:outline-none transition-all"
                             >
                                 Hủy bỏ
                             </button>
-                            <button 
-                                onClick={handleConfirmReject} 
-                                className="rounded-lg bg-[#5a2dff] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#4b24d6] focus:outline-none shadow-md shadow-[#5a2dff]/25 transition-all"
+                            <button
+                                onClick={handleConfirmReject}
+                                className="rounded-lg bg-[#5a2dff] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#4a22e8] focus:outline-none shadow-md shadow-[#c4b5fd] transition-all"
                             >
                                 Xác nhận từ chối
                             </button>
@@ -364,25 +436,25 @@ export default function AdminManageCourse() {
             )}
 
             {isDeleteModalOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 transition-opacity fade-in backdrop-blur-sm">
-                    <div className="w-full max-w-md scale-100 transform rounded-2xl bg-white p-6 shadow-2xl transition-all">
-                        <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-red-50 mx-auto">
-                            <TrashIcon className="h-8 w-8 text-red-500" />
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+                    <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
+                        <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[#ede8ff] mx-auto">
+                            <TrashIcon className="h-8 w-8 text-[#5a2dff]" />
                         </div>
                         <h3 className="text-xl font-bold text-center text-gray-900">Xóa khóa học?</h3>
                         <p className="mt-2 text-center text-gray-500 leading-relaxed">
                             Hành động này không thể hoàn tác. Bạn có chắc chắn muốn xóa khóa học <br/> <span className="font-bold text-gray-900">{selectedCourse?.title}</span>?
                         </p>
                         <div className="mt-8 flex justify-center gap-3">
-                            <button 
-                                onClick={closeModals} 
-                                className="rounded-lg border border-gray-200 bg-white px-5 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 hover:text-gray-900 focus:outline-none transition-all"
+                            <button
+                                onClick={closeModals}
+                                className="rounded-lg border border-gray-200 bg-white px-5 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 focus:outline-none transition-all"
                             >
                                 Hủy bỏ
                             </button>
-                            <button 
-                                onClick={handleConfirmDelete} 
-                                className="rounded-lg bg-red-500 px-5 py-2.5 text-sm font-semibold text-white hover:bg-red-600 focus:outline-none shadow-md shadow-red-200 transition-all"
+                            <button
+                                onClick={handleConfirmDelete}
+                                className="rounded-lg bg-[#5a2dff] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#4a22e8] focus:outline-none shadow-md shadow-[#c4b5fd] transition-all"
                             >
                                 Xóa vĩnh viễn
                             </button>
