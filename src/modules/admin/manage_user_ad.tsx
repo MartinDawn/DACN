@@ -279,7 +279,7 @@ export default function AdminManageUser() {
                                         <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-gray-500">Kinh nghiệm</th>
                                         <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-gray-500">Ngày gửi</th>
                                         <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-gray-500">Trạng thái</th>
-                                        <th className="px-6 py-4 text-end text-xs font-semibold uppercase tracking-wider text-gray-500">Hành động</th>
+                                        <th className="px-6 py-4 text-end text-xs font-semibold uppercase tracking-wider text-gray-500"></th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-100 text-sm">
