@@ -88,11 +88,11 @@ export const useInstructorRequests = () => {
     fetchRequests();
   }, [fetchRequests]);
 
-  const approveRequest = async (requestId: number, isApproved: boolean): Promise<boolean> => {
+  const approveRequest = async (id: number, isApproved: boolean): Promise<boolean> => {
     try {
-      const response = await userService.approveInstructorRequest(requestId, isApproved);
+      const response = await userService.approveInstructorRequest(id, isApproved);
       if (response.success) {
-        setRequests(prev => prev.filter(r => r.requestId !== requestId));
+        setRequests(prev => prev.filter(r => r.id !== id));
         return true;
       } else {
         setError(response.message || 'Thao tác thất bại');

@@ -10,12 +10,16 @@ export interface UserResponse {
 }
 
 export interface InstructorRequest {
-  requestId: number;
+  id: number;
   userId: string;
   fullName: string;
   email: string;
-  avatarUrl: string;
-  userName: string;
-  createdAt: string;
+  experience: string;
+  expertise: string;
+  certificate: string;
+  introduction: string;
+  socialLinks: string;
   status: string; // "Pending" | "Approved" | "Rejected"
+  createdAt: string;
+  processedAt: string | null;
 }

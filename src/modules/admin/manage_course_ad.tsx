@@ -167,7 +167,7 @@ export default function AdminManageCourse() {
                         }`}
                     >
                         <BookOpenIcon className="h-4 w-4" />
-                        Đã Public
+                        Tất cả khóa học
                         <span className="ml-2 rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600">
                             {mockPublishedCourses.length}
                         </span>
@@ -181,7 +181,7 @@ export default function AdminManageCourse() {
                         }`}
                     >
                         <ClockIcon className="h-4 w-4" />
-                        Chờ duyệt
+                        Duyệt khóa học
                         <span className="ml-2 rounded-full bg-red-100 px-2 py-0.5 text-xs text-red-600">
                              {loading ? '...' : apiPendingCourses.length}
                         </span>
@@ -236,10 +236,10 @@ export default function AdminManageCourse() {
                                             <td className="px-6 py-4 text-gray-600">
                                                 <button
                                                     onClick={() => navigate(`/courses/${course.id}`)}
-                                                    className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-600 transition hover:border-[#5a2dff] hover:text-[#5a2dff] hover:shadow-sm"
+                                                    className="inline-flex items-center justify-center rounded-lg bg-blue-50 p-2 text-blue-600 transition-colors hover:bg-blue-100"
+                                                    title="Xem chi tiết"
                                                 >
-                                                    <EyeIcon className="h-4 w-4" />
-                                                    Xem chi tiết
+                                                    <EyeIcon className="h-5 w-5" />
                                                 </button>
                                             </td>
                                             <td className="px-6 py-4 text-gray-600">{course.submittedDate}</td>
