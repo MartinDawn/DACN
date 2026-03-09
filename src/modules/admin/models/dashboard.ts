@@ -48,11 +48,11 @@ export interface DashboardResponse {
 
 export interface Notification {
     id: string;
-    title: string;
-    message: string;
-    isRead?: boolean;
+    type: string;
+    sender: string;
+    courseName: string;
     createdAt: string;
-    type?: string;
+    isRead?: boolean;
 }
 
 export interface NotificationsData {

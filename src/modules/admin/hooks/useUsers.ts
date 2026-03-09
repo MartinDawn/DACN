@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { userService } from '../services/user.service';
-import type { UserResponse } from '../models/user.model';
+import type { UserResponse, InstructorRequest } from '../models/user.model';
 
 export const useUsers = () => {
   const [users, setUsers] = useState<UserResponse[]>([]);
@@ -60,4 +60,49 @@ export const useUsers = () => {
   };
 
   return { users, isLoading, error, refetch: fetchUsers, banUser };
+};
+
+export const useInstructorRequests = () => {
+  const [requests, setRequests] = useState<InstructorRequest[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchRequests = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const response = await userService.getInstructorRequests();
+      if (response.success) {
+        setRequests(response.data || []);
+      } else {
+        setError(response.message || 'Không thể tải danh sách yêu cầu giảng viên');
+      }
+    } catch {
+      setError('Lỗi kết nối. Vui lòng thử lại.');
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchRequests();
+  }, [fetchRequests]);
+
+  const approveRequest = async (requestId: number, isApproved: boolean): Promise<boolean> => {
+    try {
+      const response = await userService.approveInstructorRequest(requestId, isApproved);
+      if (response.success) {
+        setRequests(prev => prev.filter(r => r.requestId !== requestId));
+        return true;
+      } else {
+        setError(response.message || 'Thao tác thất bại');
+        return false;
+      }
+    } catch {
+      setError('Lỗi kết nối. Vui lòng thử lại.');
+      return false;
+    }
+  };
+
+  return { requests, isLoading, error, refetch: fetchRequests, approveRequest };
 };

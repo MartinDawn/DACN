@@ -8,3 +8,14 @@ export interface UserResponse {
   isBanned: boolean;
   createdAt: string;
 }
+
+export interface InstructorRequest {
+  requestId: number;
+  userId: string;
+  fullName: string;
+  email: string;
+  avatarUrl: string;
+  userName: string;
+  createdAt: string;
+  status: string; // "Pending" | "Approved" | "Rejected"
+}

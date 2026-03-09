@@ -269,21 +269,52 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                           ) : notifications.length === 0 ? (
                             <li className="px-4 py-8 text-center text-sm text-gray-400">Không có thông báo nào</li>
                           ) : (
-                            notifications.map((notif) => (
+                            notifications.map((notif) => {
+                              const typeLabel = notif.type === 'CourseRequest'
+                                ? 'Yêu cầu duyệt khóa học'
+                                : notif.type === 'InstructorRequest'
+                                ? 'Yêu cầu trở thành giảng viên'
+                                : notif.type;
+                              const notifRoute = notif.type === 'CourseRequest'
+                                ? '/admin/courses'
+                                : notif.type === 'InstructorRequest'
+                                ? '/admin/users'
+                                : null;
+                              return (
                               <li
                                 key={notif.id}
-                                className={`flex items-start gap-3 px-4 py-3 hover:bg-gray-50 transition-colors cursor-pointer ${!notif.isRead ? 'bg-purple-50/50' : ''}`}
+                                className={`flex items-start gap-3 px-4 py-3 hover:bg-gray-50 transition-colors ${notifRoute ? 'cursor-pointer' : ''} ${!notif.isRead ? 'bg-purple-50/50' : ''}`}
                               >
                                 <div className={`mt-1 h-2 w-2 flex-shrink-0 rounded-full ${!notif.isRead ? 'bg-[#5a2dff]' : 'bg-gray-300'}`} />
                                 <div className="flex-1 min-w-0">
-                                  <p className="text-sm font-medium text-gray-900 truncate">{notif.title}</p>
-                                  <p className="text-xs text-gray-500 mt-0.5 line-clamp-2">{notif.message}</p>
-                                  <p className="text-xs text-gray-400 mt-1">
-                                    {new Date(notif.createdAt).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                                  <p className="text-sm font-medium text-gray-900">{typeLabel}</p>
+                                  <p className="text-xs text-gray-600 mt-0.5">
+                                    <span className="font-medium">{notif.sender}</span>
+                                    {notif.courseName && (
+                                      <> &mdash; <span className="italic">{notif.courseName}</span></>
+                                    )}
                                   </p>
+                                  <p className="text-xs text-gray-400 mt-1">
+                                    {new Date(notif.createdAt).toLocaleString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                                  </p>
+                                  {notifRoute && (
+                                    <button
+                                      onClick={() => {
+                                        setNotificationOpen(false);
+                                        navigate(notifRoute);
+                                      }}
+                                      className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-[#5a2dff]/10 px-2.5 py-0.5 text-xs font-medium text-[#5a2dff] hover:bg-[#5a2dff]/20 transition-colors"
+                                    >
+                                      Xét duyệt
+                                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+                                      </svg>
+                                    </button>
+                                  )}
                                 </div>
                               </li>
-                            ))
+                              );
+                            })
                           )}
                         </ul>
                       </div>
