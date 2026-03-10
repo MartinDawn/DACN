@@ -61,6 +61,12 @@ export const useInstructorCourses = () => {
         }
       }
 
+      // Debug: log raw API response to identify actual field names
+      if (rawCourses.length > 0) {
+        console.log('[fetchCourses] raw first item keys:', Object.keys(rawCourses[0]));
+        console.log('[fetchCourses] raw first item:', rawCourses[0]);
+      }
+
       // Normalize keys to camelCase to ensure UI renders correctly regardless of API casing
       const normalizedCourses = rawCourses.map((item: any) => ({
         ...item,
@@ -69,11 +75,22 @@ export const useInstructorCourses = () => {
         description: item.description || item.Description,
         imageUrl: item.imageUrl || item.ImageUrl || item.image || item.Image,
         price: item.price ?? item.Price,
-        studentCount: item.studentCount ?? item.StudentCount,
-        averageRating: item.averageRating ?? item.AverageRating,
-        ratingCount: item.ratingCount ?? item.RatingCount,
-        tags: Array.isArray(item.tags || item.Tags) 
-            ? (item.tags || item.Tags).map((t: any) => ({ id: t.id || t.Id, name: t.name || t.Name })) 
+        studentCount: item.studentCount ?? item.StudentCount
+          ?? item.enrollmentCount ?? item.EnrollmentCount
+          ?? item.enrolledCount ?? item.EnrolledCount
+          ?? item.totalStudents ?? item.TotalStudents
+          ?? item.studentsCount ?? item.StudentsCount
+          ?? item.numberOfStudents ?? item.NumberOfStudents
+          ?? item.totalEnrollments ?? item.TotalEnrollments
+          ?? item.enrolled ?? item.Enrolled
+          ?? item.students ?? item.Students
+          ?? item.learnerCount ?? item.LearnerCount
+          ?? item.learners ?? item.Learners
+          ?? 0,
+        averageRating: item.averageRating ?? item.AverageRating ?? item.rating ?? item.Rating,
+        ratingCount: item.ratingCount ?? item.RatingCount ?? item.totalReviews ?? item.TotalReviews ?? item.reviewCount ?? item.ReviewCount,
+        tags: Array.isArray(item.tags || item.Tags)
+            ? (item.tags || item.Tags).map((t: any) => ({ id: t.id || t.Id, name: t.name || t.Name }))
             : []
       }));
 
