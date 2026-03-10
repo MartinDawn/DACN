@@ -59,7 +59,8 @@ export default function AdminManageCourse() {
         loading,
         pagination,
         currentPage,
-        goToPage
+        goToPage,
+        refresh
     } = useCourseRequests(activeTab);
 
     // Modal State
@@ -68,6 +69,7 @@ export default function AdminManageCourse() {
     const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [rejectReason, setRejectReason] = useState('');
+    const [isProcessing, setIsProcessing] = useState(false);
     const [pendingPage, setPendingPage] = useState(1);
     const [publishedPage, setPublishedPage] = useState(1);
 
@@ -93,6 +95,7 @@ export default function AdminManageCourse() {
         setIsRejectModalOpen(false);
         setIsDeleteModalOpen(false);
         setSelectedCourse(null);
+        setIsProcessing(false);
     };
 
     useEffect(() => {
@@ -106,39 +109,49 @@ export default function AdminManageCourse() {
     }, [isApproveModalOpen, isRejectModalOpen, isDeleteModalOpen]);
 
     const handleConfirmApprove = async () => {
-        if (!selectedCourse) return;
+        if (!selectedCourse || isProcessing) return;
 
-        if (activeTab === 'pending' && selectedCourse.requestId) {
-            try {
-                await CourseService.approveRequest(selectedCourse.requestId);
-                setCourses(prev => prev.filter(c => c.id !== selectedCourse.id));
-            } catch (error) {
-                alert('Lỗi khi duyệt yêu cầu');
-            }
-        } else {
-            setCourses(prev => prev.filter(c => c.id !== selectedCourse.id));
+        if (!selectedCourse.requestId) {
+            alert('Không tìm thấy ID yêu cầu. Vui lòng thử lại.');
+            return;
         }
-        closeModals();
+
+        setIsProcessing(true);
+        try {
+            await CourseService.approveRequest(selectedCourse.requestId);
+            setPendingCount(prev => Math.max(0, prev - 1));
+            refresh();
+            closeModals();
+        } catch (error) {
+            alert('Lỗi khi duyệt yêu cầu. Vui lòng thử lại.');
+        } finally {
+            setIsProcessing(false);
+        }
     };
 
     const handleConfirmReject = async () => {
-        if (!selectedCourse) return;
+        if (!selectedCourse || isProcessing) return;
         if (!rejectReason.trim()) {
             alert("Vui lòng nhập lý do từ chối");
             return;
         }
 
-        if (activeTab === 'pending' && selectedCourse.requestId) {
-            try {
-                await CourseService.rejectRequest(selectedCourse.requestId, rejectReason);
-                setCourses(prev => prev.filter(c => c.id !== selectedCourse.id));
-            } catch (error) {
-                alert('Lỗi khi từ chối yêu cầu');
-            }
-        } else {
-            setCourses(prev => prev.filter(c => c.id !== selectedCourse.id));
+        if (!selectedCourse.requestId) {
+            alert('Không tìm thấy ID yêu cầu. Vui lòng thử lại.');
+            return;
         }
-        closeModals();
+
+        setIsProcessing(true);
+        try {
+            await CourseService.rejectRequest(selectedCourse.requestId, rejectReason);
+            setPendingCount(prev => Math.max(0, prev - 1));
+            refresh();
+            closeModals();
+        } catch (error) {
+            alert('Lỗi khi từ chối yêu cầu. Vui lòng thử lại.');
+        } finally {
+            setIsProcessing(false);
+        }
     };
 
     const handleConfirmDelete = () => {
@@ -338,8 +351,8 @@ export default function AdminManageCourse() {
                                                 <div className="rounded-full bg-gray-50 p-4 mb-3">
                                                     <MagnifyingGlassIcon className="h-8 w-8 text-gray-300"/>
                                                 </div>
-                                                <p className="text-base font-medium">Không tìm thấy khóa học nào</p>
-                                                <p className="text-sm text-gray-400 mt-1">Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm</p>
+                                                <p className="text-base font-medium">Không có yêu cầu nào đang chờ duyệt</p>
+                                                <p className="text-sm text-gray-400 mt-1">Tất cả đã được xử lý</p>
                                             </div>
                                         </td>
                                     </tr>
@@ -372,15 +385,17 @@ export default function AdminManageCourse() {
                         <div className="mt-8 flex justify-center gap-3">
                             <button
                                 onClick={closeModals}
-                                className="min-w-[100px] rounded-lg border border-gray-200 bg-white px-5 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 focus:outline-none transition-all"
+                                disabled={isProcessing}
+                                className="min-w-[100px] rounded-lg border border-gray-200 bg-white px-5 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 focus:outline-none transition-all disabled:opacity-50"
                             >
                                 Hủy bỏ
                             </button>
                             <button
                                 onClick={handleConfirmApprove}
-                                className="min-w-[100px] rounded-lg bg-[#5a2dff] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#4a22e8] focus:outline-none shadow-md shadow-[#c4b5fd] transition-all"
+                                disabled={isProcessing}
+                                className="min-w-[100px] rounded-lg bg-[#5a2dff] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#4a22e8] focus:outline-none shadow-md shadow-[#c4b5fd] transition-all disabled:opacity-70"
                             >
-                                Duyệt ngay
+                                {isProcessing ? 'Đang xử lý...' : 'Duyệt ngay'}
                             </button>
                         </div>
                     </div>
@@ -410,15 +425,17 @@ export default function AdminManageCourse() {
                         <div className="mt-8 flex justify-end gap-3">
                             <button
                                 onClick={closeModals}
-                                className="rounded-lg border border-gray-200 bg-white px-5 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 focus:outline-none transition-all"
+                                disabled={isProcessing}
+                                className="rounded-lg border border-gray-200 bg-white px-5 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 focus:outline-none transition-all disabled:opacity-50"
                             >
                                 Hủy bỏ
                             </button>
                             <button
                                 onClick={handleConfirmReject}
-                                className="rounded-lg bg-[#5a2dff] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#4a22e8] focus:outline-none shadow-md shadow-[#c4b5fd] transition-all"
+                                disabled={isProcessing}
+                                className="rounded-lg bg-[#5a2dff] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#4a22e8] focus:outline-none shadow-md shadow-[#c4b5fd] transition-all disabled:opacity-70"
                             >
-                                Xác nhận từ chối
+                                {isProcessing ? 'Đang xử lý...' : 'Xác nhận từ chối'}
                             </button>
                         </div>
                     </div>

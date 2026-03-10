@@ -17,8 +17,8 @@ export const CourseService = {
       }
 
       return apiResponse.data.map((item: any) => ({
-        id: item.courseId,
-        requestId: item.id,
+        id: item.courseId != null ? String(item.courseId) : String(item.id),
+        requestId: item.id != null ? String(item.id) : undefined,
         title: item.courseName || 'Khóa học mới',
         instructor: item.instructorName || 'Giảng viên',
         category: 'Chờ duyệt',
@@ -27,7 +27,7 @@ export const CourseService = {
         submittedDate: item.createdAt
             ? new Date(item.createdAt).toISOString().split('T')[0]
             : new Date().toISOString().split('T')[0],
-        image: 'https://via.placeholder.com/150?text=No+Image',
+        image: 'https://placehold.co/150?text=No+Image',
         lessons: 0
       }));
     } catch (error) {
@@ -68,7 +68,7 @@ export const CourseService = {
           submittedDate: item.createTime
             ? new Date(item.createTime).toISOString().split('T')[0]
             : '',
-          image: item.imageUrl || 'https://via.placeholder.com/150?text=No+Image',
+          image: item.imageUrl || 'https://placehold.co/150?text=No+Image',
           lessons: 0,
           totalStudents: item.totalStudents ?? 0,
           averageRating: item.averageRating ?? 0
@@ -90,7 +90,7 @@ export const CourseService = {
 
   approveRequest: async (requestId: string): Promise<void> => {
     try {
-      await apiClient.post(`/Course/approve-request/${requestId}`);
+      await apiClient.post(`/Course/approve-request/${requestId}`, {});
     } catch (error) {
       console.error('Error approving course request:', error);
       throw error;
@@ -99,7 +99,10 @@ export const CourseService = {
 
   rejectRequest: async (requestId: string, reason: string): Promise<void> => {
     try {
-      await apiClient.post(`/Course/reject-request/${requestId}`, { reason });
+      await apiClient.post(`/Course/reject-request/${requestId}`, {
+        title: 'Khóa học bị từ chối',
+        message: reason,
+      });
     } catch (error) {
       console.error('Error rejecting course request:', error);
       throw error;

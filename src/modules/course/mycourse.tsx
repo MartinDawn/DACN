@@ -319,7 +319,7 @@ const MyCoursePage: React.FC = () => {
                   >
                     <div className="relative h-40 w-full overflow-hidden rounded-2xl sm:h-auto sm:w-48">
                       <img
-                        src={course.imageUrl || "https://via.placeholder.com/900x600"}
+                        src={course.imageUrl || "https://placehold.co/900x600"}
                         alt={course.name}
                         className="h-full w-full object-cover transition duration-300 sm:group-hover:scale-105"
                       />

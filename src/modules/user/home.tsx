@@ -71,12 +71,13 @@ const UserHome: React.FC = () => {
   const [activeTab, setActiveTab] = React.useState<SummaryTab>(summaryTabs[0]);
 
   // GỌI TẤT CẢ DỮ LIỆU TỪ HOOKS
-  const { 
-    myCourses, 
-    isMyCoursesLoading, 
-    getMyCourses, 
-    recommendedCourses, 
-    isRecommendedLoading 
+  const {
+    myCourses,
+    isMyCoursesLoading,
+    getMyCourses,
+    recommendedCourses,
+    isRecommendedLoading,
+    getRecommendedCourses,
   } = useCourses();
   
   // 1. SỬA LẠI: Lấy thêm hàm `fetchProfile`
@@ -89,8 +90,9 @@ const UserHome: React.FC = () => {
   // 2. SỬA LẠI: Gọi cả 2 hàm fetch khi component mount
   React.useEffect(() => {
     getMyCourses();
-    fetchProfile(); // <-- Gọi hàm fetch profile
-  }, [getMyCourses, fetchProfile]); // <-- Thêm vào dependency
+    getRecommendedCourses();
+    fetchProfile();
+  }, [getMyCourses, getRecommendedCourses, fetchProfile]);
 
   // TẠO STATS ĐỘNG TỪ DỮ LIỆU HOOKS
   const stats = React.useMemo(() => {
@@ -147,7 +149,7 @@ const UserHome: React.FC = () => {
         {myCourses.map((course) => (
           <PostCard
             key={course.id}
-            image={course.imageUrl || 'https://via.placeholder.com/400x300'}
+            image={course.imageUrl || 'https://placehold.co/400x300'}
             title={course.name}
             instructor={course.instructorName}
             rating={course.rating} // Đã sửa
@@ -281,7 +283,7 @@ const UserHome: React.FC = () => {
                   recommendedCourses.map((course) => (
                     <PostCard
                       key={course.id}
-                      image={course.imageUrl || 'https://via.placeholder.com/400x300'}
+                      image={course.imageUrl || 'https://placehold.co/400x300'}
                       title={course.name}
                       instructor={course.instructorName}
                       rating={course.rating}

@@ -28,8 +28,8 @@ export default function AdminManageUser() {
     const [selectedUser, setSelectedUser] = useState<UserResponse | null>(null);
     const [selectedRequest, setSelectedRequest] = useState<InstructorRequest | null>(null);
 
-    const { users, isLoading, error, refetch, banUser } = useUsers();
-    const { requests, isLoading: isRequestsLoading, error: requestsError, refetch: refetchRequests, approveRequest } = useInstructorRequests();
+    const { users, isLoading, refetch, banUser } = useUsers();
+    const { requests, isLoading: isRequestsLoading, refetch: refetchRequests, approveRequest } = useInstructorRequests();
 
     const [currentPage, setCurrentPage] = useState(1);
 
@@ -72,7 +72,12 @@ export default function AdminManageUser() {
     const handleConfirmApprove = async () => {
         if (!approveConfirm) return;
         setIsApproveLoading(true);
-        await approveRequest(approveConfirm.request.id, approveConfirm.isApproved);
+        const { isApproved } = approveConfirm;
+        const title = 'Yêu cầu trở thành giảng viên';
+        const message = isApproved
+            ? 'Yêu cầu trở thành giảng viên của bạn đã được chấp thuận. Chào mừng bạn trở thành giảng viên!'
+            : 'Yêu cầu trở thành giảng viên của bạn đã bị từ chối.';
+        await approveRequest(approveConfirm.request.requestId || approveConfirm.request.id, isApproved, title, message);
         setIsApproveLoading(false);
         setApproveConfirm(null);
         setSelectedRequest(null);
@@ -156,17 +161,6 @@ export default function AdminManageUser() {
                         </button>
                     ))}
                 </div>
-
-                {/* Error */}
-                {(activeTab !== 'pending' ? error : requestsError) && (
-                    <div className="mb-4 flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-600">
-                        <ExclamationTriangleIcon className="h-5 w-5 flex-shrink-0" />
-                        <span>{activeTab !== 'pending' ? error : requestsError}</span>
-                        <button onClick={activeTab !== 'pending' ? refetch : refetchRequests} className="ml-auto underline font-medium">
-                            Thử lại
-                        </button>
-                    </div>
-                )}
 
                 {/* Users Table */}
                 {activeTab !== 'pending' && (
@@ -275,9 +269,7 @@ export default function AdminManageUser() {
                                 </tbody>
                             </table>
                         </div>
-                        {totalUserPages > 1 && (
-                            <Pagination current={currentPage} total={totalUserPages} onChange={setCurrentPage} />
-                        )}
+                        <Pagination current={currentPage} total={totalUserPages} totalItems={filteredUsers.length} itemLabel="người dùng" onChange={setCurrentPage} />
                     </div>
                 )}
 
@@ -392,9 +384,7 @@ export default function AdminManageUser() {
                                 </tbody>
                             </table>
                         </div>
-                        {totalRequestPages > 1 && (
-                            <Pagination current={currentPage} total={totalRequestPages} onChange={setCurrentPage} />
-                        )}
+                        <Pagination current={currentPage} total={totalRequestPages} totalItems={filteredRequests.length} itemLabel="yêu cầu" onChange={setCurrentPage} />
                     </div>
                 )}
             </div>
@@ -607,7 +597,7 @@ function InfoBlock({ icon, label, value, multiline }: { icon: React.ReactNode; l
     );
 }
 
-function Pagination({ current, total, onChange }: { current: number; total: number; onChange: (page: number) => void }) {
+function Pagination({ current, total, totalItems, itemLabel = 'mục', onChange }: { current: number; total: number; totalItems?: number; itemLabel?: string; onChange: (page: number) => void }) {
     const pages: (number | '...')[] = [];
     if (total <= 7) {
         for (let i = 1; i <= total; i++) pages.push(i);
@@ -623,6 +613,9 @@ function Pagination({ current, total, onChange }: { current: number; total: numb
         <div className="flex items-center justify-between border-t border-gray-100 px-6 py-3 bg-white">
             <p className="text-sm text-gray-500">
                 Trang <span className="font-semibold text-gray-700">{current}</span> / {total}
+                {totalItems !== undefined && (
+                    <>&nbsp;·&nbsp; Tổng <span className="font-semibold text-gray-700">{totalItems}</span> {itemLabel}</>
+                )}
             </p>
             <div className="flex items-center gap-1">
                 <button

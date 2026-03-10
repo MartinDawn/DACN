@@ -66,6 +66,7 @@ export const useInstructorRequests = () => {
   const [requests, setRequests] = useState<InstructorRequest[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const fetchRequests = useCallback(async () => {
     setIsLoading(true);
@@ -88,21 +89,20 @@ export const useInstructorRequests = () => {
     fetchRequests();
   }, [fetchRequests]);
 
-  const approveRequest = async (id: number, isApproved: boolean): Promise<boolean> => {
+  const approveRequest = async (id: number, isApproved: boolean, title: string, message: string): Promise<boolean> => {
     try {
-      const response = await userService.approveInstructorRequest(id, isApproved);
-      if (response.success) {
-        setRequests(prev => prev.filter(r => r.id !== id));
-        return true;
-      } else {
-        setError(response.message || 'Thao tác thất bại');
-        return false;
-      }
-    } catch {
-      setError('Lỗi kết nối. Vui lòng thử lại.');
+      setError(null);
+      setSuccessMessage(null);
+      const result = await userService.approveInstructorRequest(id, isApproved, title, message);
+      setRequests(prev => prev.filter(r => (r.requestId || r.id) !== (result?.requestId || id)));
+      setSuccessMessage(result?.message || (isApproved ? 'Đã duyệt yêu cầu thành công' : 'Đã từ chối yêu cầu thành công'));
+      return true;
+    } catch (err: any) {
+      const msg = err?.response?.data?.message || err?.response?.data?.title || 'Lỗi kết nối. Vui lòng thử lại.';
+      setError(msg);
       return false;
     }
   };
 
-  return { requests, isLoading, error, refetch: fetchRequests, approveRequest };
+  return { requests, isLoading, error, successMessage, refetch: fetchRequests, approveRequest };
 };

@@ -11,38 +11,8 @@ import {
 } from "@heroicons/react/24/outline";
 import { Link } from "react-router-dom";
 import UserLayout from "../user/layout/layout";
-
-type NotificationCategory =
-  | "courses"
-  | "achievements"
-  | "social"
-  | "offers"
-  | "system"
-  | "reminders";
-
-type NotificationFilter =
-  | "all"
-  | "unread"
-  | "courses"
-  | "achievements"
-  | "social"
-  | "offers";
-
-type NotificationStatus = "read" | "unread";
-
-type NotificationItem = {
-  id: string;
-  title: string;
-  message: string;
-  category: NotificationCategory;
-  filter: NotificationFilter;
-  tag: string;
-  status: NotificationStatus;
-  timeAgo: string;
-  icon: React.ComponentType<{ className?: string }>;
-  accent: string;
-  isThisWeek: boolean;
-};
+import { useMyNotifications } from "./hooks/useNotifications";
+import type { NotificationCategory, NotificationFilter } from "./models/notification.model";
 
 const tagStyles: Record<NotificationCategory, string> = {
   courses: "bg-[#efe7ff] text-[#5a2dff]",
@@ -53,89 +23,30 @@ const tagStyles: Record<NotificationCategory, string> = {
   reminders: "bg-[#ffeedd] text-[#fb923c]",
 };
 
-const initialNotifications: NotificationItem[] = [
-  {
-    id: "1",
-    title: "Bài học mới trong React Development",
-    message: "Giảng viên John Smith vừa thêm bài: “Advanced Hooks Patterns”.",
-    category: "courses",
-    filter: "courses",
-    tag: "Cập nhật khóa học",
-    status: "unread",
-    timeAgo: "2 giờ trước",
-    icon: BookOpenIcon,
-    accent: "bg-[#efe7ff] text-[#5a2dff]",
-    isThisWeek: true,
-  },
-  {
-    id: "2",
-    title: "Chúc mừng! Bạn đã hoàn thành JavaScript Mastery",
-    message: "Bạn nhận được chứng chỉ và đề xuất khóa học tiếp theo.",
-    category: "achievements",
-    filter: "achievements",
-    tag: "Thành tích",
-    status: "unread",
-    timeAgo: "1 ngày trước",
-    icon: StarIcon,
-    accent: "bg-[#fff6d8] text-[#f59e0b]",
-    isThisWeek: true,
-  },
-  {
-    id: "3",
-    title: "Bình luận mới về câu hỏi của bạn",
-    message: "Sarah Johnson đã phản hồi thắc mắc của bạn trong mục Hỏi & Đáp.",
-    category: "social",
-    filter: "social",
-    tag: "Cộng đồng",
-    status: "read",
-    timeAgo: "2 ngày trước",
-    icon: ChatBubbleLeftRightIcon,
-    accent: "bg-[#e8f7ef] text-[#0ea879]",
-    isThisWeek: true,
-  },
-  {
-    id: "4",
-    title: "Flash Sale: Giảm 50% tất cả khóa Design",
-    message: "Ưu đãi kết thúc trong 6 giờ nữa, đừng bỏ lỡ!",
-    category: "offers",
-    filter: "offers",
-    tag: "Khuyến mãi",
-    status: "read",
-    timeAgo: "3 ngày trước",
-    icon: GiftIcon,
-    accent: "bg-[#fce8ff] text-[#d946ef]",
-    isThisWeek: true,
-  },
-  {
-    id: "5",
-    title: "Báo cáo học tập tuần này đã sẵn sàng",
-    message: "Kiểm tra tiến độ và thành tích đạt được trong tuần.",
-    category: "system",
-    filter: "courses",
-    tag: "Hệ thống",
-    status: "read",
-    timeAgo: "5 ngày trước",
-    icon: ChartBarIcon,
-    accent: "bg-[#e7edff] text-[#2563eb]",
-    isThisWeek: true,
-  },
-  {
-    id: "6",
-    title: "Duy trì chuỗi học tập của bạn",
-    message: "Bạn chưa học bài nào hôm nay. Giữ chuỗi 7 ngày nhé!",
-    category: "reminders",
-    filter: "offers",
-    tag: "Nhắc nhở",
-    status: "read",
-    timeAgo: "1 tuần trước",
-    icon: CalendarIcon,
-    accent: "bg-[#ffeedd] text-[#fb923c]",
-    isThisWeek: false,
-  },
-];
+const categoryIcons: Record<
+  NotificationCategory,
+  React.ComponentType<{ className?: string }>
+> = {
+  courses: BookOpenIcon,
+  achievements: StarIcon,
+  social: ChatBubbleLeftRightIcon,
+  offers: GiftIcon,
+  system: ChartBarIcon,
+  reminders: CalendarIcon,
+};
 
 const NotificationPage: React.FC = () => {
-  const [items, setItems] = React.useState(initialNotifications);
+  const {
+    items,
+    loading,
+    error,
+    unreadCount,
+    thisWeekCount,
+    markAsRead,
+    markAllAsRead,
+    deleteNotification,
+  } = useMyNotifications();
+
   const [activeFilter, setActiveFilter] = React.useState<NotificationFilter>("all");
   const [emailSettings, setEmailSettings] = React.useState({
     courseUpdates: true,
@@ -149,20 +60,10 @@ const NotificationPage: React.FC = () => {
     achievements: true,
   });
 
-  const unreadCount = React.useMemo(
-    () => items.filter((item) => item.status === "unread").length,
-    [items],
-  );
-
-  const thisWeekCount = React.useMemo(
-    () => items.filter((item) => item.isThisWeek).length,
-    [items],
-  );
-
   const filteredItems = React.useMemo(() => {
     if (activeFilter === "all") return items;
     if (activeFilter === "unread") return items.filter((item) => item.status === "unread");
-    return items.filter((item) => item.filter === activeFilter);
+    return items.filter((item) => item.category === activeFilter);
   }, [items, activeFilter]);
 
   const tabs = React.useMemo(
@@ -176,17 +77,6 @@ const NotificationPage: React.FC = () => {
     ],
     [items.length, unreadCount],
   );
-
-  const handleMarkAllRead = () =>
-    setItems((prev) => prev.map((item) => ({ ...item, status: "read" as NotificationStatus })));
-
-  const handleMarkRead = (id: string) =>
-    setItems((prev) =>
-      prev.map((item) => (item.id === id ? { ...item, status: "read" as NotificationStatus } : item)),
-    );
-
-  const handleDelete = (id: string) =>
-    setItems((prev) => prev.filter((item) => item.id !== id));
 
   const toggleEmailSetting = (key: keyof typeof emailSettings) =>
     setEmailSettings((prev) => ({ ...prev, [key]: !prev[key] }));
@@ -239,7 +129,7 @@ const NotificationPage: React.FC = () => {
           </div>
           <button
             type="button"
-            onClick={handleMarkAllRead}
+            onClick={markAllAsRead}
             className="inline-flex items-center justify-center rounded-full border border-[#5a2dff]/40 px-5 py-2 text-sm font-semibold text-[#5a2dff] transition hover:bg-[#efe7ff]"
           >
             Đánh dấu tất cả đã đọc
@@ -275,67 +165,91 @@ const NotificationPage: React.FC = () => {
 
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr),320px]">
           <section className="space-y-4">
-            {filteredItems.map((item) => {
-              const Icon = item.icon;
-              const isUnread = item.status === "unread";
-              const cardClass = isUnread
-                ? "border-[#cbb6ff] bg-[#f6f1ff]"
-                : "border-gray-100 bg-white";
-              return (
-                <article
-                  key={item.id}
-                  className={`rounded-3xl border p-6 shadow-[0_18px_48px_rgba(15,23,42,0.08)] transition hover:-translate-y-0.5 hover:shadow-[0_24px_64px_rgba(15,23,42,0.12)] ${cardClass}`}
-                >
-                  <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                    <div className="flex items-start gap-4">
-                      <span
-                        className={`inline-flex h-12 w-12 items-center justify-center rounded-3xl ${item.accent}`}
-                      >
-                        <Icon className="h-6 w-6" />
-                      </span>
-                      <div className="space-y-2">
-                        <div className="flex flex-wrap items-center gap-3">
-                          <h2 className="text-lg font-semibold text-gray-900">
-                            {item.title}
-                          </h2>
-                          <span
-                            className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${tagStyles[item.category]}`}
-                          >
-                            {item.tag}
-                          </span>
-                          <span className="text-xs font-medium text-gray-400">
-                            {item.timeAgo}
-                          </span>
+            {loading && (
+              <div className="rounded-3xl border border-dashed border-gray-200 bg-white p-12 text-center text-sm font-semibold text-gray-500">
+                Đang tải thông báo...
+              </div>
+            )}
+            {error && !loading && (
+              <div className="rounded-3xl border border-red-200 bg-red-50 p-12 text-center text-sm font-semibold text-red-500">
+                {error}
+              </div>
+            )}
+            {!loading &&
+              !error &&
+              filteredItems.map((item) => {
+                const Icon = categoryIcons[item.category];
+                const isUnread = item.status === "unread";
+                const cardClass = isUnread
+                  ? "border-[#cbb6ff] bg-[#f6f1ff]"
+                  : "border-gray-100 bg-white";
+                return (
+                  <article
+                    key={item.id}
+                    onClick={() => { if (isUnread) markAsRead(item.id); }}
+                    className={`rounded-3xl border p-6 shadow-[0_18px_48px_rgba(15,23,42,0.08)] transition hover:-translate-y-0.5 hover:shadow-[0_24px_64px_rgba(15,23,42,0.12)] ${cardClass} ${isUnread ? "cursor-pointer" : ""}`}
+                  >
+                    <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                      <div className="flex items-start gap-4">
+                        <span
+                          className={`inline-flex h-12 w-12 items-center justify-center rounded-3xl ${tagStyles[item.category]}`}
+                        >
+                          <Icon className="h-6 w-6" />
+                        </span>
+                        <div className="space-y-2">
+                          <div className="flex flex-wrap items-center gap-3">
+                            <h2 className="text-lg font-semibold text-gray-900">
+                              {item.title}
+                            </h2>
+                            <span
+                              className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${tagStyles[item.category]}`}
+                            >
+                              {item.tag}
+                            </span>
+                            <span className="text-xs font-medium text-gray-400">
+                              {item.timeAgo}
+                            </span>
+                            {isUnread && (
+                              <span className="inline-flex h-2 w-2 rounded-full bg-[#5a2dff]" title="Chưa đọc" />
+                            )}
+                          </div>
+                          <p className="text-sm text-gray-600">{item.message}</p>
+                          {isUnread && (
+                            <p className="text-xs font-medium text-[#5a2dff]/70">
+                              Nhấn vào thông báo để đánh dấu đã đọc
+                            </p>
+                          )}
                         </div>
-                        <p className="text-sm text-gray-600">{item.message}</p>
+                      </div>
+                      <div
+                        className="flex items-center gap-2 self-start text-sm font-semibold text-gray-600"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <button
+                          type="button"
+                          onClick={() => markAsRead(item.id)}
+                          className={`rounded-full px-4 py-2 transition ${
+                            isUnread
+                              ? "bg-[#5a2dff] text-white shadow-sm shadow-[#5a2dff]/30 hover:bg-[#4a21eb]"
+                              : "border border-gray-200 text-gray-400 cursor-default"
+                          }`}
+                          disabled={!isUnread}
+                        >
+                          {isUnread ? "Đánh dấu đã đọc" : "Đã đọc"}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => deleteNotification(item.id)}
+                          className="rounded-full border border-gray-200 px-4 py-2 transition hover:border-red-400 hover:text-red-500"
+                        >
+                          Xóa
+                        </button>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2 self-start text-sm font-semibold text-gray-600">
-                      <button
-                        type="button"
-                        onClick={() => handleMarkRead(item.id)}
-                        className={`rounded-full px-4 py-2 transition ${
-                          isUnread
-                            ? "bg-[#5a2dff] text-white shadow-sm shadow-[#5a2dff]/30 hover:bg-[#4a21eb]"
-                            : "border border-gray-200 hover:border-[#5a2dff] hover:text-[#5a2dff]"
-                        }`}
-                        disabled={!isUnread}
-                      >
-                        Đánh dấu đã đọc
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleDelete(item.id)}
-                        className="rounded-full border border-gray-200 px-4 py-2 transition hover:border-red-400 hover:text-red-500"
-                      >
-                        Xóa
-                      </button>
-                    </div>
-                  </div>
-                </article>
-              );
-            })}
-            {!filteredItems.length && (
+                  </article>
+                );
+              })}
+            {!loading && !error && !filteredItems.length && (
               <div className="rounded-3xl border border-dashed border-gray-200 bg-white p-12 text-center text-sm font-semibold text-gray-500">
                 Không có thông báo nào trong danh sách này.
               </div>
@@ -369,19 +283,27 @@ const NotificationPage: React.FC = () => {
               <div className="mt-3 space-y-3 text-sm font-semibold text-gray-600">
                 <div className="flex items-center justify-between">
                   <span>Cập nhật khóa học</span>
-                  {renderToggle(emailSettings.courseUpdates, () => toggleEmailSetting("courseUpdates"))}
+                  {renderToggle(emailSettings.courseUpdates, () =>
+                    toggleEmailSetting("courseUpdates"),
+                  )}
                 </div>
                 <div className="flex items-center justify-between">
                   <span>Tin nhắn mới</span>
-                  {renderToggle(emailSettings.newMessages, () => toggleEmailSetting("newMessages"))}
+                  {renderToggle(emailSettings.newMessages, () =>
+                    toggleEmailSetting("newMessages"),
+                  )}
                 </div>
                 <div className="flex items-center justify-between">
                   <span>Thành tích</span>
-                  {renderToggle(emailSettings.achievements, () => toggleEmailSetting("achievements"))}
+                  {renderToggle(emailSettings.achievements, () =>
+                    toggleEmailSetting("achievements"),
+                  )}
                 </div>
                 <div className="flex items-center justify-between">
                   <span>Khuyến mãi</span>
-                  {renderToggle(emailSettings.promotions, () => toggleEmailSetting("promotions"))}
+                  {renderToggle(emailSettings.promotions, () =>
+                    toggleEmailSetting("promotions"),
+                  )}
                 </div>
               </div>
 
@@ -391,7 +313,9 @@ const NotificationPage: React.FC = () => {
               <div className="mt-3 space-y-3 text-sm font-semibold text-gray-600">
                 <div className="flex items-center justify-between">
                   <span>Cập nhật khóa học</span>
-                  {renderToggle(pushSettings.courseUpdates, () => togglePushSetting("courseUpdates"))}
+                  {renderToggle(pushSettings.courseUpdates, () =>
+                    togglePushSetting("courseUpdates"),
+                  )}
                 </div>
                 <div className="flex items-center justify-between">
                   <span>Nhắc nhở học tập</span>
@@ -401,7 +325,9 @@ const NotificationPage: React.FC = () => {
                 </div>
                 <div className="flex items-center justify-between">
                   <span>Thành tích</span>
-                  {renderToggle(pushSettings.achievements, () => togglePushSetting("achievements"))}
+                  {renderToggle(pushSettings.achievements, () =>
+                    togglePushSetting("achievements"),
+                  )}
                 </div>
               </div>
             </div>
@@ -411,7 +337,7 @@ const NotificationPage: React.FC = () => {
               <div className="mt-4 space-y-3 text-sm font-semibold text-gray-600">
                 <button
                   type="button"
-                  onClick={handleMarkAllRead}
+                  onClick={markAllAsRead}
                   className="flex w-full items-center justify-between rounded-2xl border border-gray-100 px-4 py-3 transition hover:border-[#5a2dff] hover:text-[#5a2dff]"
                 >
                   <span>Đánh dấu tất cả đã đọc</span>

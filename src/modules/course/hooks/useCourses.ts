@@ -1,6 +1,6 @@
 // src/hooks/useCourses.ts
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import type {
   RecommendedCourse,
   CourseDetail,
@@ -48,26 +48,23 @@ export const useCourses = () => {
 
   // --- LOGIC ---
 
-  // 1. Tự động tải Recommended Courses khi hook được sử dụng
-  useEffect(() => {
-    const fetchRecommendedCourses = async () => {
-      setIsRecommendedLoading(true);
-      setRecommendedError(null);
-      try {
-        const response = await courseService.getRecommendedCourses();
-        if (response.success) {
-          setRecommendedCourses(response.data || []);
-        } else {
-          setRecommendedError(response.message || 'Không thể tải khóa học đề xuất');
-        }
-      } catch (err) {
-        setRecommendedError('Lỗi kết nối. Không thể tải khóa học đề xuất.');
-      } finally {
-        setIsRecommendedLoading(false);
+  // 1. Hàm để tải Recommended Courses (gọi tường minh từ trang cần dùng)
+  const getRecommendedCourses = useCallback(async () => {
+    setIsRecommendedLoading(true);
+    setRecommendedError(null);
+    try {
+      const response = await courseService.getRecommendedCourses();
+      if (response.success) {
+        setRecommendedCourses(response.data || []);
+      } else {
+        setRecommendedError(response.message || 'Không thể tải khóa học đề xuất');
       }
-    };
-    fetchRecommendedCourses();
-  }, []); // Mảng rỗng, chỉ chạy 1 lần
+    } catch (err) {
+      setRecommendedError('Lỗi kết nối. Không thể tải khóa học đề xuất.');
+    } finally {
+      setIsRecommendedLoading(false);
+    }
+  }, []);
 
   // 2. Hàm để tải My Courses (dùng cho trang MyCoursePage)
   const getMyCourses = useCallback(async () => {
@@ -194,6 +191,7 @@ const getCourseContent = useCallback(async (courseId: string) => {
 
     // Các hàm gọi API
     getMyCourses,
+    getRecommendedCourses,
     getCourseDetail,
     getCourseComments,
     getCourseContent,
