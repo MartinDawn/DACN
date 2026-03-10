@@ -22,6 +22,7 @@ import { StarIcon as StarSolidIcon } from '@heroicons/react/20/solid';
 
 // 1. IMPORT HOOK
 import { useCourses } from './hooks/useCourses'; // Đảm bảo đường dẫn hook đúng
+import { useLecture } from './hooks/useLecture';
 import type { ApiLecture } from './models/course';
 
 // --- TYPES & CONSTANTS (ĐÃ SỬA) ---
@@ -311,11 +312,20 @@ const CourseProgressPage: React.FC = () => {
     };
   }, [courseContent, courseDetail]); // Tính toán lại khi 1 trong 2 API xong
 
+  // useLecture hook để fetch document URL từ API
+  const {
+    documentUrl,
+    isDocumentLoading,
+    getDocumentUrl,
+    clearDocument,
+  } = useLecture();
+
   // 8. QUẢN LÝ STATE CỦA UI (Giữ nguyên)
   const [searchTerm, setSearchTerm] = useState('');
   const [activeFilter, setActiveFilter] = useState<LessonFilterValue>('all');
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({});
   const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>({});
+  const [downloadingItem, setDownloadingItem] = useState<LessonItem | null>(null);
 
   useEffect(() => {
     if (course) {
@@ -345,16 +355,27 @@ const CourseProgressPage: React.FC = () => {
     },
     [navigate, course]
   );
-  const downloadDocument = useCallback((item: LessonItem) => {
-    if (item.type !== 'doc' || typeof document === 'undefined') return;
-    const anchor = document.createElement('a');
-    anchor.href = DEFAULT_DOCUMENT_DOWNLOAD_PATH;
-    anchor.rel = 'noopener';
-    anchor.download = `${normalizeToFileName(item.title)}.txt`;
-    document.body.appendChild(anchor);
-    anchor.click();
-    document.body.removeChild(anchor);
-  }, []);
+  const handleDownloadDocument = useCallback((item: LessonItem) => {
+    if (item.type !== 'doc') return;
+    clearDocument();
+    setDownloadingItem(item);
+    getDocumentUrl(item.id);
+  }, [getDocumentUrl, clearDocument]);
+
+  // Trigger download sau khi documentUrl được fetch về
+  useEffect(() => {
+    if (downloadingItem && documentUrl && typeof document !== 'undefined') {
+      const anchor = document.createElement('a');
+      anchor.href = documentUrl;
+      anchor.rel = 'noopener';
+      anchor.target = '_blank';
+      anchor.download = normalizeToFileName(downloadingItem.title);
+      document.body.appendChild(anchor);
+      anchor.click();
+      document.body.removeChild(anchor);
+      setDownloadingItem(null);
+    }
+  }, [documentUrl, downloadingItem]);
 
   // 10. XỬ LÝ TRẠNG THÁI LOADING VÀ ERROR (Gộp cả hai)
   const isLoading = isContentLoading || isDetailLoading;
@@ -610,10 +631,15 @@ const CourseProgressPage: React.FC = () => {
                                     {item.type === 'doc' && (
                                       <button
                                         type="button"
-                                        onClick={() => downloadDocument(item)}
-                                        className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 text-slate-400 transition hover:border-indigo-200 hover:text-indigo-600"
+                                        onClick={() => handleDownloadDocument(item)}
+                                        disabled={isDocumentLoading && downloadingItem?.id === item.id}
+                                        className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 text-slate-400 transition hover:border-indigo-200 hover:text-indigo-600 disabled:cursor-not-allowed disabled:opacity-60"
                                       >
-                                        <ArrowDownTrayIcon className="h-4 w-4" />
+                                        {isDocumentLoading && downloadingItem?.id === item.id ? (
+                                          <div className="h-4 w-4 animate-spin rounded-full border-2 border-sky-500 border-t-transparent" />
+                                        ) : (
+                                          <ArrowDownTrayIcon className="h-4 w-4" />
+                                        )}
                                       </button>
                                     )}
                                     <button
