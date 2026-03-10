@@ -11,11 +11,11 @@ export const notificationService = {
   },
 
   async markAsRead(id: string): Promise<void> {
-    await apiClient.put(`/Notification/mark-as-read/${id}`);
+    await apiClient.post(`/Notification/mark-as-read/${id}`);
   },
 
   async markAllAsRead(): Promise<void> {
-    await apiClient.put("/Notification/mark-all-as-read");
+    await apiClient.post("/Notification/mark-all-as-read");
   },
 
   async deleteNotification(id: string): Promise<void> {

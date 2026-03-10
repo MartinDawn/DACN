@@ -6,6 +6,7 @@ export const useNotifications = () => {
     const [notifications, setNotifications] = useState<NotificationApiItem[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
+    const [actionError, setActionError] = useState<string | null>(null);
 
     const fetchNotifications = useCallback(async () => {
         try {
@@ -37,11 +38,14 @@ export const useNotifications = () => {
     }, []);
 
     const markAllAsRead = useCallback(async () => {
+        setActionError(null);
+        // Optimistic update — giống user side
+        setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
         try {
             await notificationService.markAllAsRead();
-            setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
-        } catch (err) {
+        } catch (err: any) {
             console.error("Error marking all as read:", err);
+            setActionError(err?.response?.data?.message || err?.message || 'Có lỗi xảy ra khi đánh dấu tất cả đã đọc.');
         }
     }, []);
 
@@ -61,6 +65,7 @@ export const useNotifications = () => {
         unreadCount,
         loading,
         error,
+        actionError,
         markAsRead,
         markAllAsRead,
         deleteNotification,

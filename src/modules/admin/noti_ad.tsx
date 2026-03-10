@@ -4,10 +4,14 @@ import AdminLayout from './layout/layout';
 import { useNotifications } from './hooks/useNotifications';
 import {
   BellIcon,
+  BellAlertIcon,
   CheckCircleIcon,
   TrashIcon,
   ArrowTopRightOnSquareIcon,
   EnvelopeOpenIcon,
+  BookOpenIcon,
+  AcademicCapIcon,
+  Cog6ToothIcon,
 } from '@heroicons/react/24/outline';
 
 type NotifFilter = 'all' | 'unread' | 'read';
@@ -50,6 +54,13 @@ const TYPE_COLOR: Record<string, { bg: string; text: string; dot: string }> = {
 
 const DEFAULT_COLOR = { bg: 'bg-orange-50', text: 'text-orange-600', dot: 'bg-orange-400' };
 
+const TYPE_ICON: Record<string, React.ComponentType<{ className?: string }>> = {
+  CourseRequest: BookOpenIcon,
+  InstructorRequest: AcademicCapIcon,
+  System: Cog6ToothIcon,
+  system: Cog6ToothIcon,
+};
+
 const TYPE_ROUTE: Record<string, string> = {
   CourseRequest: '/admin/courses',
   InstructorRequest: '/admin/users',
@@ -62,6 +73,7 @@ export default function AdminNotifications() {
     unreadCount,
     loading,
     error,
+    actionError,
     markAsRead,
     markAllAsRead,
     deleteNotification,
@@ -89,7 +101,7 @@ export default function AdminNotifications() {
         <div className="mb-6 flex flex-col gap-4 rounded-2xl bg-white p-6 shadow-sm border border-gray-100 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-4">
             <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-[#efe7ff] text-[#5a2dff]">
-              <BellIcon className="h-6 w-6" />
+              <BellAlertIcon className="h-6 w-6" />
             </span>
             <div>
               <div className="flex items-center gap-3">
@@ -117,37 +129,44 @@ export default function AdminNotifications() {
           )}
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-[1fr_280px]">
-          {/* Left: Notification List */}
-          <div className="space-y-4">
-            {/* Filter Tabs */}
-            <div className="flex flex-wrap items-center gap-1 rounded-xl bg-gray-100 p-1 w-fit">
-              {tabs.map((tab) => {
-                const isActive = activeFilter === tab.value;
-                return (
-                  <button
-                    key={tab.value}
-                    type="button"
-                    onClick={() => setActiveFilter(tab.value)}
-                    className={`flex items-center gap-2 rounded-lg px-4 py-1.5 text-sm font-medium transition ${
-                      isActive ? 'bg-white text-[#5a2dff] shadow-sm' : 'text-gray-500 hover:text-gray-700'
+        {/* Action Error Banner */}
+        {actionError && (
+          <div className="mb-4 flex items-center gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+            <span className="flex-1">{actionError}</span>
+          </div>
+        )}
+
+        {/* Filter Tabs */}
+        <div className="mb-4 flex flex-wrap items-center gap-1 rounded-xl bg-gray-100 p-1 w-fit">
+          {tabs.map((tab) => {
+            const isActive = activeFilter === tab.value;
+            return (
+              <button
+                key={tab.value}
+                type="button"
+                onClick={() => setActiveFilter(tab.value)}
+                className={`flex items-center gap-2 rounded-lg px-4 py-1.5 text-sm font-medium transition ${
+                  isActive ? 'bg-white text-[#5a2dff] shadow-sm' : 'text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                {tab.label}
+                {tab.count != null && tab.count > 0 && (
+                  <span
+                    className={`inline-flex h-5 min-w-[20px] items-center justify-center rounded-full px-1 text-xs ${
+                      isActive ? 'bg-[#efe7ff] text-[#5a2dff]' : 'bg-gray-200 text-gray-600'
                     }`}
                   >
-                    {tab.label}
-                    {tab.count != null && tab.count > 0 && (
-                      <span
-                        className={`inline-flex h-5 min-w-[20px] items-center justify-center rounded-full px-1 text-xs ${
-                          isActive ? 'bg-[#efe7ff] text-[#5a2dff]' : 'bg-gray-200 text-gray-600'
-                        }`}
-                      >
-                        {tab.count}
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
+                    {tab.count}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
 
+        <div className="grid gap-6 lg:grid-cols-[1fr_280px]">
+          {/* Left: Notification List */}
+          <div className="space-y-3">
             {/* List */}
             {loading ? (
               <div className="rounded-2xl border border-dashed border-gray-200 bg-white p-12 text-center">
@@ -188,10 +207,16 @@ export default function AdminNotifications() {
                         isUnread ? 'border-[#cbb6ff] bg-[#f8f5ff] cursor-pointer' : 'border-gray-100 bg-white'
                       }`}
                     >
-                      {/* Dot indicator */}
-                      <div className="mt-1.5 flex-shrink-0">
-                        <span className={`block h-2.5 w-2.5 rounded-full ${isUnread ? color.dot : 'bg-gray-300'}`} />
-                      </div>
+                      {/* Icon */}
+                      <span
+                        className={`inline-flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-2xl ${
+                          isUnread ? color.bg : 'bg-gray-100'
+                        }`}
+                      >
+                        {React.createElement(TYPE_ICON[notif.type] ?? BellIcon, {
+                          className: `h-6 w-6 ${isUnread ? color.text : 'text-gray-400'}`,
+                        })}
+                      </span>
 
                       {/* Content */}
                       <div className="flex-1 min-w-0">
@@ -272,7 +297,7 @@ export default function AdminNotifications() {
           </div>
 
           {/* Right: Stats */}
-          <aside className="space-y-4">
+          <aside className="space-y-4 self-start sticky top-6">
             <div className="rounded-2xl bg-white p-5 shadow-sm border border-gray-100">
               <h3 className="text-sm font-semibold text-gray-900 mb-4">Thống kê</h3>
               <div className="space-y-3 text-sm">
