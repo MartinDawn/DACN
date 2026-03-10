@@ -43,3 +43,9 @@ export interface RequestInstructorResponse {
   message?: string;
   // ...thêm trường nếu backend trả về thêm dữ liệu...
 }
+
+export interface InstructorStatusResponse {
+  status: 'Pending' | 'Approved' | 'Rejected' | 'None';
+  reason?: string;
+  submittedAt?: string;
+}

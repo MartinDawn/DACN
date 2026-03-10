@@ -10,6 +10,7 @@ export interface Course {
   image: string;
   lessons: number;
   totalStudents?: number;
+  averageRating?: number;
 }
 
 export interface PaginationInfo {

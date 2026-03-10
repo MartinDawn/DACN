@@ -1,7 +1,11 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { toast } from "react-hot-toast";
 import { useRequestInstructor } from "./hooks/useRequestInstructor";
+import { instructorService } from "./services/instructor.service";
 
 export default function RegisterFormTeacher() {
+	const navigate = useNavigate();
 	const [form, setForm] = useState({
 		fullName: "",
 		email: "",
@@ -13,10 +17,29 @@ export default function RegisterFormTeacher() {
 	});
 	const [lang, setLang] = useState<"vi" | "en">("vi");
 	const [loading, setLoading] = useState(false);
-	const [message, setMessage] = useState<string | null>(null);
-	const [error, setError] = useState<string | null>(null);
 
 	const { send } = useRequestInstructor();
+
+	// Check status again to be safe
+	useEffect(() => {
+		const checkStatus = async () => {
+			try {
+				const response = await instructorService.getInstructorStatus();
+				if (response?.success && response.data) {
+					const { status } = response.data;
+					const statusStr = String(status || "").toLowerCase();
+					if (statusStr === "pending") {
+						navigate("/instructor/register-teacher");
+					} else if (statusStr === "approved") {
+						navigate("/instructor");
+					}
+				}
+			} catch (error) {
+				console.error("Error checking status inside form:", error);
+			}
+		};
+		checkStatus();
+	}, [navigate]);
 
 	const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
 		const { name, value } = e.target;
@@ -26,8 +49,6 @@ export default function RegisterFormTeacher() {
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
 		setLoading(true);
-		setMessage(null);
-		setError(null);
 
 		const payload = {
 			experience: form.experience,
@@ -40,18 +61,15 @@ export default function RegisterFormTeacher() {
 		try {
 			const res = await send(payload, lang);
 			if (res && res.success) {
-				// Hiển thị thông báo tiếng Việt cố định thay vì phụ thuộc vào res.message (có thể là tiếng Anh)
-				setMessage("Yêu cầu đã được gửi thành công.");
-				// optionally reset form:
-				// setForm({ fullName: "", email: "", expertise: "", experience: "", certificate: "", introduction: "", socialLinks: "" });
+				toast.success("Yêu cầu đã được gửi thành công.");
+				navigate("/instructor/register-teacher");
 			} else {
-				// Hiển thị lỗi chung bằng tiếng Việt
-				setError("Có lỗi khi gửi yêu cầu. Vui lòng thử lại.");
+				toast.error("Có lỗi khi gửi yêu cầu. Vui lòng thử lại.");
+				setLoading(false);
 			}
 		} catch (err) {
-			setError("Lỗi kết nối. Vui lòng thử lại.");
+			toast.error("Bạn đã gửi yêu cầu. Vui lòng đợi...");
 			console.error(err);
-		} finally {
 			setLoading(false);
 		}
 	};
@@ -151,9 +169,6 @@ export default function RegisterFormTeacher() {
 						/>
 					</div>
 
-					{/* status messages */}
-					{message && <div className="rounded-md bg-green-50 p-3 text-sm text-green-800">{message}</div>}
-					{error && <div className="rounded-md bg-red-50 p-3 text-sm text-red-800">{error}</div>}
 
 					{/* Actions */}
 					<div className="flex items-center justify-between gap-4">
