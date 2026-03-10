@@ -1640,15 +1640,12 @@ const LessonContentPage: React.FC = () => {
                     <LessonIcon className="h-3.5 w-3.5" />
                     {lessonTypeLabel[lesson.type]}
                   </span>
-                  <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-500">
-                    <ClockIcon className="h-3.5 w-3.5" />
-                    {lesson.duration}
-                  </span>
+                  
                   <span className="text-xs text-slate-400">
                     Bài {currentIndex + 1} / {timeline.length}
                   </span>
                 </div>
-                <h1 className="text-xl font-bold text-slate-900 leading-snug">{lesson.title}</h1>
+                <h1 className="text-xl font-bold text-slate-900 leading-snug truncate" title={lesson.title}>{lesson.title}</h1>
                 <p className="text-sm text-slate-500">{section.title}</p>
               </div>
 

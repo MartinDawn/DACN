@@ -1,12 +1,13 @@
 // src/hooks/useCourses.ts
 
 import { useState, useEffect, useCallback } from 'react';
-import type { 
-  RecommendedCourse, 
-  CourseDetail, 
-  CourseComment, 
-  MyCourse, 
-  ApiCourseContent
+import type {
+  RecommendedCourse,
+  CourseDetail,
+  CourseComment,
+  MyCourse,
+  ApiCourseContent,
+  AddCommentRequest,
 } from '../models/course'; 
 import { courseService } from '../services/course.service'; 
 
@@ -40,6 +41,10 @@ export const useCourses = () => {
   const [courseContent, setCourseContent] = useState<ApiCourseContent | null>(null);
   const [isContentLoading, setIsContentLoading] = useState(false);
   const [contentError, setContentError] = useState<string | null>(null);
+
+  // STATE CHO ADD COMMENT
+  const [isAddingComment, setIsAddingComment] = useState(false);
+  const [addCommentError, setAddCommentError] = useState<string | null>(null);
 
   // --- LOGIC ---
 
@@ -143,6 +148,24 @@ const getCourseContent = useCallback(async (courseId: string) => {
     }
   }, []);
 
+  const addComment = useCallback(async (data: AddCommentRequest): Promise<boolean> => {
+    setIsAddingComment(true);
+    setAddCommentError(null);
+    try {
+      const response = await courseService.addComment(data);
+      if (response.success) {
+        return true;
+      }
+      setAddCommentError(response.message || 'Không thể gửi đánh giá');
+      return false;
+    } catch {
+      setAddCommentError('Lỗi kết nối. Không thể gửi đánh giá.');
+      return false;
+    } finally {
+      setIsAddingComment(false);
+    }
+  }, []);
+
   // --- RETURN ---
   // Trả về tất cả state và các hàm để component sử dụng
   return { 
@@ -155,22 +178,25 @@ const getCourseContent = useCallback(async (courseId: string) => {
 
     // Trạng thái Loading
     isRecommendedLoading,
-    isMyCoursesLoading, 
-    isDetailLoading, 
+    isMyCoursesLoading,
+    isDetailLoading,
     isCommentsLoading,
     isContentLoading,
-    
+    isAddingComment,
+
     // Trạng thái Lỗi
     recommendedError,
     myCoursesError,
     detailError,
     commentsError,
     contentError,
-    
+    addCommentError,
+
     // Các hàm gọi API
     getMyCourses,
     getCourseDetail,
     getCourseComments,
     getCourseContent,
+    addComment,
   };
 };

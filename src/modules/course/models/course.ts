@@ -222,6 +222,12 @@ export interface ApiQuizResult {
   detailedResults?: ApiQuizResultAnswer[]; // actual API field name
 }
 
+export interface AddCommentRequest {
+  courseId: string;
+  rate: number;
+  content: string;
+}
+
 // GET /api/Quiz/{quizId}/attempts  — one entry in history list
 export interface ApiQuizAttemptSummary {
   attemptId?: string;

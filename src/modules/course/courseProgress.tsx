@@ -166,7 +166,7 @@ const extractItemsFromLecture = (lecture: ApiLecture): LessonItem[] => {
           ? typeof lesson.duration === 'number'
             ? `${Math.floor(lesson.duration / 60)}:${String(lesson.duration % 60).padStart(2, '0')}`
             : String(lesson.duration)
-          : 'N/A';
+          : '';
       items.push({
         id: lesson.id ?? `${lecture.id}-lesson-${index}`,
         title: getName(lesson),
@@ -188,26 +188,26 @@ const extractItemsFromLecture = (lecture: ApiLecture): LessonItem[] => {
     (lecture.quizzes && lecture.quizzes.length > 0)
   ) {
     (lecture.videos ?? []).forEach((v, i) => {
-      items.push({ id: getId(v as { id?: string }, `${lecture.id}-video-${i}`), title: getName(v as string | { title?: string; name?: string }), type: 'video', duration: 'N/A', url: (v as { url?: string; videoUrl?: string }).url ?? (v as { url?: string; videoUrl?: string }).videoUrl, isCompleted: false, isPreview: false });
+      items.push({ id: getId(v as { id?: string }, `${lecture.id}-video-${i}`), title: getName(v as string | { title?: string; name?: string }), type: 'video', duration: '', url: (v as { url?: string; videoUrl?: string }).url ?? (v as { url?: string; videoUrl?: string }).videoUrl, isCompleted: false, isPreview: false });
     });
     (lecture.documents ?? []).forEach((d, i) => {
-      items.push({ id: getId(d as { id?: string }, `${lecture.id}-doc-${i}`), title: getName(d as string | { title?: string; name?: string }), type: 'doc', duration: 'Tài liệu', isCompleted: false, isPreview: false });
+      items.push({ id: getId(d as { id?: string }, `${lecture.id}-doc-${i}`), title: getName(d as string | { title?: string; name?: string }), type: 'doc', duration: '', isCompleted: false, isPreview: false });
     });
     (lecture.quizzes ?? []).forEach((q, i) => {
-      items.push({ id: getId(q as { id?: string }, `${lecture.id}-quiz-${i}`), title: getName(q as string | { title?: string; name?: string }), type: 'quiz', duration: 'N/A', isCompleted: false, isPreview: false });
+      items.push({ id: getId(q as { id?: string }, `${lecture.id}-quiz-${i}`), title: getName(q as string | { title?: string; name?: string }), type: 'quiz', duration: '', isCompleted: false, isPreview: false });
     });
     return items;
   }
 
   // --- Cấu trúc 1: videoNames/documentNames/quizNames (string[]) ---
   (lecture.videoNames ?? []).forEach((name, index) => {
-    items.push({ id: `${lecture.id}-video-${index}`, title: name, type: 'video', duration: 'N/A', url: lecture.videoUrls?.[index], isCompleted: false, isPreview: false });
+    items.push({ id: `${lecture.id}-video-${index}`, title: name, type: 'video', duration: '', url: lecture.videoUrls?.[index], isCompleted: false, isPreview: false });
   });
   (lecture.documentNames ?? []).forEach((name, index) => {
-    items.push({ id: `${lecture.id}-doc-${index}`, title: name, type: 'doc', duration: 'Tài liệu', isCompleted: false, isPreview: false });
+    items.push({ id: `${lecture.id}-doc-${index}`, title: name, type: 'doc', duration: '', isCompleted: false, isPreview: false });
   });
   (lecture.quizNames ?? []).forEach((name, index) => {
-    items.push({ id: `${lecture.id}-quiz-${index}`, title: name, type: 'quiz', duration: 'N/A', isCompleted: false, isPreview: false });
+    items.push({ id: `${lecture.id}-quiz-${index}`, title: name, type: 'quiz', duration: '', isCompleted: false, isPreview: false });
   });
 
   return items;
@@ -452,7 +452,6 @@ const CourseProgressPage: React.FC = () => {
                   {course.instructorInfo.rating.toFixed(1)}
                 </span>
                 <span>• {course.instructorInfo.students.toLocaleString('vi-VN')} học viên</span>
-                <span>• {course.updatedAt}</span>
               </div>
               <p className="text-sm font-medium text-slate-500">{course.instructor}</p>
             </div>
@@ -559,10 +558,12 @@ const CourseProgressPage: React.FC = () => {
                     </div>
                     <div className="flex items-center gap-4 text-sm text-slate-500">
                       <span>{totalItems} nội dung</span>
-                      <span className="inline-flex items-center gap-1">
-                        <ClockIcon className="h-4 w-4" />
-                        {section.totalDuration}
-                      </span>
+                      {section.totalDuration && section.totalDuration !== 'N/A' && (
+                        <span className="inline-flex items-center gap-1">
+                          <ClockIcon className="h-4 w-4" />
+                          {section.totalDuration}
+                        </span>
+                      )}
                       <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 text-slate-600 transition">
                         <ChevronDownIcon
                           className={`h-5 w-5 transition ${isSectionExpanded ? 'rotate-180' : ''}`}
@@ -579,10 +580,6 @@ const CourseProgressPage: React.FC = () => {
                             // `item.type` giờ là ('video' | 'quiz' | 'doc')
                             // và các const cũng chỉ chứa 3 key đó.
                             const LessonIcon = lessonTypeIcons[item.type];
-                            const StatusIcon = item.isCompleted ? CheckCircleIcon : PlayCircleIcon;
-                            const statusTone = item.isCompleted
-                              ? lessonStatusStyles.completed
-                              : lessonStatusStyles.locked;
                             const isItemExpanded = Boolean(expandedItems[item.id]);
                             return (
                               <li
@@ -590,28 +587,19 @@ const CourseProgressPage: React.FC = () => {
                                 className="rounded-2xl border border-slate-100 bg-slate-50/60 p-4 text-sm text-slate-600 transition hover:border-indigo-200 hover:bg-white"
                               >
                                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                                  <div className="flex flex-1 items-center gap-4">
-                                    <span
-                                      className={`inline-flex h-10 w-10 items-center justify-center rounded-full border ${statusTone}`}
-                                    >
-                                      <StatusIcon className="h-5 w-5" />
-                                    </span>
-                                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+                                  <div className="flex min-w-0 flex-1 items-center gap-4">
+                                    <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
                                       <span
-                                        className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${lessonTypeStyles[item.type]}`}
+                                        className={`inline-flex shrink-0 items-center rounded-full px-3 py-1 text-xs font-semibold ${lessonTypeStyles[item.type]}`}
                                       >
                                         {lessonTypeLabel[item.type]}
                                       </span>
-                                      <span className="font-medium text-slate-900">
+                                      <span className="truncate font-medium text-slate-900" title={item.title}>
                                         {item.title}
                                       </span>
                                     </div>
                                   </div>
                                   <div className="flex items-center gap-2">
-                                    <span className="inline-flex items-center gap-1 text-xs font-semibold text-slate-500">
-                                      <ClockIcon className="h-4 w-4" />
-                                      {item.duration}
-                                    </span>
                                     <button
                                       type="button"
                                       onClick={() => openLesson(item.id)}
@@ -654,10 +642,12 @@ const CourseProgressPage: React.FC = () => {
                                       {lessonTypeDescriptions[item.type]}
                                     </p>
                                     <div className="mt-3 flex flex-wrap items-center gap-2 text-xs font-semibold">
-                                      <span className="inline-flex items-center gap-1 rounded-full bg-white px-3 py-1 text-indigo-600 shadow-sm">
-                                        <ClockIcon className="h-4 w-4" />
-                                        {item.duration}
-                                      </span>
+                                      {item.duration && (
+                                        <span className="inline-flex items-center gap-1 rounded-full bg-white px-3 py-1 text-indigo-600 shadow-sm">
+                                          <ClockIcon className="h-4 w-4" />
+                                          {item.duration}
+                                        </span>
+                                      )}
                                       <span className="inline-flex items-center gap-1 rounded-full bg-white px-3 py-1 text-indigo-600 shadow-sm">
                                         <LessonIcon className="h-4 w-4" />
                                         {lessonTypeLabel[item.type]}

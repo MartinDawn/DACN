@@ -2,17 +2,18 @@
 import apiClient from "../../auth/services/apiClient"; 
 
 // 3. Các import 'type' giữ nguyên
-import type { 
-  ApiResponse, 
-  RecommendedCourse, 
-  CourseDetail, 
-  MyCourse, 
-  CourseComment, 
-  FilterParams, 
+import type {
+  ApiResponse,
+  RecommendedCourse,
+  CourseDetail,
+  MyCourse,
+  CourseComment,
+  FilterParams,
   PaginatedCourses,
-  CourseSearchResponse, 
+  CourseSearchResponse,
   SearchParams,
-  ApiCourseContent,            
+  ApiCourseContent,
+  AddCommentRequest,
 } from '../../course/models/course.ts';
 import type { Tag } from '../../course/models/tag.ts';
 
@@ -86,6 +87,14 @@ export const courseService = {
       `/Course/course-content/${courseId}`
     );
     console.log('[getCourseContent] raw response:', JSON.stringify(response.data, null, 2));
+    return response.data;
+  },
+
+  async addComment(data: AddCommentRequest): Promise<ApiResponse<null>> {
+    const response = await apiClient.post<ApiResponse<null>>(
+      '/Course/add-comment',
+      data
+    );
     return response.data;
   },
 };
