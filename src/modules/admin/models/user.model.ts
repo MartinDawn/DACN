@@ -10,7 +10,8 @@ export interface UserResponse {
 }
 
 export interface InstructorRequest {
-  id: number;
+  id: number;        // alias dự phòng
+  requestId: number; // field chính từ backend
   userId: string;
   fullName: string;
   email: string;
@@ -22,4 +23,11 @@ export interface InstructorRequest {
   status: string; // "Pending" | "Approved" | "Rejected"
   createdAt: string;
   processedAt: string | null;
+}
+
+export interface ApproveInstructorResponse {
+  title: string;
+  message: string;
+  requestId: number;
+  isApproved: boolean;
 }

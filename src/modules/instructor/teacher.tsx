@@ -594,10 +594,17 @@ const InstructorDashboard: React.FC = () => {
                       )}
                     </div>
 
-                    <div className="mt-6 flex items-center justify-between border-t border-gray-100 pt-4">
+                    <div className="mt-3 flex items-center gap-1.5">
+                      <DollarSign size={15} className="text-emerald-500" />
+                      <span className="text-sm font-semibold text-emerald-600">
+                        {course.price === 0 ? "Miễn phí" : `${(course.price ?? 0).toLocaleString('vi-VN')}đ`}
+                      </span>
+                    </div>
+
+                    <div className="mt-4 flex items-center justify-between border-t border-gray-100 pt-4">
                       <div className="flex items-center gap-1.5 text-sm font-medium text-gray-500">
                         <Users size={16} className="text-gray-400"/>
-                        <span>{course.studentCount || 0} học viên</span>
+                        <span>{course.studentCount ?? 0} học viên</span>
                       </div>
                       <div className="flex items-center gap-1 text-sm font-semibold text-amber-500">
                         <Star size={16} className="fill-current" />

@@ -9,7 +9,9 @@ import {
   DocumentArrowDownIcon,
   MagnifyingGlassIcon,
   SparklesIcon,
+  XMarkIcon,
 } from "@heroicons/react/24/outline";
+import { StarIcon } from "@heroicons/react/24/solid";
 // 1. THÊM useNavigate
 import { Link, useNavigate } from "react-router-dom";
 import UserLayout from "../user/layout/layout"; 
@@ -64,11 +66,20 @@ const MyCoursePage: React.FC = () => {
   const [activeFilter, setActiveFilter] = useState<FilterValue>("all");
   const [searchTerm, setSearchTerm] = useState("");
 
-  const { 
-    myCourses, 
-    isMyCoursesLoading, 
-    myCoursesError, 
-    getMyCourses 
+  // State cho modal đánh giá
+  const [ratingModal, setRatingModal] = useState<CourseProgress | null>(null);
+  const [ratingValue, setRatingValue] = useState(0);
+  const [hoverRating, setHoverRating] = useState(0);
+  const [ratingContent, setRatingContent] = useState("");
+
+  const {
+    myCourses,
+    isMyCoursesLoading,
+    myCoursesError,
+    getMyCourses,
+    addComment,
+    isAddingComment,
+    addCommentError,
   } = useCourses();
 
   // Gọi API một lần khi component được tải
@@ -109,6 +120,29 @@ const MyCoursePage: React.FC = () => {
   const averageProgress = Math.round(
     coursesWithProgress.reduce((sum: number, course) => sum + course.progress, 0) / (coursesWithProgress.length || 1)
   );
+
+  const openRatingModal = (course: CourseProgress) => {
+    setRatingModal(course);
+    setRatingValue(0);
+    setHoverRating(0);
+    setRatingContent("");
+  };
+
+  const closeRatingModal = () => {
+    setRatingModal(null);
+  };
+
+  const handleSubmitRating = async () => {
+    if (!ratingModal || ratingValue === 0) return;
+    const success = await addComment({
+      courseId: ratingModal.id,
+      rate: ratingValue,
+      content: ratingContent,
+    });
+    if (success) {
+      closeRatingModal();
+    }
+  };
 
   // Lọc danh sách khóa học hiển thị dựa trên filter và search term
   const visibleCourses = useMemo(() => {
@@ -285,7 +319,7 @@ const MyCoursePage: React.FC = () => {
                   >
                     <div className="relative h-40 w-full overflow-hidden rounded-2xl sm:h-auto sm:w-48">
                       <img
-                        src={course.imageUrl || "https://via.placeholder.com/900x600"}
+                        src={course.imageUrl || "https://placehold.co/900x600"}
                         alt={course.name}
                         className="h-full w-full object-cover transition duration-300 sm:group-hover:scale-105"
                       />
@@ -347,6 +381,14 @@ const MyCoursePage: React.FC = () => {
                             className="rounded-full border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-600 transition hover:border-[#5a2dff] hover:text-[#5a2dff]"
                           >
                             Tải tài liệu
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => openRatingModal(course)}
+                            className="inline-flex items-center gap-1.5 rounded-full border border-amber-300 bg-amber-50 px-4 py-2 text-sm font-semibold text-amber-600 transition hover:bg-amber-100 hover:border-amber-400"
+                          >
+                            <StarIcon className="h-4 w-4" />
+                            Đánh giá
                           </button>
                         </div>
                       </div>
@@ -450,6 +492,94 @@ const MyCoursePage: React.FC = () => {
           </aside>
         </div>
       </div>
+
+      {/* Rating Modal */}
+      {ratingModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-md rounded-3xl bg-white p-8 shadow-2xl">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h2 className="text-xl font-bold text-gray-900">Đánh giá khóa học</h2>
+                <p className="mt-1 text-sm text-gray-500 line-clamp-2">{ratingModal.name}</p>
+              </div>
+              <button
+                type="button"
+                onClick={closeRatingModal}
+                className="flex-shrink-0 rounded-full p-1 text-gray-400 transition hover:bg-gray-100 hover:text-gray-600"
+              >
+                <XMarkIcon className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Stars */}
+            <div className="mt-6">
+              <p className="mb-3 text-sm font-semibold text-gray-700">Chọn số sao</p>
+              <div className="flex gap-2">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <button
+                    key={star}
+                    type="button"
+                    onClick={() => setRatingValue(star)}
+                    onMouseEnter={() => setHoverRating(star)}
+                    onMouseLeave={() => setHoverRating(0)}
+                    className="transition-transform hover:scale-110"
+                  >
+                    <StarIcon
+                      className={`h-9 w-9 transition-colors ${
+                        star <= (hoverRating || ratingValue)
+                          ? "text-amber-400"
+                          : "text-gray-200"
+                      }`}
+                    />
+                  </button>
+                ))}
+              </div>
+              {ratingValue > 0 && (
+                <p className="mt-2 text-xs font-semibold text-amber-500">
+                  {["", "Rất tệ", "Tệ", "Bình thường", "Tốt", "Rất tốt"][ratingValue]}
+                </p>
+              )}
+            </div>
+
+            {/* Comment textarea */}
+            <div className="mt-5">
+              <label className="mb-2 block text-sm font-semibold text-gray-700">
+                Nhận xét của bạn
+              </label>
+              <textarea
+                rows={4}
+                value={ratingContent}
+                onChange={(e) => setRatingContent(e.target.value)}
+                placeholder="Chia sẻ trải nghiệm của bạn về khóa học này..."
+                className="w-full resize-none rounded-2xl border border-gray-200 bg-gray-50 p-4 text-sm text-gray-700 outline-none transition focus:border-[#5a2dff] focus:bg-white"
+              />
+            </div>
+
+            {addCommentError && (
+              <p className="mt-3 text-sm font-medium text-red-500">{addCommentError}</p>
+            )}
+
+            <div className="mt-6 flex items-center justify-end gap-3">
+              <button
+                type="button"
+                onClick={closeRatingModal}
+                disabled={isAddingComment}
+                className="rounded-full border border-gray-200 px-5 py-2.5 text-sm font-semibold text-gray-600 transition hover:border-gray-300 hover:text-gray-900 disabled:opacity-50"
+              >
+                Hủy
+              </button>
+              <button
+                type="button"
+                onClick={handleSubmitRating}
+                disabled={ratingValue === 0 || isAddingComment}
+                className="rounded-full bg-[#5a2dff] px-5 py-2.5 text-sm font-semibold text-white shadow-sm shadow-[#5a2dff]/30 transition hover:bg-[#4a21eb] disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {isAddingComment ? "Đang gửi..." : "Gửi đánh giá"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </UserLayout>
   );
 };

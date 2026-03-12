@@ -635,11 +635,11 @@ const ManageCoursePage: React.FC = () => {
     <InstructorLayout>
       <div className="mx-auto max-w-5xl space-y-6">
         <div className="flex items-center justify-between">
-          <div>
+          <div className="min-w-0 flex-1 pr-4">
             <button onClick={handleManageCourse} className="mb-2 flex items-center gap-2 text-sm font-medium text-[#5a2dff] hover:text-[#4a21eb]">
               <ArrowLeft size={16} /> Quay lại khóa học
             </button>
-            <h1 className="text-2xl font-bold text-gray-900">{course?.name}</h1>
+            <h1 className="truncate text-2xl font-bold text-gray-900" title={course?.name}>{course?.name}</h1>
             <p className="text-sm text-gray-500">Quản lý nội dung chương trình học</p>
           </div>
           <div className="flex gap-2">
@@ -680,7 +680,7 @@ const ManageCoursePage: React.FC = () => {
                      <div className="flex items-center justify-between bg-gray-50 px-6 py-4">
                         <div className="flex items-center gap-3 cursor-pointer" onClick={() => toggleExpand(lecture.id)}>
                            <div className="font-bold text-gray-400">CHƯƠNG {index + 1}</div>
-                           <h3 className="font-bold text-gray-900">{lecture.name}</h3>
+                           <h3 className="font-bold text-gray-900 truncate min-w-0 max-w-xs">{lecture.name}</h3>
                            {isExpanded ? <ChevronUp size={16} className="text-gray-400"/> : <ChevronDown size={16} className="text-gray-400"/>}
                         </div>
                         <div className="flex items-center gap-2">
@@ -714,7 +714,7 @@ const ManageCoursePage: React.FC = () => {
                                       <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#5a2dff]/10 text-[#5a2dff]">
                                         <Video size={14} />
                                       </div>
-                                      <span className="flex-1 text-sm font-medium text-gray-700">{vidName}</span>
+                                      <span className="flex-1 text-sm font-medium text-gray-700 truncate min-w-0">{vidName}</span>
                                       
                                       {/* Preview Button: Bấm vào đây để xem video */}
                                       {(hasUrl || vidId) && (
@@ -769,9 +769,9 @@ const ManageCoursePage: React.FC = () => {
                                <div key={`d-${i}`} className="flex items-center gap-3 rounded-lg border border-gray-100 bg-gray-50 p-3 group hover:border-[#5a2dff]/30 transition-colors">
                                   <FileText size={16} className="text-[#5a2dff]"/>
                                   {docUrl ? (
-                                    <a href={docUrl} target="_blank" rel="noreferrer" className="flex-1 text-sm hover:underline hover:text-[#4b24cc]">{docName}</a>
+                                    <a href={docUrl} target="_blank" rel="noreferrer" className="flex-1 text-sm hover:underline hover:text-[#4b24cc] truncate min-w-0">{docName}</a>
                                   ) : (
-                                    <span className="flex-1 text-sm">{docName}</span>
+                                    <span className="flex-1 text-sm truncate min-w-0">{docName}</span>
                                   )}
                                   
                                   {/* Actions for Document */}
@@ -803,7 +803,7 @@ const ManageCoursePage: React.FC = () => {
                                return (
                                 <div key={`q-${i}`} className="flex items-center gap-3 rounded-lg border border-gray-100 bg-gray-50 p-3 group hover:border-[#5a2dff]/30 transition-colors">
                                    <HelpCircle size={16} className="text-[#5a2dff]"/>
-                                   <span className="flex-1 text-sm">{quizName}</span>
+                                   <span className="flex-1 text-sm truncate min-w-0">{quizName}</span>
                                    
                                    {/* Actions for Quiz - EDIT BUTTON */}
                                    {quizId && (

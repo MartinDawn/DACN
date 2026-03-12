@@ -1,7 +1,7 @@
 import apiClient from "../../auth/services/apiClient";
 import type { ApiResponse, Tag } from "../../course/models/course";
 import type { InstructorCourse, CreateCourseResponse, BecomeInstructorResponse } from "../models/instructor";
-import type { RequestInstructorPayload, RequestInstructorResponse } from "../models/instructor";
+import type { RequestInstructorPayload, RequestInstructorResponse, InstructorStatusResponse } from "../models/instructor";
 
 export const instructorService = {
   /**
@@ -101,6 +101,14 @@ export const instructorService = {
         },
       }
     );
+    return response.data;
+  },
+
+  /**
+   * Fetches the status of the instructor registration request.
+   */
+  async getInstructorStatus(): Promise<ApiResponse<InstructorStatusResponse>> {
+    const response = await apiClient.get<ApiResponse<InstructorStatusResponse>>('/Account/my-request-status');
     return response.data;
   },
 };

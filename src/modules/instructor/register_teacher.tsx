@@ -1,25 +1,86 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import UserLayout from "../user/layout/layout";
-import { 
-	ArrowLeft, 
-	Users, 
-	BookOpen, 
-	DollarSign, 
-	Globe, 
-	TrendingUp, 
-	Clock, 
-	Target, 
-	Zap, 
-	Handshake 
+import { instructorService } from "./services/instructor.service";
+import { toast } from "react-hot-toast";
+import {
+	ArrowLeft,
+	Users,
+	BookOpen,
+	DollarSign,
+	Globe,
+	TrendingUp,
+	Clock,
+	Target,
+	Zap,
+	Handshake
 } from "lucide-react";
 
 export default function RegisterTeacherPage() {
 	const navigate = useNavigate();
+	const [checkLoading, setCheckLoading] = useState(true);
+	const [isPending, setIsPending] = useState(false);
+
+	useEffect(() => {
+		const checkStatus = async () => {
+			try {
+				const response = await instructorService.getInstructorStatus();
+				if (response?.success && response.data) {
+					const { status } = response.data;
+					const statusStr = String(status || "").toLowerCase();
+					if (statusStr === "pending") {
+						setIsPending(true);
+					} else if (statusStr === "approved") {
+						navigate("/instructor");
+					}
+					// Nếu Rejected hoặc None thì ở lại trang này
+				}
+			} catch (error) {
+				console.error("Error checking instructor status:", error);
+			} finally {
+				setCheckLoading(false);
+			}
+		};
+		checkStatus();
+	}, [navigate]);
 
 	const goToForm = () => {
 		navigate("/instructor/register-teacher/form");
 	};
+
+	if (checkLoading) {
+		return (
+			<UserLayout>
+				<div className="flex min-h-screen items-center justify-center">
+					<div className="h-8 w-8 animate-spin rounded-full border-4 border-[#5a2dff] border-t-transparent"></div>
+				</div>
+			</UserLayout>
+		);
+	}
+
+	if (isPending) {
+		return (
+			<UserLayout>
+				<div className="flex min-h-[60vh] flex-col items-center justify-center px-4 py-12 text-center">
+					<div className="mb-6 flex h-24 w-24 items-center justify-center rounded-full bg-blue-50 text-blue-500">
+						<Clock className="h-12 w-12" />
+					</div>
+					<h1 className="mb-4 text-3xl font-bold text-gray-900">Đang chờ xét duyệt</h1>
+					<p className="mb-8 max-w-lg text-lg text-gray-600">
+						Yêu cầu đăng ký làm giảng viên của bạn đã được gửi và đang trong quá trình xét duyệt.
+						Vui lòng kiên nhẫn đợi, chúng tôi sẽ thông báo kết quả sớm nhất có thể.
+					</p>
+					<Link
+						to="/user/home"
+						className="inline-flex items-center justify-center gap-2 rounded-full bg-blue-600 px-6 py-3 font-semibold text-white transition hover:bg-blue-700"
+					>
+						<ArrowLeft className="h-4 w-4" />
+						Quay về trang chủ
+					</Link>
+				</div>
+			</UserLayout>
+		);
+	}
 
 	return (
 		<UserLayout>

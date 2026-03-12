@@ -226,7 +226,7 @@ const ViewAllCourse: React.FC = () => {
                     rating={course.averageRating || course.rating || 0} 
                     
                     price={`${currencyFormatter.format(course.price)}đ`}
-                    image={course.imageUrl || "https://via.placeholder.com/300x200"}
+                    image={course.imageUrl || "https://placehold.co/300x200"}
                     students={`${course.totalStudents || 0} học viên`}
                     duration={`${course.totalHours || 0} giờ`}
                     originalPrice={course.originalPrice ? `${currencyFormatter.format(course.originalPrice)}đ` : undefined}

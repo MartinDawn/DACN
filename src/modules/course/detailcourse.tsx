@@ -118,7 +118,7 @@ const DetailCourse: React.FC = () => {
                 </div>
                 <div className="flex items-center gap-3">
                   <img 
-                    src={courseDetail.instructorAvatar || "https://via.placeholder.com/100"} 
+                    src={courseDetail.instructorAvatar || "https://placehold.co/100"} 
                     alt={courseDetail.instructorName} 
                     className="h-14 w-14 rounded-full object-cover" 
                   />
@@ -129,7 +129,7 @@ const DetailCourse: React.FC = () => {
                 </div>
                 <div className="overflow-hidden rounded-[28px]">
                   <img 
-                    src={courseDetail.imageUrl || "https://via.placeholder.com/800x450"} 
+                    src={courseDetail.imageUrl || "https://placehold.co/800x450"} 
                     alt={courseDetail.name} 
                     className="h-64 w-full object-cover" 
                   />

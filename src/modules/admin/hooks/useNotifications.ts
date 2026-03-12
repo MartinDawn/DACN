@@ -1,48 +1,74 @@
 import { useState, useEffect, useCallback } from 'react';
-import dashboardService from '../services/dashboardService';
-import type { Notification } from '../models/dashboard';
-
-const READ_NOTIFICATIONS_KEY = 'admin_read_notifications';
+import { notificationService } from '../../header/services/notification.service';
+import type { NotificationApiItem } from '../../header/models/notification.model';
 
 export const useNotifications = () => {
-    const [notifications, setNotifications] = useState<Notification[]>([]);
+    const [notifications, setNotifications] = useState<NotificationApiItem[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
-    const [readIds, setReadIds] = useState<Set<string>>(() => {
-        const stored = localStorage.getItem(READ_NOTIFICATIONS_KEY);
-        return stored ? new Set(JSON.parse(stored)) : new Set();
-    });
+    const [actionError, setActionError] = useState<string | null>(null);
 
-    useEffect(() => {
-        const fetchNotifications = async () => {
-            try {
-                setLoading(true);
-                const data = await dashboardService.getNotifications();
-                setNotifications(data);
-            } catch (err: any) {
-                console.error("Error fetching notifications:", err);
-                setError(err.message || 'Có lỗi xảy ra khi tải thông báo.');
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchNotifications();
+    const fetchNotifications = useCallback(async () => {
+        try {
+            setLoading(true);
+            setError(null);
+            const data = await notificationService.getMyNotifications();
+            setNotifications(data);
+        } catch (err: any) {
+            console.error("Error fetching notifications:", err);
+            setError(err.message || 'Có lỗi xảy ra khi tải thông báo.');
+        } finally {
+            setLoading(false);
+        }
     }, []);
 
-    const markAllAsRead = useCallback(() => {
-        const allIds = notifications.map(n => n.id);
-        const newReadIds = new Set([...Array.from(readIds), ...allIds]);
-        setReadIds(newReadIds);
-        localStorage.setItem(READ_NOTIFICATIONS_KEY, JSON.stringify(Array.from(newReadIds)));
-    }, [notifications, readIds]);
+    useEffect(() => {
+        fetchNotifications();
+    }, [fetchNotifications]);
 
-    const notificationsWithReadStatus = notifications.map(n => ({
-        ...n,
-        isRead: readIds.has(n.id),
-    }));
+    const markAsRead = useCallback(async (id: string) => {
+        try {
+            await notificationService.markAsRead(id);
+            setNotifications(prev =>
+                prev.map(n => n.id === id ? { ...n, isRead: true } : n)
+            );
+        } catch (err) {
+            console.error("Error marking notification as read:", err);
+        }
+    }, []);
 
-    const unreadCount = notificationsWithReadStatus.filter(n => !n.isRead).length;
+    const markAllAsRead = useCallback(async () => {
+        setActionError(null);
+        // Optimistic update — giống user side
+        setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+        try {
+            await notificationService.markAllAsRead();
+        } catch (err: any) {
+            console.error("Error marking all as read:", err);
+            setActionError(err?.response?.data?.message || err?.message || 'Có lỗi xảy ra khi đánh dấu tất cả đã đọc.');
+        }
+    }, []);
 
-    return { notifications: notificationsWithReadStatus, unreadCount, loading, error, markAllAsRead };
+    const deleteNotification = useCallback(async (id: string) => {
+        try {
+            await notificationService.deleteNotification(id);
+            setNotifications(prev => prev.filter(n => n.id !== id));
+        } catch (err) {
+            console.error("Error deleting notification:", err);
+        }
+    }, []);
+
+    const unreadCount = notifications.filter(n => !n.isRead).length;
+
+    return {
+        notifications,
+        unreadCount,
+        loading,
+        error,
+        actionError,
+        markAsRead,
+        markAllAsRead,
+        deleteNotification,
+        refetch: fetchNotifications,
+    };
 };

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AdminLayout from './layout/layout';
 import type { Course } from './models/course.model';
@@ -12,10 +12,41 @@ import {
   MagnifyingGlassIcon,
   BookOpenIcon,
   ClockIcon,
-  XMarkIcon,
-  ChevronLeftIcon,
-  ChevronRightIcon
+  XMarkIcon
 } from "@heroicons/react/24/outline";
+import { StarIcon } from "@heroicons/react/24/solid";
+
+const ITEMS_PER_PAGE = 10;
+
+function LazyImage({ src, alt }: { src: string; alt: string }) {
+    const [loaded, setLoaded] = useState(false);
+    const [error, setError] = useState(false);
+
+    const handleLoad = useCallback(() => setLoaded(true), []);
+    const handleError = useCallback(() => { setError(true); setLoaded(true); }, []);
+
+    return (
+        <div className="relative h-full w-full">
+            {!loaded && (
+                <div className="absolute inset-0 animate-pulse rounded-lg bg-gray-200" />
+            )}
+            {error ? (
+                <div className="flex h-full w-full items-center justify-center bg-gray-100 rounded-lg">
+                    <BookOpenIcon className="h-6 w-6 text-gray-300" />
+                </div>
+            ) : (
+                <img
+                    src={src}
+                    alt={alt}
+                    loading="lazy"
+                    onLoad={handleLoad}
+                    onError={handleError}
+                    className={`h-full w-full object-cover transition-opacity duration-300 ${loaded ? 'opacity-100' : 'opacity-0'}`}
+                />
+            )}
+        </div>
+    );
+}
 
 export default function AdminManageCourse() {
     const navigate = useNavigate();
@@ -28,7 +59,8 @@ export default function AdminManageCourse() {
         loading,
         pagination,
         currentPage,
-        goToPage
+        goToPage,
+        refresh
     } = useCourseRequests(activeTab);
 
     // Modal State
@@ -37,6 +69,9 @@ export default function AdminManageCourse() {
     const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [rejectReason, setRejectReason] = useState('');
+    const [isProcessing, setIsProcessing] = useState(false);
+    const [pendingPage, setPendingPage] = useState(1);
+    const [publishedPage, setPublishedPage] = useState(1);
 
     // Open Modals
     const openApproveModal = (course: Course) => {
@@ -60,6 +95,7 @@ export default function AdminManageCourse() {
         setIsRejectModalOpen(false);
         setIsDeleteModalOpen(false);
         setSelectedCourse(null);
+        setIsProcessing(false);
     };
 
     useEffect(() => {
@@ -73,39 +109,49 @@ export default function AdminManageCourse() {
     }, [isApproveModalOpen, isRejectModalOpen, isDeleteModalOpen]);
 
     const handleConfirmApprove = async () => {
-        if (!selectedCourse) return;
+        if (!selectedCourse || isProcessing) return;
 
-        if (activeTab === 'pending' && selectedCourse.requestId) {
-            try {
-                await CourseService.approveRequest(selectedCourse.requestId);
-                setCourses(prev => prev.filter(c => c.id !== selectedCourse.id));
-            } catch (error) {
-                alert('Lỗi khi duyệt yêu cầu');
-            }
-        } else {
-            setCourses(prev => prev.filter(c => c.id !== selectedCourse.id));
+        if (!selectedCourse.requestId) {
+            alert('Không tìm thấy ID yêu cầu. Vui lòng thử lại.');
+            return;
         }
-        closeModals();
+
+        setIsProcessing(true);
+        try {
+            await CourseService.approveRequest(selectedCourse.requestId);
+            setPendingCount(prev => Math.max(0, prev - 1));
+            refresh();
+            closeModals();
+        } catch (error) {
+            alert('Lỗi khi duyệt yêu cầu. Vui lòng thử lại.');
+        } finally {
+            setIsProcessing(false);
+        }
     };
 
     const handleConfirmReject = async () => {
-        if (!selectedCourse) return;
+        if (!selectedCourse || isProcessing) return;
         if (!rejectReason.trim()) {
             alert("Vui lòng nhập lý do từ chối");
             return;
         }
 
-        if (activeTab === 'pending' && selectedCourse.requestId) {
-            try {
-                await CourseService.rejectRequest(selectedCourse.requestId, rejectReason);
-                setCourses(prev => prev.filter(c => c.id !== selectedCourse.id));
-            } catch (error) {
-                alert('Lỗi khi từ chối yêu cầu');
-            }
-        } else {
-            setCourses(prev => prev.filter(c => c.id !== selectedCourse.id));
+        if (!selectedCourse.requestId) {
+            alert('Không tìm thấy ID yêu cầu. Vui lòng thử lại.');
+            return;
         }
-        closeModals();
+
+        setIsProcessing(true);
+        try {
+            await CourseService.rejectRequest(selectedCourse.requestId, rejectReason);
+            setPendingCount(prev => Math.max(0, prev - 1));
+            refresh();
+            closeModals();
+        } catch (error) {
+            alert('Lỗi khi từ chối yêu cầu. Vui lòng thử lại.');
+        } finally {
+            setIsProcessing(false);
+        }
     };
 
     const handleConfirmDelete = () => {
@@ -119,6 +165,14 @@ export default function AdminManageCourse() {
         (course.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
          course.instructor.toLowerCase().includes(searchTerm.toLowerCase()))
     );
+
+    const totalPublishedPages = Math.max(1, Math.ceil(filteredCourses.length / ITEMS_PER_PAGE));
+    const totalPendingPages = Math.max(1, Math.ceil(filteredCourses.length / ITEMS_PER_PAGE));
+    const displayCourses = activeTab === 'pending'
+        ? filteredCourses.slice((pendingPage - 1) * ITEMS_PER_PAGE, pendingPage * ITEMS_PER_PAGE)
+        : filteredCourses.slice((publishedPage - 1) * ITEMS_PER_PAGE, publishedPage * ITEMS_PER_PAGE);
+
+    useEffect(() => { setPendingPage(1); setPublishedPage(1); }, [activeTab, searchTerm]);
 
     const [publishedCount, setPublishedCount] = useState(0);
     const [pendingCount, setPendingCount] = useState(0);
@@ -195,32 +249,30 @@ export default function AdminManageCourse() {
                         <table className="w-full text-left">
                             <thead className="bg-[#f7f9fc] border-b border-gray-100">
                                 <tr>
-                                    <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-gray-500">Khóa học</th>
-                                    <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-gray-500">Giảng viên</th>
-                                    <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-gray-500">Danh mục</th>
-                                    <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-gray-500">Giá</th>
+                                    <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-gray-500 w-[33%]">Khóa học</th>
+                                    <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-gray-500 w-[18%]">Giảng viên</th>
+                                    <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-gray-500 w-[12%]">Giá</th>
                                     {activeTab === 'published' && (
-                                        <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-gray-500">Trạng thái</th>
+                                        <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-gray-500 w-[12%]">Đánh giá</th>
                                     )}
-                                    <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-gray-500">Kiểm tra</th>
-                                    <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-gray-500">Ngày tạo</th>
-                                    <th className="px-6 py-4 text-end text-xs font-semibold uppercase tracking-wider text-gray-500">Hành động</th>
+                                    <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-gray-500 w-[12%]">Ngày tạo</th>
+                                    <th className="px-6 py-4 text-end text-xs font-semibold uppercase tracking-wider text-gray-500 w-[13%]">Hành động</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-100 text-sm">
                                 {loading ? (
                                     <tr>
-                                        <td colSpan={activeTab === 'published' ? 8 : 7} className="px-6 py-12 text-center text-gray-500">
+                                        <td colSpan={activeTab === 'published' ? 6 : 5} className="px-6 py-12 text-center text-gray-500">
                                             Đang tải dữ liệu...
                                         </td>
                                     </tr>
                                 ) : filteredCourses.length > 0 ? (
-                                    filteredCourses.map((course) => (
+                                    displayCourses.map((course) => (
                                         <tr key={course.id} className="hover:bg-gray-50/50 transition-colors">
                                             <td className="px-6 py-4">
                                                 <div className="flex items-center gap-3">
                                                     <div className="h-12 w-16 flex-shrink-0 overflow-hidden rounded-lg bg-gray-100">
-                                                        <img src={course.image} alt={course.title} className="h-full w-full object-cover" />
+                                                        <LazyImage src={course.image} alt={course.title} />
                                                     </div>
                                                     <div>
                                                         <p className="font-semibold text-gray-900 line-clamp-1 max-w-[200px]" title={course.title}>{course.title}</p>
@@ -234,11 +286,6 @@ export default function AdminManageCourse() {
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4 text-gray-600 font-medium">{course.instructor}</td>
-                                            <td className="px-6 py-4 text-gray-600">
-                                                <span className="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-800">
-                                                    {course.category}
-                                                </span>
-                                            </td>
                                             <td className="px-6 py-4 font-semibold text-gray-900">
                                                 {course.price > 0
                                                     ? `${course.price.toLocaleString('vi-VN')}đ`
@@ -247,27 +294,26 @@ export default function AdminManageCourse() {
                                             </td>
                                             {activeTab === 'published' && (
                                                 <td className="px-6 py-4">
-                                                    <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                                                        course.status === 'Public'
-                                                            ? 'bg-green-100 text-green-700'
-                                                            : 'bg-gray-100 text-gray-600'
-                                                    }`}>
-                                                        {course.status === 'Public' ? 'Công khai' : 'Riêng tư'}
-                                                    </span>
+                                                    {course.averageRating && course.averageRating > 0 ? (
+                                                        <div className="flex items-center gap-1">
+                                                            <StarIcon className="h-4 w-4 text-yellow-400" />
+                                                            <span className="font-semibold text-gray-900">{course.averageRating.toFixed(1)}</span>
+                                                        </div>
+                                                    ) : (
+                                                        <span className="text-xs text-gray-400">Chưa có</span>
+                                                    )}
                                                 </td>
                                             )}
-                                            <td className="px-6 py-4 text-gray-600">
-                                                <button
-                                                    onClick={() => navigate(`/courses/${course.id}`)}
-                                                    className="inline-flex items-center justify-center rounded-lg bg-blue-50 p-2 text-blue-600 transition-colors hover:bg-blue-100"
-                                                    title="Xem chi tiết"
-                                                >
-                                                    <EyeIcon className="h-5 w-5" />
-                                                </button>
-                                            </td>
                                             <td className="px-6 py-4 text-gray-600">{course.submittedDate}</td>
                                             <td className="px-6 py-4 text-end">
                                                 <div className="flex items-center justify-end gap-2">
+                                                    <button
+                                                        onClick={() => navigate(`/user/course-progress/${course.id}`)}
+                                                        className="inline-flex items-center justify-center rounded-lg bg-blue-50 p-2 text-blue-600 transition-colors hover:bg-blue-100"
+                                                        title="Xem chi tiết"
+                                                    >
+                                                        <EyeIcon className="h-5 w-5" />
+                                                    </button>
                                                     {activeTab === 'pending' ? (
                                                         <>
                                                             <button
@@ -300,13 +346,13 @@ export default function AdminManageCourse() {
                                     ))
                                 ) : (
                                     <tr>
-                                        <td colSpan={activeTab === 'published' ? 8 : 7} className="px-6 py-12 text-center text-gray-500">
+                                        <td colSpan={activeTab === 'published' ? 6 : 5} className="px-6 py-12 text-center text-gray-500">
                                             <div className="flex flex-col items-center justify-center">
                                                 <div className="rounded-full bg-gray-50 p-4 mb-3">
                                                     <MagnifyingGlassIcon className="h-8 w-8 text-gray-300"/>
                                                 </div>
-                                                <p className="text-base font-medium">Không tìm thấy khóa học nào</p>
-                                                <p className="text-sm text-gray-400 mt-1">Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm</p>
+                                                <p className="text-base font-medium">Không có yêu cầu nào đang chờ duyệt</p>
+                                                <p className="text-sm text-gray-400 mt-1">Tất cả đã được xử lý</p>
                                             </div>
                                         </td>
                                     </tr>
@@ -315,55 +361,12 @@ export default function AdminManageCourse() {
                         </table>
                     </div>
 
-                    {/* Pagination - only show for published tab */}
-                    {activeTab === 'published' && pagination.totalPages > 1 && (
-                        <div className="flex items-center justify-between border-t border-gray-100 px-6 py-4">
-                            <p className="text-sm text-gray-500">
-                                Trang <span className="font-medium text-gray-900">{pagination.page}</span> / <span className="font-medium text-gray-900">{pagination.totalPages}</span>
-                                &nbsp;·&nbsp; Tổng <span className="font-medium text-gray-900">{pagination.totalCount}</span> khóa học
-                            </p>
-                            <div className="flex items-center gap-1">
-                                <button
-                                    onClick={() => goToPage(currentPage - 1)}
-                                    disabled={!pagination.hasPreviousPage}
-                                    className="inline-flex items-center justify-center rounded-lg border border-gray-200 p-2 text-gray-500 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-                                >
-                                    <ChevronLeftIcon className="h-4 w-4" />
-                                </button>
-                                {Array.from({ length: pagination.totalPages }, (_, i) => i + 1)
-                                    .filter(p => p === 1 || p === pagination.totalPages || Math.abs(p - currentPage) <= 1)
-                                    .reduce<(number | 'ellipsis')[]>((acc, p, idx, arr) => {
-                                        if (idx > 0 && p - (arr[idx - 1] as number) > 1) acc.push('ellipsis');
-                                        acc.push(p);
-                                        return acc;
-                                    }, [])
-                                    .map((item, idx) =>
-                                        item === 'ellipsis' ? (
-                                            <span key={`ellipsis-${idx}`} className="px-2 text-gray-400">…</span>
-                                        ) : (
-                                            <button
-                                                key={item}
-                                                onClick={() => goToPage(item as number)}
-                                                className={`min-w-[36px] rounded-lg border px-3 py-2 text-sm font-medium transition-colors ${
-                                                    currentPage === item
-                                                        ? 'border-[#5a2dff] bg-[#5a2dff] text-white'
-                                                        : 'border-gray-200 text-gray-600 hover:bg-gray-50'
-                                                }`}
-                                            >
-                                                {item}
-                                            </button>
-                                        )
-                                    )
-                                }
-                                <button
-                                    onClick={() => goToPage(currentPage + 1)}
-                                    disabled={!pagination.hasNextPage}
-                                    className="inline-flex items-center justify-center rounded-lg border border-gray-200 p-2 text-gray-500 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-                                >
-                                    <ChevronRightIcon className="h-4 w-4" />
-                                </button>
-                            </div>
-                        </div>
+                    {/* Pagination */}
+                    {activeTab === 'published' && !loading && (
+                        <Pagination current={publishedPage} total={totalPublishedPages} totalItems={filteredCourses.length} onChange={setPublishedPage} />
+                    )}
+                    {activeTab === 'pending' && !loading && (
+                        <Pagination current={pendingPage} total={totalPendingPages} totalItems={filteredCourses.length} onChange={setPendingPage} />
                     )}
                 </div>
             </div>
@@ -382,15 +385,17 @@ export default function AdminManageCourse() {
                         <div className="mt-8 flex justify-center gap-3">
                             <button
                                 onClick={closeModals}
-                                className="min-w-[100px] rounded-lg border border-gray-200 bg-white px-5 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 focus:outline-none transition-all"
+                                disabled={isProcessing}
+                                className="min-w-[100px] rounded-lg border border-gray-200 bg-white px-5 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 focus:outline-none transition-all disabled:opacity-50"
                             >
                                 Hủy bỏ
                             </button>
                             <button
                                 onClick={handleConfirmApprove}
-                                className="min-w-[100px] rounded-lg bg-[#5a2dff] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#4a22e8] focus:outline-none shadow-md shadow-[#c4b5fd] transition-all"
+                                disabled={isProcessing}
+                                className="min-w-[100px] rounded-lg bg-[#5a2dff] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#4a22e8] focus:outline-none shadow-md shadow-[#c4b5fd] transition-all disabled:opacity-70"
                             >
-                                Duyệt ngay
+                                {isProcessing ? 'Đang xử lý...' : 'Duyệt ngay'}
                             </button>
                         </div>
                     </div>
@@ -420,15 +425,17 @@ export default function AdminManageCourse() {
                         <div className="mt-8 flex justify-end gap-3">
                             <button
                                 onClick={closeModals}
-                                className="rounded-lg border border-gray-200 bg-white px-5 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 focus:outline-none transition-all"
+                                disabled={isProcessing}
+                                className="rounded-lg border border-gray-200 bg-white px-5 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 focus:outline-none transition-all disabled:opacity-50"
                             >
                                 Hủy bỏ
                             </button>
                             <button
                                 onClick={handleConfirmReject}
-                                className="rounded-lg bg-[#5a2dff] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#4a22e8] focus:outline-none shadow-md shadow-[#c4b5fd] transition-all"
+                                disabled={isProcessing}
+                                className="rounded-lg bg-[#5a2dff] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#4a22e8] focus:outline-none shadow-md shadow-[#c4b5fd] transition-all disabled:opacity-70"
                             >
-                                Xác nhận từ chối
+                                {isProcessing ? 'Đang xử lý...' : 'Xác nhận từ chối'}
                             </button>
                         </div>
                     </div>
@@ -463,5 +470,67 @@ export default function AdminManageCourse() {
                 </div>
             )}
         </AdminLayout>
+    );
+}
+
+function Pagination({ current, total, totalItems, onChange }: {
+    current: number;
+    total: number;
+    totalItems?: number;
+    onChange: (page: number) => void;
+}) {
+    const pages: (number | '...')[] = [];
+    if (total <= 7) {
+        for (let i = 1; i <= total; i++) pages.push(i);
+    } else {
+        pages.push(1);
+        if (current > 3) pages.push('...');
+        for (let i = Math.max(2, current - 1); i <= Math.min(total - 1, current + 1); i++) pages.push(i);
+        if (current < total - 2) pages.push('...');
+        pages.push(total);
+    }
+
+    return (
+        <div className="flex items-center justify-between border-t border-gray-100 px-6 py-3 bg-white">
+            <p className="text-sm text-gray-500">
+                Trang <span className="font-semibold text-gray-700">{current}</span> / {total}
+                {totalItems !== undefined && (
+                    <>&nbsp;·&nbsp; Tổng <span className="font-semibold text-gray-700">{totalItems}</span> khóa học</>
+                )}
+            </p>
+            <div className="flex items-center gap-1">
+                <button
+                    onClick={() => onChange(current - 1)}
+                    disabled={current === 1}
+                    className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm font-medium text-gray-600 transition hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                    ‹
+                </button>
+                {pages.map((p, i) =>
+                    p === '...' ? (
+                        <span key={`dots-${i}`} className="px-2 text-gray-400 text-sm">…</span>
+                    ) : (
+                        <button
+                            key={p}
+                            onClick={() => onChange(p)}
+                            className={`min-w-[36px] rounded-lg border px-3 py-1.5 text-sm font-medium transition ${
+                                current === p
+                                    ? 'border-[#5a2dff] bg-[#5a2dff] text-white shadow-sm shadow-[#5a2dff]/30'
+                                    : 'border-gray-200 text-gray-600 hover:bg-gray-50'
+                            }`}
+                        >
+                            {p}
+                        </button>
+                    )
+                )}
+                <button
+                    onClick={() => onChange(current + 1)}
+                    disabled={current === total}
+                    className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm font-medium text-gray-600 transition hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                    ›
+                </button>
+            </div>
+        </div>
     );
 }

@@ -74,7 +74,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   const profileMenuRef = useRef<HTMLDivElement>(null);
   const [isLogoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
 
-  const { notifications, unreadCount, loading: notifLoading, error: notifError, markAllAsRead } = useNotifications();
+  const { notifications, unreadCount, loading: notifLoading, error: notifError, markAsRead, markAllAsRead, deleteNotification } = useNotifications();
   const [isNotificationOpen, setNotificationOpen] = useState(false);
   const notificationMenuRef = useRef<HTMLDivElement>(null);
 
@@ -182,7 +182,11 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
               <ul className="mb-6 flex flex-col gap-1.5">
                 <li><SidebarItem icon={ChartPieIcon} label="Biểu đồ" hasSubmenu={true} isExpanded={sidebarExpanded}/></li>
                 <li><SidebarItem icon={FormIcon} label="Giao diện UI" hasSubmenu={true} isExpanded={sidebarExpanded}/></li>
-                <li><SidebarItem icon={FormIcon} label="Xác thực" hasSubmenu={true} isExpanded={sidebarExpanded}/></li>
+                <li>
+                  <NavLink to="/admin/notifications">
+                    <SidebarItem icon={BellIcon} label="Thông báo" isActive={location.pathname === '/admin/notifications'} isExpanded={sidebarExpanded}/>
+                  </NavLink>
+                </li>
               </ul>
             </div>
           </nav>
@@ -229,11 +233,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                   </li>
                   <li className="relative" ref={notificationMenuRef}>
                     <button
-                      onClick={() => {
-                        const opening = !isNotificationOpen;
-                        setNotificationOpen(opening);
-                        if (opening) markAllAsRead();
-                      }}
+                      onClick={() => setNotificationOpen(!isNotificationOpen)}
                       className="relative flex h-10 w-10 items-center justify-center rounded-full bg-[#EEF2FF] text-gray-500 transition hover:text-[#5a2dff]"
                     >
                       {unreadCount > 0 && (
@@ -249,11 +249,21 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                       <div className="absolute right-0 mt-3 w-80 rounded-2xl border border-gray-100 bg-white shadow-xl z-50">
                         <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
                           <h5 className="font-semibold text-gray-900 text-sm">Thông báo</h5>
-                          {unreadCount > 0 && (
-                            <span className="rounded-full bg-red-50 px-2 py-0.5 text-xs font-semibold text-red-500">
-                              {unreadCount} chưa đọc
-                            </span>
-                          )}
+                          <div className="flex items-center gap-2">
+                            {unreadCount > 0 && (
+                              <span className="rounded-full bg-red-50 px-2 py-0.5 text-xs font-semibold text-red-500">
+                                {unreadCount} chưa đọc
+                              </span>
+                            )}
+                            {unreadCount > 0 && (
+                              <button
+                                onClick={markAllAsRead}
+                                className="text-xs text-[#5a2dff] hover:underline font-medium whitespace-nowrap"
+                              >
+                                Đọc tất cả
+                              </button>
+                            )}
+                          </div>
                         </div>
                         <ul className="max-h-80 overflow-y-auto divide-y divide-gray-50">
                           {notifLoading ? (
@@ -283,23 +293,23 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                               return (
                               <li
                                 key={notif.id}
-                                className={`flex items-start gap-3 px-4 py-3 hover:bg-gray-50 transition-colors ${notifRoute ? 'cursor-pointer' : ''} ${!notif.isRead ? 'bg-purple-50/50' : ''}`}
+                                onClick={() => { if (!notif.isRead) markAsRead(notif.id); }}
+                                className={`flex items-start gap-3 px-4 py-3 hover:bg-gray-50 transition-colors ${!notif.isRead ? 'bg-purple-50/50 cursor-pointer' : ''}`}
                               >
                                 <div className={`mt-1 h-2 w-2 flex-shrink-0 rounded-full ${!notif.isRead ? 'bg-[#5a2dff]' : 'bg-gray-300'}`} />
                                 <div className="flex-1 min-w-0">
-                                  <p className="text-sm font-medium text-gray-900">{typeLabel}</p>
-                                  <p className="text-xs text-gray-600 mt-0.5">
-                                    <span className="font-medium">{notif.sender}</span>
-                                    {notif.courseName && (
-                                      <> &mdash; <span className="italic">{notif.courseName}</span></>
-                                    )}
-                                  </p>
+                                  <p className="text-sm font-medium text-gray-900">{notif.title || typeLabel}</p>
+                                  {notif.message && (
+                                    <p className="text-xs text-gray-600 mt-0.5 line-clamp-2">{notif.message}</p>
+                                  )}
                                   <p className="text-xs text-gray-400 mt-1">
                                     {new Date(notif.createdAt).toLocaleString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                                   </p>
                                   {notifRoute && (
                                     <button
-                                      onClick={() => {
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        markAsRead(notif.id);
                                         setNotificationOpen(false);
                                         navigate(notifRoute);
                                       }}
@@ -311,6 +321,32 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                                       </svg>
                                     </button>
                                   )}
+                                </div>
+                                {/* Action buttons */}
+                                <div
+                                  className="flex flex-col gap-1 shrink-0"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  {!notif.isRead && (
+                                    <button
+                                      onClick={() => markAsRead(notif.id)}
+                                      title="Đánh dấu đã đọc"
+                                      className="flex h-6 w-6 items-center justify-center rounded-full text-gray-400 hover:bg-[#5a2dff]/10 hover:text-[#5a2dff] transition-colors"
+                                    >
+                                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" />
+                                      </svg>
+                                    </button>
+                                  )}
+                                  <button
+                                    onClick={() => deleteNotification(notif.id)}
+                                    title="Xóa thông báo"
+                                    className="flex h-6 w-6 items-center justify-center rounded-full text-gray-400 hover:bg-red-50 hover:text-red-500 transition-colors"
+                                  >
+                                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                  </button>
                                 </div>
                               </li>
                               );

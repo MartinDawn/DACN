@@ -20,14 +20,18 @@ import {
 import { useUsers, useInstructorRequests } from './hooks/useUsers';
 import type { UserResponse, InstructorRequest } from './models/user.model';
 
+const ITEMS_PER_PAGE = 10;
+
 export default function AdminManageUser() {
     const [activeTab, setActiveTab] = useState<'all' | 'student' | 'instructor' | 'pending'>('all');
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedUser, setSelectedUser] = useState<UserResponse | null>(null);
     const [selectedRequest, setSelectedRequest] = useState<InstructorRequest | null>(null);
 
-    const { users, isLoading, error, refetch, banUser } = useUsers();
-    const { requests, isLoading: isRequestsLoading, error: requestsError, refetch: refetchRequests, approveRequest } = useInstructorRequests();
+    const { users, isLoading, refetch, banUser } = useUsers();
+    const { requests, isLoading: isRequestsLoading, refetch: refetchRequests, approveRequest } = useInstructorRequests();
+
+    const [currentPage, setCurrentPage] = useState(1);
 
     const [confirmAction, setConfirmAction] = useState<{ user: UserResponse; isBanning: boolean } | null>(null);
     const [isBanLoading, setIsBanLoading] = useState(false);
@@ -68,7 +72,12 @@ export default function AdminManageUser() {
     const handleConfirmApprove = async () => {
         if (!approveConfirm) return;
         setIsApproveLoading(true);
-        await approveRequest(approveConfirm.request.id, approveConfirm.isApproved);
+        const { isApproved } = approveConfirm;
+        const title = 'Yêu cầu trở thành giảng viên';
+        const message = isApproved
+            ? 'Yêu cầu trở thành giảng viên của bạn đã được chấp thuận. Chào mừng bạn trở thành giảng viên!'
+            : 'Yêu cầu trở thành giảng viên của bạn đã bị từ chối.';
+        await approveRequest(approveConfirm.request.requestId || approveConfirm.request.id, isApproved, title, message);
         setIsApproveLoading(false);
         setApproveConfirm(null);
         setSelectedRequest(null);
@@ -99,6 +108,13 @@ export default function AdminManageUser() {
         instructor: users.filter(u => u.role.toLowerCase() === 'instructor').length,
         pending: requests.length
     };
+
+    useEffect(() => { setCurrentPage(1); }, [activeTab, searchTerm]);
+
+    const totalUserPages = Math.max(1, Math.ceil(filteredUsers.length / ITEMS_PER_PAGE));
+    const totalRequestPages = Math.max(1, Math.ceil(filteredRequests.length / ITEMS_PER_PAGE));
+    const paginatedUsers = filteredUsers.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
+    const paginatedRequests = filteredRequests.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
 
     const initials = (name: string) =>
         name.split(' ').slice(-2).map(w => w[0]).join('').toUpperCase();
@@ -146,17 +162,6 @@ export default function AdminManageUser() {
                     ))}
                 </div>
 
-                {/* Error */}
-                {(activeTab !== 'pending' ? error : requestsError) && (
-                    <div className="mb-4 flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-600">
-                        <ExclamationTriangleIcon className="h-5 w-5 flex-shrink-0" />
-                        <span>{activeTab !== 'pending' ? error : requestsError}</span>
-                        <button onClick={activeTab !== 'pending' ? refetch : refetchRequests} className="ml-auto underline font-medium">
-                            Thử lại
-                        </button>
-                    </div>
-                )}
-
                 {/* Users Table */}
                 {activeTab !== 'pending' && (
                     <div className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
@@ -197,12 +202,12 @@ export default function AdminManageUser() {
                                             </tr>
                                         ))
                                     ) : filteredUsers.length > 0 ? (
-                                        filteredUsers.map((user) => (
+                                        paginatedUsers.map((user) => (
                                             <tr key={user.id} className="hover:bg-gray-50/50 transition-colors">
                                                 <td className="px-6 py-4">
                                                     <div className="flex items-center gap-3">
                                                         <div className="h-10 w-10 flex-shrink-0 overflow-hidden rounded-full bg-gray-100">
-                                                            <img src={user.avatarUrl} alt={user.fullName} className="h-full w-full object-cover" />
+                                                            <img src={user.avatarUrl} alt={user.fullName} loading="lazy" className="h-full w-full object-cover" />
                                                         </div>
                                                         <div>
                                                             <p className="font-semibold text-gray-900">{user.fullName}</p>
@@ -264,6 +269,7 @@ export default function AdminManageUser() {
                                 </tbody>
                             </table>
                         </div>
+                        <Pagination current={currentPage} total={totalUserPages} totalItems={filteredUsers.length} itemLabel="người dùng" onChange={setCurrentPage} />
                     </div>
                 )}
 
@@ -279,7 +285,7 @@ export default function AdminManageUser() {
                                         <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-gray-500">Kinh nghiệm</th>
                                         <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-gray-500">Ngày gửi</th>
                                         <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-gray-500">Trạng thái</th>
-                                        <th className="px-6 py-4 text-end text-xs font-semibold uppercase tracking-wider text-gray-500"></th>
+                                        <th className="px-6 py-4 text-end text-xs font-semibold uppercase tracking-wider text-gray-500">Hành động</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-100 text-sm">
@@ -309,7 +315,7 @@ export default function AdminManageUser() {
                                             </tr>
                                         ))
                                     ) : filteredRequests.length > 0 ? (
-                                        filteredRequests.map((req) => (
+                                        paginatedRequests.map((req) => (
                                             <tr key={req.id} className="hover:bg-gray-50/50 transition-colors">
                                                 <td className="px-6 py-4">
                                                     <div className="flex items-center gap-3">
@@ -378,6 +384,7 @@ export default function AdminManageUser() {
                                 </tbody>
                             </table>
                         </div>
+                        <Pagination current={currentPage} total={totalRequestPages} totalItems={filteredRequests.length} itemLabel="yêu cầu" onChange={setCurrentPage} />
                     </div>
                 )}
             </div>
@@ -523,7 +530,7 @@ export default function AdminManageUser() {
                         <div className="px-6 pb-6 relative">
                             <div className="flex flex-col items-center -mt-12 mb-6">
                                 <div className="h-24 w-24 rounded-full border-[4px] border-white shadow-md bg-white overflow-hidden">
-                                    <img src={selectedUser.avatarUrl} alt={selectedUser.fullName} className="h-full w-full object-cover" />
+                                    <img src={selectedUser.avatarUrl} alt={selectedUser.fullName} loading="lazy" className="h-full w-full object-cover" />
                                 </div>
                                 <h3 className="mt-3 text-xl font-bold text-gray-900">{selectedUser.fullName}</h3>
                                 <p className="text-sm text-gray-500">{selectedUser.email}</p>
@@ -586,6 +593,63 @@ function InfoBlock({ icon, label, value, multiline }: { icon: React.ReactNode; l
             <p className={`text-sm font-medium text-gray-800 ${multiline ? 'whitespace-pre-wrap' : 'truncate'}`}>
                 {value || '—'}
             </p>
+        </div>
+    );
+}
+
+function Pagination({ current, total, totalItems, itemLabel = 'mục', onChange }: { current: number; total: number; totalItems?: number; itemLabel?: string; onChange: (page: number) => void }) {
+    const pages: (number | '...')[] = [];
+    if (total <= 7) {
+        for (let i = 1; i <= total; i++) pages.push(i);
+    } else {
+        pages.push(1);
+        if (current > 3) pages.push('...');
+        for (let i = Math.max(2, current - 1); i <= Math.min(total - 1, current + 1); i++) pages.push(i);
+        if (current < total - 2) pages.push('...');
+        pages.push(total);
+    }
+
+    return (
+        <div className="flex items-center justify-between border-t border-gray-100 px-6 py-3 bg-white">
+            <p className="text-sm text-gray-500">
+                Trang <span className="font-semibold text-gray-700">{current}</span> / {total}
+                {totalItems !== undefined && (
+                    <>&nbsp;·&nbsp; Tổng <span className="font-semibold text-gray-700">{totalItems}</span> {itemLabel}</>
+                )}
+            </p>
+            <div className="flex items-center gap-1">
+                <button
+                    onClick={() => onChange(current - 1)}
+                    disabled={current === 1}
+                    className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm font-medium text-gray-600 transition hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                    ‹
+                </button>
+                {pages.map((p, i) =>
+                    p === '...' ? (
+                        <span key={`dots-${i}`} className="px-2 text-gray-400 text-sm">…</span>
+                    ) : (
+                        <button
+                            key={p}
+                            onClick={() => onChange(p)}
+                            className={`min-w-[36px] rounded-lg border px-3 py-1.5 text-sm font-medium transition ${
+                                p === current
+                                    ? 'border-[#5a2dff] bg-[#5a2dff] text-white shadow-sm shadow-[#5a2dff]/30'
+                                    : 'border-gray-200 text-gray-600 hover:bg-gray-50'
+                            }`}
+                        >
+                            {p}
+                        </button>
+                    )
+                )}
+                <button
+                    onClick={() => onChange(current + 1)}
+                    disabled={current === total}
+                    className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm font-medium text-gray-600 transition hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                    ›
+                </button>
+            </div>
         </div>
     );
 }

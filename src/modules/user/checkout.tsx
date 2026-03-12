@@ -328,7 +328,7 @@ const CheckoutPage: React.FC = () => {
               <div className="max-h-60 overflow-y-auto space-y-4 pr-2">
                   {selectedItems.map((item) => (
                     <div key={item.id} className="flex items-start gap-3">
-                      <img src={item.imageUrl || "https://via.placeholder.com/150"} alt={item.name} className="h-16 w-24 rounded-lg object-cover bg-gray-100" />
+                      <img src={item.imageUrl || "https://placehold.co/150"} alt={item.name} className="h-16 w-24 rounded-lg object-cover bg-gray-100" />
                       <div className="flex-1 space-y-1 text-sm">
                         <h4 className="font-semibold text-gray-900 line-clamp-2">{item.name}</h4>
                         <div className="flex items-baseline gap-2">

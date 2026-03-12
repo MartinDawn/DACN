@@ -1,6 +1,6 @@
 import apiClient from "../../auth/services/apiClient";
 import type { ApiResponse } from "../../auth/models/auth";
-import type { UserResponse, InstructorRequest } from "../models/user.model";
+import type { UserResponse, InstructorRequest, ApproveInstructorResponse } from "../models/user.model";
 
 export const userService = {
   async getUsers(): Promise<ApiResponse<UserResponse[]>> {
@@ -19,8 +19,8 @@ export const userService = {
     const response = await apiClient.get<ApiResponse<InstructorRequest[]>>('/Account/instructor-requests');
     return response.data;
   },
-  async approveInstructorRequest(requestId: number, isApproved: boolean): Promise<ApiResponse<null>> {
-    const response = await apiClient.post<ApiResponse<null>>('/Account/approve-instructor-request', { requestId, isApproved });
+  async approveInstructorRequest(requestId: number, isApproved: boolean, title: string, message: string): Promise<ApproveInstructorResponse> {
+    const response = await apiClient.post<ApproveInstructorResponse>('/Account/approve-instructor-request', { requestId, isApproved, title, message });
     return response.data;
   },
 };
