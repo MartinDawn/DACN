@@ -155,8 +155,10 @@ const getCourseContent = useCallback(async (courseId: string) => {
       }
       setAddCommentError(response.message || 'Không thể gửi đánh giá');
       return false;
-    } catch {
-      setAddCommentError('Lỗi kết nối. Không thể gửi đánh giá.');
+    } catch (err) {
+      const axiosErr = err as { response?: { data?: { message?: string } } };
+      const serverMsg = axiosErr?.response?.data?.message;
+      setAddCommentError(serverMsg || 'Lỗi kết nối. Không thể gửi đánh giá.');
       return false;
     } finally {
       setIsAddingComment(false);

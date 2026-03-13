@@ -8,7 +8,7 @@ export const instructorService = {
    * Fetches the courses for the current instructor.
    */
   async getMyCourses(): Promise<ApiResponse<InstructorCourse[]>> {
-    const response = await apiClient.get<ApiResponse<InstructorCourse[]>>('/Course/my-courses');
+    const response = await apiClient.get<ApiResponse<InstructorCourse[]>>('/Course/instructor-courses');
     return response.data;
   },
 

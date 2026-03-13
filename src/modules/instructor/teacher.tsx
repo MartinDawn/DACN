@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import InstructorLayout from "../user/layout/layout";
-import { 
-  ArrowLeft, Book, Camera, FileText, Lightbulb, UploadCloud, X, List, 
-  LayoutDashboard, BarChart2, Activity, Users, DollarSign, Star, 
+import {
+  ArrowLeft, Book, Camera, FileText, Lightbulb, UploadCloud, X, List,
+  LayoutDashboard, BarChart2, Activity, Users, DollarSign, Star,
   MessageSquare, PlusCircle, UserPlus, MessageCircle, Settings, Trash2,
-  AlertTriangle, Send 
+  AlertTriangle, Send, CheckCircle2, Clock, FileEdit
 } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { useInstructorCourses } from "./hooks/useInstructorCourses";
@@ -69,14 +69,6 @@ const InstructorDashboard: React.FC = () => {
     }
   };
 
-  useEffect(() => {
-    const loadCourses = async () => {
-      await fetchCourses();
-    };
-    loadCourses();
-  }, [fetchCourses]);
-
-  // Xử lý phím ESC để đóng tất cả popup/form
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
@@ -479,7 +471,7 @@ const InstructorDashboard: React.FC = () => {
                 <p className="text-sm font-semibold text-gray-500">Tổng Học Viên</p>
                 <div className="p-2 bg-blue-50 rounded-lg text-blue-600"><Users size={20} /></div>
               </div>
-              <p className="mt-2 text-3xl font-bold text-gray-900">{courses.reduce((sum, c) => sum + (c.studentCount || 0), 0)}</p>
+              <p className="mt-2 text-3xl font-bold text-gray-900">{courses.reduce((sum, c) => sum + (c.totalStudents || 0), 0)}</p>
               <p className="mt-1 text-xs text-green-500">+12% so với tháng trước</p>
             </div>
             <div className="rounded-3xl bg-white p-6 shadow-lg shadow-slate-900/5">
@@ -487,7 +479,7 @@ const InstructorDashboard: React.FC = () => {
                 <p className="text-sm font-semibold text-gray-500">Tổng Doanh Thu</p>
                 <div className="p-2 bg-purple-50 rounded-lg text-purple-600"><DollarSign size={20} /></div>
               </div>
-              <p className="mt-2 text-3xl font-bold text-gray-900">{courses.reduce((sum, c) => sum + ((c.price || 0) * (c.studentCount || 0)), 0).toLocaleString()}đ</p>
+              <p className="mt-2 text-3xl font-bold text-gray-900">{courses.reduce((sum, c) => sum + ((c.price || 0) * (c.totalStudents || 0)), 0).toLocaleString()}đ</p>
               <p className="mt-1 text-xs text-green-500">+8% so với tháng trước</p>
             </div>
             <div className="rounded-3xl bg-white p-6 shadow-lg shadow-slate-900/5">
@@ -495,7 +487,7 @@ const InstructorDashboard: React.FC = () => {
                 <p className="text-sm font-semibold text-gray-500">Đánh Giá Trung Bình</p>
                 <div className="p-2 bg-amber-50 rounded-lg text-amber-500"><Star size={20} /></div>
               </div>
-              <p className="mt-2 text-3xl font-bold text-gray-900">{courses.length > 0 ? (courses.reduce((sum, c) => sum + (c.averageRating || 0), 0) / courses.length).toFixed(1) : 0} </p>
+              <p className="mt-2 text-3xl font-bold text-gray-900">{courses.length > 0 ? (courses.reduce((sum, c) => sum + (c.rating || 0), 0) / courses.length).toFixed(1) : 0} </p>
               <p className="mt-1 text-xs text-green-500">+0.2 so với tháng trước</p>
             </div>
             <div className="rounded-3xl bg-white p-6 shadow-lg shadow-slate-900/5">
@@ -571,15 +563,32 @@ const InstructorDashboard: React.FC = () => {
               {courses.map((course) => (
                 <div key={course.id} className="group overflow-hidden rounded-3xl bg-white shadow-lg shadow-slate-900/5 transition hover:-translate-y-1 hover:shadow-xl ring-1 ring-slate-900/5">
                   <div className="relative h-48 w-full overflow-hidden">
-                    <img 
-                      src={course.imageUrl || "/placeholder.jpg"} 
-                      alt={course.name} 
+                    <img
+                      src={course.imageUrl || "/placeholder.jpg"}
+                      alt={course.name}
                       className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
                       onError={(e) => {
                         (e.target as HTMLImageElement).src = "/placeholder.jpg";
                       }}
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 transition group-hover:opacity-100" />
+                    {/* Status Badge */}
+                    {(course.isPublished || course.status === 'Public') ? (
+                      <span className="absolute top-3 left-3 inline-flex items-center gap-1.5 rounded-full bg-green-500 px-2.5 py-1 text-xs font-semibold text-white shadow">
+                        <CheckCircle2 size={13} />
+                        Công khai
+                      </span>
+                    ) : course.status === 'Pending' ? (
+                      <span className="absolute top-3 left-3 inline-flex items-center gap-1.5 rounded-full bg-amber-400 px-2.5 py-1 text-xs font-semibold text-white shadow">
+                        <Clock size={13} />
+                        Chờ duyệt
+                      </span>
+                    ) : (
+                      <span className="absolute top-3 left-3 inline-flex items-center gap-1.5 rounded-full bg-gray-700/80 px-2.5 py-1 text-xs font-semibold text-white shadow">
+                        <FileEdit size={13} />
+                        Bản nháp
+                      </span>
+                    )}
                   </div>
                   
                   <div className="p-5">
@@ -604,12 +613,11 @@ const InstructorDashboard: React.FC = () => {
                     <div className="mt-4 flex items-center justify-between border-t border-gray-100 pt-4">
                       <div className="flex items-center gap-1.5 text-sm font-medium text-gray-500">
                         <Users size={16} className="text-gray-400"/>
-                        <span>{course.studentCount ?? 0} học viên</span>
+                        <span>{course.totalStudents ?? 0} học viên</span>
                       </div>
                       <div className="flex items-center gap-1 text-sm font-semibold text-amber-500">
                         <Star size={16} className="fill-current" />
-                        <span>{course.averageRating?.toFixed(1) || "0.0"}</span>
-                        <span className="text-gray-400 font-normal">({course.ratingCount || 0})</span>
+                        <span>{course.rating?.toFixed(1) || "0.0"}</span>
                       </div>
                     </div>
                     
@@ -621,25 +629,32 @@ const InstructorDashboard: React.FC = () => {
                           Quản lý
                       </button>
 
-                      {/* Button Request Publish: Vô hiệu hóa khi đã Public, đang chờ duyệt hoặc status là Public */}
-                      <button 
-                        disabled={course.isPublished || course.status === 'Pending' || course.status === 'Public'}
-                        onClick={() => handleRequestPublish(course.id, course.name)}
-                        className={`flex items-center justify-center rounded-xl px-3 py-2.5 transition active:translate-y-0.5 ${
-                          course.isPublished || course.status === 'Pending' || course.status === 'Public'
-                            ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                            : "bg-green-50 text-green-600 hover:bg-green-100 hover:text-green-700"
-                        }`}
-                        title={
-                          course.isPublished || course.status === 'Public'
-                            ? "Đã công khai" 
-                            : course.status === 'Pending' 
-                              ? "Đang chờ duyệt" 
-                              : "Gửi yêu cầu duyệt"
-                        }
-                      >
-                        <Send size={18} />
-                      </button>
+                      {/* Button Request Publish */}
+                      {(course.isPublished || course.status === 'Public') ? (
+                        <button
+                          disabled
+                          className="flex items-center justify-center rounded-xl bg-green-100 px-3 py-2.5 text-green-600 cursor-not-allowed"
+                          title="Đã công khai"
+                        >
+                          <CheckCircle2 size={18} />
+                        </button>
+                      ) : course.status === 'Pending' ? (
+                        <button
+                          disabled
+                          className="flex items-center justify-center rounded-xl bg-amber-100 px-3 py-2.5 text-amber-500 cursor-not-allowed"
+                          title="Đang chờ duyệt"
+                        >
+                          <Clock size={18} />
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => handleRequestPublish(course.id, course.name)}
+                          className="flex items-center justify-center rounded-xl bg-green-50 px-3 py-2.5 text-green-600 transition hover:bg-green-100 hover:text-green-700 active:translate-y-0.5"
+                          title="Gửi yêu cầu duyệt"
+                        >
+                          <Send size={18} />
+                        </button>
+                      )}
 
                       <button 
                         onClick={() => handleDeleteCourse(course.id, course.name)}

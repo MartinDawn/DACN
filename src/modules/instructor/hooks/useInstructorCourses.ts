@@ -3,7 +3,6 @@ import { toast } from 'react-hot-toast';
 import { instructorService } from '../services/instructor.service';
 import type { InstructorCourse } from '../models/instructor';
 import type { Tag } from '../../course/models/course';
-import { API_CONFIG } from '../../../config/api.config';
 
 export const useInstructorCourses = () => {
   const [courses, setCourses] = useState<InstructorCourse[]>([]);
@@ -17,91 +16,49 @@ export const useInstructorCourses = () => {
 
   const fetchCourses = useCallback(async (silent = false) => {
     try {
-      setIsLoading(true);
-      const token = localStorage.getItem("accessToken");
-      
-      if (!token) {
-        if (!silent) toast.error("Vui lòng đăng nhập để xem khóa học");
+      if (!silent) setIsLoading(true);
+
+      const response = await instructorService.getMyCourses();
+
+      if (!response.success) {
+        if (!silent) toast.error(response.message || "Không thể tải danh sách khóa học");
         setCourses([]);
         return;
       }
 
-      const response = await fetch(
-        `${API_CONFIG.baseURL}/api/Course/instructor-courses`,
-        {
-          method: "GET",
-          headers: {
-            "Accept-Language": "vi",
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const rawCourses: any[] = Array.isArray(response.data) ? response.data : [];
 
-      if (!response.ok) {
-        if (response.status === 403) {
-          if (!silent) toast.error("Bạn chưa đăng ký làm giảng viên");
-          setCourses([]);
-          return;
-        }
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      
-      // Handle various response patterns (direct array or wrapped in data/result)
-      // lấy api list course của instructor
-      let rawCourses: any[] = [];
-      if (Array.isArray(data)) {
-        rawCourses = data;
-      } else if (data && typeof data === 'object') {
-        if (Array.isArray(data.data)) {
-          rawCourses = data.data;
-        } else if (Array.isArray(data.result)) {
-          rawCourses = data.result;
-        }
-      }
-
-      // Debug: log raw API response to identify actual field names
-      if (rawCourses.length > 0) {
-        console.log('[fetchCourses] raw first item keys:', Object.keys(rawCourses[0]));
-        console.log('[fetchCourses] raw first item:', rawCourses[0]);
-      }
-
-      // Normalize keys to camelCase to ensure UI renders correctly regardless of API casing
+      // Normalize API response to match InstructorCourse interface
       const normalizedCourses = rawCourses.map((item: any) => ({
         ...item,
         id: item.id || item.Id,
         name: item.name || item.Name,
-        description: item.description || item.Description,
-        imageUrl: item.imageUrl || item.ImageUrl || item.image || item.Image,
-        price: item.price ?? item.Price,
-        studentCount: item.studentCount ?? item.StudentCount
-          ?? item.enrollmentCount ?? item.EnrollmentCount
-          ?? item.enrolledCount ?? item.EnrolledCount
-          ?? item.totalStudents ?? item.TotalStudents
-          ?? item.studentsCount ?? item.StudentsCount
-          ?? item.numberOfStudents ?? item.NumberOfStudents
-          ?? item.totalEnrollments ?? item.TotalEnrollments
-          ?? item.enrolled ?? item.Enrolled
-          ?? item.students ?? item.Students
-          ?? item.learnerCount ?? item.LearnerCount
-          ?? item.learners ?? item.Learners
-          ?? 0,
-        averageRating: item.averageRating ?? item.AverageRating ?? item.rating ?? item.Rating,
-        ratingCount: item.ratingCount ?? item.RatingCount ?? item.totalReviews ?? item.TotalReviews ?? item.reviewCount ?? item.ReviewCount,
-        tags: Array.isArray(item.tags || item.Tags)
-            ? (item.tags || item.Tags).map((t: any) => ({ id: t.id || t.Id, name: t.name || t.Name }))
+        description: item.description || item.Description || '',
+        imageUrl: item.imageUrl || item.ImageUrl || '',
+        price: item.price ?? item.Price ?? 0,
+        totalStudents: item.totalStudents ?? item.TotalStudents ?? 0,
+        rating: item.rating ?? item.Rating ?? item.averageRating ?? item.AverageRating ?? 0,
+        status: item.status || item.Status,
+        tags: Array.isArray(item.tags ?? item.Tags)
+            ? (item.tags ?? item.Tags).map((t: any) => ({ id: t.id || t.Id, name: t.name || t.Name }))
             : []
       }));
 
       setCourses(normalizedCourses);
 
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error fetching instructor courses:", error);
-      if (!silent) toast.error("Không thể tải danh sách khóa học");
-      setCourses([]);
+      if (error?.response?.status === 403) {
+        if (!silent) toast.error("Bạn chưa đăng ký làm giảng viên");
+        setCourses([]);
+        return;
+      }
+      if (!silent) {
+        toast.error("Không thể tải danh sách khóa học");
+        setCourses([]);
+      }
     } finally {
-      setIsLoading(false);
+      if (!silent) setIsLoading(false);
     }
   }, []);
 

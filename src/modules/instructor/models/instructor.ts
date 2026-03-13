@@ -3,16 +3,15 @@ import type { Tag } from "../../course/models/course";
 export interface InstructorCourse {
   id: string;
   name: string;
-  description: string;
+  description?: string;
   price: number;
   imageUrl: string;
-  isPublished: boolean;
-  studentCount: number;
-  averageRating: number;
-  ratingCount: number;
-  tagIds: string[];
+  isPublished?: boolean;
+  totalStudents: number;
+  rating: number;
+  tagIds?: string[];
   tags?: Tag[];
-  status?: string; // Thêm trường status để check 'Pending'
+  status?: string;
 }
 
 // Interface for the data returned by the create course API
