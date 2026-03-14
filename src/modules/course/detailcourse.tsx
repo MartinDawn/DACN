@@ -225,31 +225,48 @@ const DetailCourse: React.FC = () => {
                             <div className="flex items-start gap-4">
                               <div className="h-10 w-10 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
                                 <span className="text-lg font-semibold text-gray-600">
-                                  {comment.studentName[0].toUpperCase()}
+                                  {(comment.userName || '?')[0].toUpperCase()}
                                 </span>
                               </div>
                               <div className="flex-1">
                                 <div className="flex items-center justify-between">
                                   <div>
-                                    <p className="font-semibold text-gray-900">{comment.studentName}</p>
+                                    <p className="font-semibold text-gray-900">{comment.userName || 'Ẩn danh'}</p>
                                     <p className="text-sm text-gray-500">
                                       {new Date(comment.timestamp).toLocaleDateString('vi-VN', {
                                         year: 'numeric', month: 'long', day: 'numeric'
                                       })}
                                     </p>
                                   </div>
-                                  <div className="flex items-center gap-1 text-yellow-500 flex-shrink-0">
-                                    {[...Array(5)].map((_, index) => (
-                                      <StarIcon
-                                        key={index}
-                                        className={`h-5 w-5 ${
-                                          index < comment.rate ? 'text-yellow-500' : 'text-gray-200'
-                                        }`}
-                                      />
-                                    ))}
-                                  </div>
+                                  {comment.rate > 0 && (
+                                    <div className="flex items-center gap-1 text-yellow-500 flex-shrink-0">
+                                      {[...Array(5)].map((_, index) => (
+                                        <StarIcon
+                                          key={index}
+                                          className={`h-5 w-5 ${
+                                            index < comment.rate ? 'text-yellow-500' : 'text-gray-200'
+                                          }`}
+                                        />
+                                      ))}
+                                    </div>
+                                  )}
                                 </div>
                                 <p className="mt-3 text-gray-600">{comment.content}</p>
+                                {comment.replies && comment.replies.length > 0 && (
+                                  <div className="mt-4 space-y-3 border-l-2 border-indigo-100 pl-4">
+                                    {comment.replies.map((reply) => (
+                                      <div key={reply.commentId} className="rounded-lg bg-indigo-50 p-3">
+                                        <p className="text-xs font-semibold text-indigo-700">Giảng viên phản hồi</p>
+                                        <p className="mt-1 text-sm text-gray-700">{reply.content}</p>
+                                        <p className="mt-1 text-xs text-gray-400">
+                                          {new Date(reply.timestamp).toLocaleDateString('vi-VN', {
+                                            year: 'numeric', month: 'long', day: 'numeric'
+                                          })}
+                                        </p>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
                               </div>
                             </div>
                           </div>

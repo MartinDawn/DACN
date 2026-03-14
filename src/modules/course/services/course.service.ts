@@ -7,7 +7,7 @@ import type {
   RecommendedCourse,
   CourseDetail,
   MyCourse,
-  CourseComment,
+  CourseCommentsData,
   FilterParams,
   PaginatedCourses,
   CourseSearchResponse,
@@ -42,8 +42,8 @@ export const courseService = {
     return response.data;
   },
 
-  async getCourseComments(courseId: string): Promise<ApiResponse<CourseComment[]>> {
-    const response = await apiClient.get<ApiResponse<CourseComment[]>>(
+  async getCourseComments(courseId: string): Promise<ApiResponse<CourseCommentsData>> {
+    const response = await apiClient.get<ApiResponse<CourseCommentsData>>(
       `/Course/course-comments/${courseId}`
     );
     return response.data;

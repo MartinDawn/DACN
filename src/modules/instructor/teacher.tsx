@@ -10,7 +10,7 @@ import {
 import { toast } from "react-hot-toast";
 import { useInstructorCourses } from "./hooks/useInstructorCourses";
 import { instructorService } from "./services/instructor.service";
-import type { InstructorCourse } from "./models/instructor";
+import type { InstructorCourse, CourseComment } from "./models/instructor";
 
 const InstructorDashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState<"overview" | "courses" | "analytics" | "activity">("courses");
@@ -23,6 +23,17 @@ const InstructorDashboard: React.FC = () => {
   // State for Publish Confirmation Modal
   const [showPublishModal, setShowPublishModal] = useState(false);
   const [courseToPublish, setCourseToPublish] = useState<{ id: string; name: string } | null>(null);
+
+  // State for Course Comments Modal
+  const [showCommentsModal, setShowCommentsModal] = useState(false);
+  const [selectedCourseForComments, setSelectedCourseForComments] = useState<{ id: string; name: string } | null>(null);
+  const [courseComments, setCourseComments] = useState<CourseComment[]>([]);
+  const [commentsLoading, setCommentsLoading] = useState(false);
+
+  // State for Reply
+  const [replyingToCommentId, setReplyingToCommentId] = useState<string | null>(null);
+  const [replyContent, setReplyContent] = useState("");
+  const [replyLoading, setReplyLoading] = useState(false);
 
   const [courseName, setCourseName] = useState("");
   const [coursePrice, setCoursePrice] = useState<number | string>("");
@@ -69,10 +80,71 @@ const InstructorDashboard: React.FC = () => {
     }
   };
 
+  const handleViewComments = async (courseId: string, courseName: string) => {
+    setSelectedCourseForComments({ id: courseId, name: courseName });
+    setShowCommentsModal(true);
+    setCommentsLoading(true);
+    setCourseComments([]);
+    try {
+      const res = await instructorService.getCourseComments(courseId);
+      // Chỉ lấy comment của học viên: rate >= 1 VÀ không phải comment của giảng viên
+      const list: CourseComment[] = (res?.data?.allComments ?? []).filter(
+        (c) => Number(c.rate) >= 1 && c.isMyComment !== true
+      );
+      setCourseComments(list);
+      // Tính average rating chỉ từ đánh giá học viên (loại bỏ hoàn toàn reply của giảng viên)
+      const correctRating = list.length > 0
+        ? list.reduce((sum, c) => sum + (c.rate || 0), 0) / list.length
+        : 0;
+      setCourses(prev => prev.map(c => c.id === courseId ? { ...c, rating: correctRating } : c));
+    } catch (error) {
+      console.error(error);
+      toast.error("Không thể tải đánh giá. Vui lòng thử lại.");
+    } finally {
+      setCommentsLoading(false);
+    }
+  };
+
+  const handleReply = async (commentId: string) => {
+    if (!replyContent.trim()) return;
+    setReplyLoading(true);
+    try {
+      await instructorService.replyComment(commentId, replyContent.trim());
+      toast.success("Phản hồi đã được gửi!");
+      setReplyingToCommentId(null);
+      setReplyContent("");
+      if (selectedCourseForComments) {
+        const res = await instructorService.getCourseComments(selectedCourseForComments.id);
+        // Chỉ lấy comment của học viên: rate >= 1 VÀ không phải comment của giảng viên
+        const filtered = (res?.data?.allComments ?? []).filter(
+          (c) => Number(c.rate) >= 1 && c.isMyComment !== true
+        );
+        setCourseComments(filtered);
+        // Tính average rating chỉ từ đánh giá học viên (loại bỏ hoàn toàn reply của giảng viên)
+        const correctRating = filtered.length > 0
+          ? filtered.reduce((sum, c) => sum + (c.rate || 0), 0) / filtered.length
+          : 0;
+        setCourses(prev => prev.map(c =>
+          c.id === selectedCourseForComments.id ? { ...c, rating: correctRating } : c
+        ));
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("Không thể gửi phản hồi. Vui lòng thử lại.");
+    } finally {
+      setReplyLoading(false);
+    }
+  };
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
-        if (showDeleteModal) {
+        if (showCommentsModal) {
+          setShowCommentsModal(false);
+          setSelectedCourseForComments(null);
+          setReplyingToCommentId(null);
+          setReplyContent("");
+        } else if (showDeleteModal) {
           setShowDeleteModal(false);
           setCourseToDelete(null);
         } else if (showPublishModal) {
@@ -85,7 +157,7 @@ const InstructorDashboard: React.FC = () => {
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [showDeleteModal, showPublishModal, showCreateCourseForm]);
+  }, [showDeleteModal, showPublishModal, showCreateCourseForm, showCommentsModal]);
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -487,7 +559,7 @@ const InstructorDashboard: React.FC = () => {
                 <p className="text-sm font-semibold text-gray-500">Đánh Giá Trung Bình</p>
                 <div className="p-2 bg-amber-50 rounded-lg text-amber-500"><Star size={20} /></div>
               </div>
-              <p className="mt-2 text-3xl font-bold text-gray-900">{courses.length > 0 ? (courses.reduce((sum, c) => sum + (c.rating || 0), 0) / courses.length).toFixed(1) : 0} </p>
+              <p className="mt-2 text-3xl font-bold text-gray-900">{(() => { const ratedCourses = courses.filter(c => (c.rating || 0) > 0); return ratedCourses.length > 0 ? (ratedCourses.reduce((sum, c) => sum + c.rating, 0) / ratedCourses.length).toFixed(1) : "0.0"; })()}</p>
               <p className="mt-1 text-xs text-green-500">+0.2 so với tháng trước</p>
             </div>
             <div className="rounded-3xl bg-white p-6 shadow-lg shadow-slate-900/5">
@@ -615,9 +687,26 @@ const InstructorDashboard: React.FC = () => {
                         <Users size={16} className="text-gray-400"/>
                         <span>{course.totalStudents ?? 0} học viên</span>
                       </div>
-                      <div className="flex items-center gap-1 text-sm font-semibold text-amber-500">
-                        <Star size={16} className="fill-current" />
-                        <span>{course.rating?.toFixed(1) || "0.0"}</span>
+                      <div className="flex items-center gap-2">
+                        {(course.rating ?? 0) > 0 ? (
+                          <div className="flex items-center gap-1 text-sm font-semibold text-amber-500">
+                            <Star size={16} className="fill-current" />
+                            <span>{course.rating!.toFixed(1)}</span>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-1 text-sm text-gray-400">
+                            <Star size={16} />
+                            <span>—</span>
+                          </div>
+                        )}
+                        <button
+                          onClick={() => handleViewComments(course.id, course.name)}
+                          className="flex items-center gap-1 rounded-lg bg-amber-50 px-2 py-1 text-xs font-medium text-amber-600 transition hover:bg-amber-100 active:translate-y-0.5"
+                          title="Xem đánh giá học viên"
+                        >
+                          <MessageSquare size={12} />
+                          Đánh giá
+                        </button>
                       </div>
                     </div>
                     
@@ -753,7 +842,7 @@ const InstructorDashboard: React.FC = () => {
                 <br />Admin sẽ xem xét nội dung trước khi công khai.
               </p>
             </div>
-            
+
             <div className="mt-8 flex gap-3">
               <button
                 onClick={() => setShowPublishModal(false)}
@@ -767,6 +856,144 @@ const InstructorDashboard: React.FC = () => {
               >
                 Gửi ngay
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Course Comments Modal */}
+      {showCommentsModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4 backdrop-blur-sm transition-all">
+          <div className="w-full max-w-2xl max-h-[85vh] flex flex-col overflow-hidden rounded-2xl bg-white shadow-2xl animate-in fade-in zoom-in duration-200">
+            {/* Header */}
+            <div className="flex items-center justify-between border-b border-gray-100 p-6">
+              <div>
+                <h3 className="text-xl font-bold text-gray-900">Đánh Giá Học Viên</h3>
+                <p className="mt-1 text-sm text-gray-500 truncate max-w-xs">{selectedCourseForComments?.name}</p>
+              </div>
+              <button
+                onClick={() => { setShowCommentsModal(false); setReplyingToCommentId(null); setReplyContent(""); }}
+                className="rounded-full p-2 text-gray-400 transition hover:bg-gray-100 hover:text-gray-600"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="flex-1 overflow-y-auto p-6">
+              {commentsLoading ? (
+                <div className="py-16 text-center">
+                  <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-[#5a2dff] border-r-transparent" />
+                  <p className="mt-4 text-sm text-gray-500">Đang tải đánh giá...</p>
+                </div>
+              ) : courseComments.length === 0 ? (
+                <div className="py-16 text-center">
+                  <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-amber-50">
+                    <Star className="h-7 w-7 text-amber-400" />
+                  </div>
+                  <p className="font-semibold text-gray-700">Chưa có đánh giá nào</p>
+                  <p className="mt-1 text-sm text-gray-400">Học viên chưa để lại đánh giá cho khóa học này.</p>
+                </div>
+              ) : (
+                <ul className="space-y-4">
+                  {courseComments.map((c, idx) => (
+                    <li key={idx} className="rounded-xl border border-gray-100 bg-gray-50 p-4">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#eef2ff] text-sm font-bold text-[#5a2dff]">
+                          {(c.userName || "?")[0].toUpperCase()}
+                          </div>
+                          <div>
+                            <p className="text-sm font-semibold text-gray-900">
+                              {c.userName || "Ẩn danh"}
+                            </p>
+                            {c.timestamp && (
+                              <p className="text-xs text-gray-400">
+                                {new Date(c.timestamp).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" })}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                        {Number(c.rate) >= 1 && (
+                          <div className="flex shrink-0 items-center gap-0.5">
+                            {Array.from({ length: 5 }).map((_, i) => (
+                              <Star
+                                key={i}
+                                size={14}
+                                className={i < Math.round(c.rate!) ? "fill-amber-400 text-amber-400" : "text-gray-300"}
+                              />
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                      {c.content && (
+                        <p className="mt-3 text-sm text-gray-600 leading-relaxed">{c.content}</p>
+                      )}
+                      {c.replies && c.replies.length > 0 && (
+                        <ul className="mt-3 space-y-2 border-l-2 border-[#5a2dff]/20 pl-4">
+                          {c.replies.map((reply, rIdx) => (
+                            <li key={rIdx} className="rounded-lg border border-gray-100 bg-white p-3">
+                              <div className="flex items-center gap-2">
+                                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#eef2ff] text-xs font-bold text-[#5a2dff]">
+                                  G
+                                </div>
+                                <div>
+                                  <p className="text-xs font-semibold text-gray-900">Giảng viên</p>
+                                  {reply.timestamp && (
+                                    <p className="text-xs text-gray-400">
+                                      {new Date(reply.timestamp).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" })}
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+                              {reply.content && (
+                                <p className="mt-2 text-sm text-gray-600 leading-relaxed">{reply.content}</p>
+                              )}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                      <div className="mt-3">
+                        {replyingToCommentId === c.commentId ? (
+                          <div className="flex gap-2">
+                            <input
+                              type="text"
+                              value={replyContent}
+                              onChange={(e) => setReplyContent(e.target.value)}
+                              onKeyDown={(e) => e.key === "Enter" && !replyLoading && handleReply(c.commentId!)}
+                              placeholder="Nhập phản hồi..."
+                              className="flex-1 rounded-lg border border-gray-200 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#5a2dff]/40"
+                              autoFocus
+                            />
+                            <button
+                              onClick={() => handleReply(c.commentId!)}
+                              disabled={replyLoading || !replyContent.trim()}
+                              className="flex items-center gap-1 rounded-lg bg-[#5a2dff] px-3 py-1.5 text-sm text-white transition hover:bg-[#4a1fe0] disabled:opacity-50"
+                            >
+                              <Send size={13} />
+                              Gửi
+                            </button>
+                            <button
+                              onClick={() => { setReplyingToCommentId(null); setReplyContent(""); }}
+                              className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm text-gray-500 transition hover:bg-gray-100"
+                            >
+                              Hủy
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => { setReplyingToCommentId(c.commentId!); setReplyContent(""); }}
+                            className="flex items-center gap-1 text-xs text-[#5a2dff] hover:underline"
+                          >
+                            <MessageCircle size={13} />
+                            Phản hồi
+                          </button>
+                        )}
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
           </div>
         </div>

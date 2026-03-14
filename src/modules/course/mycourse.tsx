@@ -376,12 +376,12 @@ const MyCoursePage: React.FC = () => {
                           >
                             {actionLabel}
                           </button>
-                          <button
+                          {/* <button
                             type="button"
                             className="rounded-full border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-600 transition hover:border-[#5a2dff] hover:text-[#5a2dff]"
                           >
                             Tải tài liệu
-                          </button>
+                          </button> */}
                           <button
                             type="button"
                             onClick={() => openRatingModal(course)}

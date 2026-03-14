@@ -48,3 +48,34 @@ export interface InstructorStatusResponse {
   reason?: string;
   submittedAt?: string;
 }
+
+// Reply comments returned inside `replies[]` – instructor replies, no userName/rate
+export interface CourseReply {
+  commentId?: string;
+  content?: string;
+  timestamp?: string;
+}
+
+// Top-level comments in `allComments[]` – have rate and isMyComment
+export interface CourseComment {
+  commentId?: string;
+  userName?: string;
+  avatarUrl?: string | null;
+  rate?: number;
+  isMyComment?: boolean;
+  content?: string;
+  timestamp?: string;
+  replies?: CourseReply[];
+}
+
+export interface CourseCommentsData {
+  myComment: CourseComment | null;
+  allComments: CourseComment[];
+}
+
+export interface CourseCommentsResponse {
+  success: boolean;
+  code: string;
+  message: string;
+  data: CourseCommentsData;
+}

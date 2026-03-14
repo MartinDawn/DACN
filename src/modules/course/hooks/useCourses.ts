@@ -108,13 +108,17 @@ export const useCourses = () => {
   // 4. Hàm để tải Course Comments (dùng cho trang CourseDetail)
   const getCourseComments = useCallback(async (courseId: string) => {
     if (!courseId) return;
-    
+
     setIsCommentsLoading(true);
     setCommentsError(null);
     try {
       const response = await courseService.getCourseComments(courseId);
       if (response.success) {
-        setCourseComments(response.data || []);
+        // Chỉ lấy đánh giá của học viên (rate >= 1), loại bỏ reply 0 sao
+        const comments = (response.data?.allComments ?? []).filter(
+          (c) => Number(c.rate) >= 1
+        );
+        setCourseComments(comments);
       } else {
         setCommentsError(response.message || 'Không thể tải bình luận');
       }

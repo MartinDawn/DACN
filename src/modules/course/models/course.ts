@@ -30,12 +30,26 @@ export interface CourseDetail {
   }[];
 }
 
-export interface CourseComment {
+export interface CourseCommentReply {
   commentId: string;
-  studentName: string;
-  rate: number;
   content: string;
   timestamp: string;
+}
+
+export interface CourseComment {
+  commentId: string;
+  userName: string;
+  avatarUrl: string | null;
+  rate: number;
+  content: string;
+  isMyComment: boolean;
+  timestamp: string;
+  replies?: CourseCommentReply[];
+}
+
+export interface CourseCommentsData {
+  myComment: CourseComment | null;
+  allComments: CourseComment[];
 }
 
 export interface ApiResponse<T> {
