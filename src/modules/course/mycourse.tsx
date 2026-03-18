@@ -78,6 +78,9 @@ const MyCoursePage: React.FC = () => {
     myCoursesError,
     getMyCourses,
     addComment,
+    updateComment,
+    myCommentsMap,
+    getMyCommentsForCourses,
     isAddingComment,
     addCommentError,
   } = useCourses();
@@ -86,6 +89,14 @@ const MyCoursePage: React.FC = () => {
   useEffect(() => {
     getMyCourses();
   }, [getMyCourses]); // [getMyCourses] an toàn vì đã được bọc trong useCallback ở hook
+
+  // Fetch comments cho tất cả khóa học sau khi myCourses được tải
+  useEffect(() => {
+    if (myCourses.length > 0) {
+      const courseIds = myCourses.map(course => course.id);
+      getMyCommentsForCourses(courseIds);
+    }
+  }, [myCourses, getMyCommentsForCourses]);
 
   // Biến đổi dữ liệu: Gắn dữ liệu hardcode (progress) vào dữ liệu thật (myCourses)
   const coursesWithProgress: CourseProgress[] = useMemo(() => {
@@ -123,9 +134,19 @@ const MyCoursePage: React.FC = () => {
 
   const openRatingModal = (course: CourseProgress) => {
     setRatingModal(course);
-    setRatingValue(0);
+
+    // Kiểm tra xem khóa học này đã có đánh giá chưa
+    const existingComment = myCommentsMap[course.id];
+    if (existingComment) {
+      // Nếu đã có đánh giá, load sẵn dữ liệu
+      setRatingValue(existingComment.rate);
+      setRatingContent(existingComment.content);
+    } else {
+      // Nếu chưa có, reset về mặc định
+      setRatingValue(0);
+      setRatingContent("");
+    }
     setHoverRating(0);
-    setRatingContent("");
   };
 
   const closeRatingModal = () => {
@@ -134,11 +155,26 @@ const MyCoursePage: React.FC = () => {
 
   const handleSubmitRating = async () => {
     if (!ratingModal || ratingValue === 0) return;
-    const success = await addComment({
-      courseId: ratingModal.id,
-      rate: ratingValue,
-      content: ratingContent,
-    });
+
+    // Kiểm tra xem đã có đánh giá chưa
+    const existingComment = myCommentsMap[ratingModal.id];
+
+    let success = false;
+    if (existingComment) {
+      // Nếu đã có đánh giá, gọi updateComment
+      success = await updateComment(existingComment.commentId, {
+        rate: ratingValue,
+        content: ratingContent,
+      }, ratingModal.id);
+    } else {
+      // Nếu chưa có, gọi addComment
+      success = await addComment({
+        courseId: ratingModal.id,
+        rate: ratingValue,
+        content: ratingContent,
+      });
+    }
+
     if (success) {
       closeRatingModal();
     }
@@ -388,7 +424,7 @@ const MyCoursePage: React.FC = () => {
                             className="inline-flex items-center gap-1.5 rounded-full border border-amber-300 bg-amber-50 px-4 py-2 text-sm font-semibold text-amber-600 transition hover:bg-amber-100 hover:border-amber-400"
                           >
                             <StarIcon className="h-4 w-4" />
-                            Đánh giá
+                            {myCommentsMap[course.id] ? "Đánh giá lại" : "Đánh giá"}
                           </button>
                         </div>
                       </div>
@@ -499,7 +535,9 @@ const MyCoursePage: React.FC = () => {
           <div className="w-full max-w-md rounded-3xl bg-white p-8 shadow-2xl">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <h2 className="text-xl font-bold text-gray-900">Đánh giá khóa học</h2>
+                <h2 className="text-xl font-bold text-gray-900">
+                  {myCommentsMap[ratingModal.id] ? "Đánh giá lại khóa học" : "Đánh giá khóa học"}
+                </h2>
                 <p className="mt-1 text-sm text-gray-500 line-clamp-2">{ratingModal.name}</p>
               </div>
               <button
@@ -574,7 +612,9 @@ const MyCoursePage: React.FC = () => {
                 disabled={ratingValue === 0 || isAddingComment}
                 className="rounded-full bg-[#5a2dff] px-5 py-2.5 text-sm font-semibold text-white shadow-sm shadow-[#5a2dff]/30 transition hover:bg-[#4a21eb] disabled:cursor-not-allowed disabled:opacity-50"
               >
-                {isAddingComment ? "Đang gửi..." : "Gửi đánh giá"}
+                {isAddingComment
+                  ? (myCommentsMap[ratingModal.id] ? "Đang cập nhật..." : "Đang gửi...")
+                  : (myCommentsMap[ratingModal.id] ? "Cập nhật đánh giá" : "Gửi đánh giá")}
               </button>
             </div>
           </div>

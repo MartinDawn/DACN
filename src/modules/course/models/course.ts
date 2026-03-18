@@ -242,6 +242,11 @@ export interface AddCommentRequest {
   content: string;
 }
 
+export interface UpdateCommentRequest {
+  rate: number;
+  content: string;
+}
+
 // GET /api/Quiz/{quizId}/attempts  — one entry in history list
 export interface ApiQuizAttemptSummary {
   attemptId?: string;
