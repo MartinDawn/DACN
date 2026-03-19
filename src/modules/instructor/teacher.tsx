@@ -917,7 +917,7 @@ const InstructorDashboard: React.FC = () => {
 
       {/* Delete Reply Confirmation Modal */}
       {showDeleteReplyModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4 backdrop-blur-sm transition-all">
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 px-4 backdrop-blur-sm transition-all">
           <div className="w-full max-w-md transform overflow-hidden rounded-2xl bg-white p-6 shadow-2xl transition-all animate-in fade-in zoom-in duration-200">
             <div className="text-center">
               <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[#eef2ff]">
@@ -991,7 +991,7 @@ const InstructorDashboard: React.FC = () => {
 
       {/* Course Comments Modal */}
       {showCommentsModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4 backdrop-blur-sm transition-all">
+        <div className="fixed inset-0 z-[55] flex items-center justify-center bg-black/50 px-4 backdrop-blur-sm transition-all">
           <div className="w-full max-w-2xl max-h-[85vh] flex flex-col overflow-hidden rounded-2xl bg-white shadow-2xl animate-in fade-in zoom-in duration-200">
             {/* Header */}
             <div className="flex items-center justify-between border-b border-gray-100 p-6">

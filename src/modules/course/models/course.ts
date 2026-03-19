@@ -97,13 +97,14 @@ export interface MyCourse {
   imageUrl: string;
   name: string;
   instructorName: string;
-  averageRating: number;
-  totalReviews: number;
+  rating: number;
   price: number;
+  averageRating?: number;
+  totalReviews?: number;
   originalPrice?: number | null;
-  totalHours: number;
-  totalStudents: number;
-  isBestseller: boolean;
+  totalHours?: number;
+  totalStudents?: number;
+  isBestseller?: boolean;
 }
 
 export interface PaginatedCourses {
