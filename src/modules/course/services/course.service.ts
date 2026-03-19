@@ -7,13 +7,14 @@ import type {
   RecommendedCourse,
   CourseDetail,
   MyCourse,
-  CourseComment,
+  CourseCommentsData,
   FilterParams,
   PaginatedCourses,
   CourseSearchResponse,
   SearchParams,
   ApiCourseContent,
   AddCommentRequest,
+  UpdateCommentRequest,
 } from '../../course/models/course.ts';
 import type { Tag } from '../../course/models/tag.ts';
 
@@ -42,8 +43,8 @@ export const courseService = {
     return response.data;
   },
 
-  async getCourseComments(courseId: string): Promise<ApiResponse<CourseComment[]>> {
-    const response = await apiClient.get<ApiResponse<CourseComment[]>>(
+  async getCourseComments(courseId: string): Promise<ApiResponse<CourseCommentsData>> {
+    const response = await apiClient.get<ApiResponse<CourseCommentsData>>(
       `/Course/course-comments/${courseId}`
     );
     return response.data;
@@ -93,6 +94,14 @@ export const courseService = {
   async addComment(data: AddCommentRequest): Promise<ApiResponse<null>> {
     const response = await apiClient.post<ApiResponse<null>>(
       '/Course/add-comment',
+      data
+    );
+    return response.data;
+  },
+
+  async updateComment(commentId: string, data: UpdateCommentRequest): Promise<ApiResponse<null>> {
+    const response = await apiClient.put<ApiResponse<null>>(
+      `/Course/update-comment/${commentId}`,
       data
     );
     return response.data;

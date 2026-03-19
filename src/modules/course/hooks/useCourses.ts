@@ -8,6 +8,8 @@ import type {
   MyCourse,
   ApiCourseContent,
   AddCommentRequest,
+  UpdateCommentRequest,
+  CourseCommentsData,
 } from '../models/course'; 
 import { courseService } from '../services/course.service'; 
 
@@ -45,6 +47,9 @@ export const useCourses = () => {
   // STATE CHO ADD COMMENT
   const [isAddingComment, setIsAddingComment] = useState(false);
   const [addCommentError, setAddCommentError] = useState<string | null>(null);
+
+  // STATE CHO MY COMMENTS MAP (courseId -> myComment)
+  const [myCommentsMap, setMyCommentsMap] = useState<Record<string, CourseComment>>({});
 
   // --- LOGIC ---
 
@@ -108,13 +113,17 @@ export const useCourses = () => {
   // 4. Hàm để tải Course Comments (dùng cho trang CourseDetail)
   const getCourseComments = useCallback(async (courseId: string) => {
     if (!courseId) return;
-    
+
     setIsCommentsLoading(true);
     setCommentsError(null);
     try {
       const response = await courseService.getCourseComments(courseId);
       if (response.success) {
-        setCourseComments(response.data || []);
+        // Chỉ lấy đánh giá của học viên (rate >= 1), loại bỏ reply 0 sao
+        const comments = (response.data?.allComments ?? []).filter(
+          (c) => Number(c.rate) >= 1
+        );
+        setCourseComments(comments);
       } else {
         setCommentsError(response.message || 'Không thể tải bình luận');
       }
@@ -151,27 +160,99 @@ const getCourseContent = useCallback(async (courseId: string) => {
     try {
       const response = await courseService.addComment(data);
       if (response.success) {
+        // Sau khi add comment thành công, fetch lại comment để update map
+        await getMyCommentForCourse(data.courseId);
         return true;
       }
       setAddCommentError(response.message || 'Không thể gửi đánh giá');
       return false;
-    } catch {
-      setAddCommentError('Lỗi kết nối. Không thể gửi đánh giá.');
+    } catch (err) {
+      const axiosErr = err as { response?: { data?: { message?: string } } };
+      const serverMsg = axiosErr?.response?.data?.message;
+      setAddCommentError(serverMsg || 'Lỗi kết nối. Không thể gửi đánh giá.');
       return false;
     } finally {
       setIsAddingComment(false);
     }
   }, []);
 
+  const updateComment = useCallback(async (commentId: string, data: UpdateCommentRequest, courseId: string): Promise<boolean> => {
+    setIsAddingComment(true);
+    setAddCommentError(null);
+    try {
+      const response = await courseService.updateComment(commentId, data);
+      if (response.success) {
+        // Sau khi update comment thành công, fetch lại comment để update map
+        await getMyCommentForCourse(courseId);
+        return true;
+      }
+      setAddCommentError(response.message || 'Không thể cập nhật đánh giá');
+      return false;
+    } catch (err) {
+      const axiosErr = err as { response?: { data?: { message?: string } } };
+      const serverMsg = axiosErr?.response?.data?.message;
+      setAddCommentError(serverMsg || 'Lỗi kết nối. Không thể cập nhật đánh giá.');
+      return false;
+    } finally {
+      setIsAddingComment(false);
+    }
+  }, []);
+
+  // Hàm lấy comment của user cho một khóa học cụ thể
+  const getMyCommentForCourse = useCallback(async (courseId: string) => {
+    try {
+      const response = await courseService.getCourseComments(courseId);
+      if (response.success && response.data?.myComment) {
+        setMyCommentsMap(prev => ({
+          ...prev,
+          [courseId]: response.data.myComment as CourseComment
+        }));
+      }
+    } catch (err) {
+      // Silently fail, không cần hiện lỗi cho việc này
+      console.error('Failed to fetch my comment:', err);
+    }
+  }, []);
+
+  // Hàm lấy tất cả comments của user cho danh sách khóa học
+  const getMyCommentsForCourses = useCallback(async (courseIds: string[]) => {
+    try {
+      const promises = courseIds.map(async (courseId) => {
+        try {
+          const response = await courseService.getCourseComments(courseId);
+          if (response.success && response.data?.myComment) {
+            return { courseId, comment: response.data.myComment };
+          }
+          return null;
+        } catch {
+          return null;
+        }
+      });
+
+      const results = await Promise.all(promises);
+      const newMap: Record<string, CourseComment> = {};
+      results.forEach(result => {
+        if (result && result.comment) {
+          newMap[result.courseId] = result.comment;
+        }
+      });
+
+      setMyCommentsMap(newMap);
+    } catch (err) {
+      console.error('Failed to fetch my comments:', err);
+    }
+  }, []);
+
   // --- RETURN ---
   // Trả về tất cả state và các hàm để component sử dụng
-  return { 
+  return {
     // Dữ liệu
-    recommendedCourses, 
+    recommendedCourses,
     myCourses,
     courseDetail,
     courseComments,
     courseContent,
+    myCommentsMap,
 
     // Trạng thái Loading
     isRecommendedLoading,
@@ -196,5 +277,8 @@ const getCourseContent = useCallback(async (courseId: string) => {
     getCourseComments,
     getCourseContent,
     addComment,
+    updateComment,
+    getMyCommentForCourse,
+    getMyCommentsForCourses,
   };
 };

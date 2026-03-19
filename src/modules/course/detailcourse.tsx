@@ -6,18 +6,22 @@ import {
   CheckBadgeIcon,
   ClockIcon,
   DocumentArrowDownIcon,
+  DocumentTextIcon,
   HeartIcon,
   LanguageIcon,
   PlayCircleIcon,
+  QuestionMarkCircleIcon,
   ShareIcon,
   UserGroupIcon,
+  XMarkIcon,
 } from "@heroicons/react/24/outline";
-import { CheckCircleIcon, StarIcon } from "@heroicons/react/20/solid";
+import { StarIcon } from "@heroicons/react/20/solid";
 import UserLayout from "../user/layout/layout";
 import { useCourses } from "./hooks/useCourses.ts";
 import { useCart } from "../user/hooks/useCart";
 import { cartService } from "../user/services/cart.service";
 import { toast } from "react-hot-toast"; // 1. Import toast đã có
+import { lectureService } from "./services/lecture.service";
 
 const tabs = [
   { id: "overview", label: "Tổng quan" },
@@ -28,22 +32,26 @@ const tabs = [
 const DetailCourse: React.FC = () => {
   const { courseId } = useParams<{ courseId: string }>();
 
-  const { 
-    getCourseDetail, 
+  const {
+    getCourseDetail,
     getCourseComments,
-    courseDetail, 
+    courseDetail,
     courseComments,
-    isDetailLoading, 
-    commentsLoading,
-    detailError,    
-    commentsError 
+    isDetailLoading,
+    isCommentsLoading,
+    detailError,
+    commentsError
   } = useCourses();
-  
+
   const { cart, refreshCart } = useCart();
-  
+
   const [isAdding, setIsAdding] = useState(false);
-  
+
   const [activeTab, setActiveTab] = useState<(typeof tabs)[number]["id"]>("overview");
+
+  // State cho video preview
+  const [previewVideo, setPreviewVideo] = useState<{ id: string; name: string; url: string } | null>(null);
+  const [isLoadingVideo, setIsLoadingVideo] = useState(false);
 
   useEffect(() => {
     if (courseId) {
@@ -63,10 +71,10 @@ const DetailCourse: React.FC = () => {
 
     setIsAdding(true);
     try {
-      const response = await cartService.addCourseToCart(courseId); 
+      const response = await cartService.addCourseToCart(courseId);
       if (response.success) {
         toast.success("Đã thêm vào giỏ hàng thành công!");
-        refreshCart(); 
+        refreshCart();
       } else {
         toast.error(response.message || "Thêm vào giỏ hàng thất bại.");
       }
@@ -76,7 +84,59 @@ const DetailCourse: React.FC = () => {
       setIsAdding(false);
     }
   }, [courseId, isInCart, refreshCart]);
-  
+
+  const handlePreviewVideo = useCallback(async (videoId: string, videoName: string) => {
+    setIsLoadingVideo(true);
+    try {
+      // Đầu tiên kiểm tra xem video đã có URL sẵn trong courseDetail chưa
+      if (courseDetail?.lectures) {
+        for (const lecture of courseDetail.lectures) {
+          const video = lecture.videos.find(v => v.id === videoId && v.isTrial);
+          if (video && video.videoUrl) {
+            setPreviewVideo({ id: videoId, name: videoName, url: video.videoUrl });
+            setIsLoadingVideo(false);
+            return;
+          }
+        }
+      }
+
+      // Nếu không có URL sẵn, gọi API để lấy
+      const videoUrl = await lectureService.getSpecificVideoUrl(courseId || '', videoName);
+
+      if (videoUrl) {
+        setPreviewVideo({ id: videoId, name: videoName, url: videoUrl });
+      } else {
+        toast.error("Video này không khả dụng để xem thử hoặc chưa có URL");
+      }
+    } catch (error) {
+      toast.error("Lỗi khi tải video");
+      console.error(error);
+    } finally {
+      setIsLoadingVideo(false);
+    }
+  }, [courseId, courseDetail]);
+
+  const closePreviewVideo = useCallback(() => {
+    setPreviewVideo(null);
+  }, []);
+
+  // Effect để xử lý phím ESC cho video preview modal
+  useEffect(() => {
+    const handleEscapeKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && previewVideo) {
+        closePreviewVideo();
+      }
+    };
+
+    if (previewVideo) {
+      document.addEventListener('keydown', handleEscapeKey);
+    }
+
+    return () => {
+      document.removeEventListener('keydown', handleEscapeKey);
+    };
+  }, [previewVideo, closePreviewVideo]);
+
   return (
     <UserLayout>
 
@@ -117,10 +177,10 @@ const DetailCourse: React.FC = () => {
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
-                  <img 
-                    src={courseDetail.instructorAvatar || "https://placehold.co/100"} 
-                    alt={courseDetail.instructorName} 
-                    className="h-14 w-14 rounded-full object-cover" 
+                  <img
+                    src={courseDetail.instructorAvatar || "https://placehold.co/100"}
+                    alt={courseDetail.instructorName}
+                    className="h-14 w-14 rounded-full object-cover"
                   />
                   <div>
                     <p className="text-sm text-gray-500">Giảng viên</p>
@@ -128,10 +188,10 @@ const DetailCourse: React.FC = () => {
                   </div>
                 </div>
                 <div className="overflow-hidden rounded-[28px]">
-                  <img 
-                    src={courseDetail.imageUrl || "https://placehold.co/800x450"} 
-                    alt={courseDetail.name} 
-                    className="h-64 w-full object-cover" 
+                  <img
+                    src={courseDetail.imageUrl || "https://placehold.co/800x450"}
+                    alt={courseDetail.name}
+                    className="h-64 w-full object-cover"
                   />
                 </div>
               </header>
@@ -155,7 +215,16 @@ const DetailCourse: React.FC = () => {
               {/* Tab Content: Overview */}
               {activeTab === "overview" && (
                 <div className="space-y-8">
+                  {/* Mô tả khóa học */}
                   <div className="rounded-[28px] bg-white p-8 shadow-[0_16px_40px_rgba(15,23,42,0.08)]">
+                    <h2 className="text-xl font-bold text-gray-900">Mô tả khóa học</h2>
+                    <div className="mt-6">
+                      <p className="text-base leading-relaxed text-gray-700 whitespace-pre-line">{courseDetail.description}</p>
+                    </div>
+                  </div>
+
+                  {/* Bạn sẽ học được gì */}
+                  {/* <div className="rounded-[28px] bg-white p-8 shadow-[0_16px_40px_rgba(15,23,42,0.08)]">
                     <h2 className="text-xl font-bold text-gray-900">Bạn sẽ học được gì</h2>
                     <div className="mt-6 grid gap-4 sm:grid-cols-2">
                       {courseDetail.learningObjectives?.map((item: string, index: number) => (
@@ -165,58 +234,131 @@ const DetailCourse: React.FC = () => {
                         </div>
                       ))}
                     </div>
-                  </div>
+                  </div> */}
                 </div>
               )}
 
               {/* Tab Content: Curriculum */}
               {activeTab === "curriculum" && (
                 <div className="space-y-6">
-                  {courseDetail.curriculum?.map((section: any, index: number) => (
-                    <div key={index} className="rounded-[28px] border border-gray-200 bg-white p-6">
-                      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                        <div>
-                          <h3 className="text-lg font-semibold text-gray-900">{section.title}</h3>
-                          <p className="text-sm text-gray-500">
-                            {section.lessons} • {section.duration}
-                          </p>
+                  {courseDetail.lectures && courseDetail.lectures.length > 0 ? (
+                    courseDetail.lectures.map((lecture) => (
+                      <div key={lecture.id} className="rounded-[28px] border border-gray-200 bg-white p-6">
+                        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                          <div>
+                            <h3 className="text-lg font-semibold text-gray-900">{lecture.name}</h3>
+                            {lecture.description && (
+                              <p className="text-sm text-gray-500">{lecture.description}</p>
+                            )}
+                            <p className="text-sm text-gray-400 mt-1">
+                              {lecture.videos.length} video{lecture.videos.length > 1 ? 's' : ''} • {' '}
+                              {lecture.quizzes?.length || 0} quiz • {' '}
+                              {lecture.documents?.length || 0} tài liệu
+                            </p>
+                          </div>
                         </div>
+
+                        {/* Videos */}
+                        {lecture.videos && lecture.videos.length > 0 && (
+                          <div className="mt-4">
+                            <h4 className="text-sm font-semibold text-gray-700 mb-2">Videos</h4>
+                            <ul className="space-y-3">
+                              {lecture.videos.map((video) => (
+                                <li
+                                  key={video.id}
+                                  className="flex items-center justify-between gap-2 rounded-2xl bg-[#f8f8ff] p-4"
+                                >
+                                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                                    <PlayCircleIcon className="h-5 w-5 flex-shrink-0 text-[#5a2dff]" />
+                                    <div className="flex-1 min-w-0">
+                                      <p className="text-sm font-semibold text-gray-700 truncate min-w-0" title={video.name}>{video.name}</p>
+                                      <p className="text-xs text-gray-500">
+                                        {Math.floor(video.duration / 60)}:{String(Math.floor(video.duration % 60)).padStart(2, '0')} phút
+                                      </p>
+                                    </div>
+                                  </div>
+                                  {video.isTrial && (
+                                    <button
+                                      onClick={() => handlePreviewVideo(video.id, video.name)}
+                                      disabled={isLoadingVideo}
+                                      className="px-3 py-1.5 text-xs font-semibold text-white bg-[#5a2dff] rounded-full hover:bg-[#3c1cd6] transition disabled:opacity-50 flex-shrink-0"
+                                    >
+                                      Xem thử
+                                    </button>
+                                  )}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+
+                        {/* Quizzes */}
+                        {lecture.quizzes && lecture.quizzes.length > 0 && (
+                          <div className="mt-4">
+                            <h4 className="text-sm font-semibold text-gray-700 mb-2">Bài kiểm tra</h4>
+                            <ul className="space-y-3">
+                              {lecture.quizzes.map((quiz, index) => (
+                                <li
+                                  key={`${lecture.id}-quiz-${index}`}
+                                  className="flex items-center gap-3 rounded-2xl bg-[#f8f8ff] p-4"
+                                >
+                                  <QuestionMarkCircleIcon className="h-5 w-5 flex-shrink-0 text-[#5a2dff]" />
+                                  <p className="text-sm font-semibold text-gray-700">{quiz.name}</p>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+
+                        {/* Documents */}
+                        {lecture.documents && lecture.documents.length > 0 && (
+                          <div className="mt-4">
+                            <h4 className="text-sm font-semibold text-gray-700 mb-2">Tài liệu</h4>
+                            <ul className="space-y-3">
+                              {lecture.documents.map((doc, index) => (
+                                <li
+                                  key={`${lecture.id}-doc-${index}`}
+                                  className="flex items-center gap-3 rounded-2xl bg-[#f8f8ff] p-4"
+                                >
+                                  <DocumentTextIcon className="h-5 w-5 flex-shrink-0 text-[#5a2dff]" />
+                                  <p className="text-sm font-semibold text-gray-700">{doc.name}</p>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
                       </div>
-                      <ul className="mt-4 space-y-3 text-sm text-gray-600">
-                        {section.topics?.map((topic: string, topicIndex: number) => (
-                          <li key={topicIndex} className="flex items-start gap-2">
-                            <CheckCircleIcon className="h-5 w-5 flex-shrink-0 text-[#5a2dff]" />
-                            <span>{topic}</span>
-                          </li>
-                        ))}
-                      </ul>
+                    ))
+                  ) : (
+                    <div className="rounded-[28px] border border-dashed border-gray-200 bg-white p-12 text-center text-sm font-semibold text-gray-500">
+                      Chưa có chương trình học nào.
                     </div>
-                  ))}
+                  )}
                 </div>
               )}
 
               {/* Tab Content: Reviews */}
               {activeTab === "reviews" && (
                 <div className="rounded-[28px] bg-white p-8 shadow-[0_16px_40px_rgba(15,23,42,0.08)]">
-                  {commentsLoading && (
+                  {isCommentsLoading && (
                     <div className="flex items-center justify-center py-8">
                       <div className="text-sm text-gray-500 animate-pulse">Đang tải đánh giá...</div>
                     </div>
                   )}
 
-                  {!commentsLoading && commentsError && (
+                  {!isCommentsLoading && commentsError && (
                     <div className="rounded-[28px] border border-dashed border-gray-200 bg-white p-12 text-center text-sm text-red-500">
                       {commentsError}
                     </div>
                   )}
 
-                  {!commentsLoading && !commentsError && courseComments.length === 0 && (
+                  {!isCommentsLoading && !commentsError && courseComments.length === 0 && (
                     <div className="rounded-[28px] border border-dashed border-gray-200 bg-white p-12 text-center text-sm font-semibold text-gray-500">
                       Chưa có đánh giá nào được hiển thị.
                     </div>
                   )}
 
-                  {!commentsLoading && !commentsError && courseComments.length > 0 && (
+                  {!isCommentsLoading && !commentsError && courseComments.length > 0 && (
                     <div className="space-y-6">
                       <h2 className="text-xl font-bold text-gray-900">Đánh giá từ học viên</h2>
                       <div className="divide-y divide-gray-100">
@@ -225,31 +367,48 @@ const DetailCourse: React.FC = () => {
                             <div className="flex items-start gap-4">
                               <div className="h-10 w-10 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
                                 <span className="text-lg font-semibold text-gray-600">
-                                  {comment.studentName[0].toUpperCase()}
+                                  {(comment.userName || '?')[0].toUpperCase()}
                                 </span>
                               </div>
                               <div className="flex-1">
                                 <div className="flex items-center justify-between">
                                   <div>
-                                    <p className="font-semibold text-gray-900">{comment.studentName}</p>
+                                    <p className="font-semibold text-gray-900">{comment.userName || 'Ẩn danh'}</p>
                                     <p className="text-sm text-gray-500">
                                       {new Date(comment.timestamp).toLocaleDateString('vi-VN', {
                                         year: 'numeric', month: 'long', day: 'numeric'
                                       })}
                                     </p>
                                   </div>
-                                  <div className="flex items-center gap-1 text-yellow-500 flex-shrink-0">
-                                    {[...Array(5)].map((_, index) => (
-                                      <StarIcon
-                                        key={index}
-                                        className={`h-5 w-5 ${
-                                          index < comment.rate ? 'text-yellow-500' : 'text-gray-200'
-                                        }`}
-                                      />
-                                    ))}
-                                  </div>
+                                  {comment.rate > 0 && (
+                                    <div className="flex items-center gap-1 text-yellow-500 flex-shrink-0">
+                                      {[...Array(5)].map((_, index) => (
+                                        <StarIcon
+                                          key={`${comment.commentId}-star-${index}`}
+                                          className={`h-5 w-5 ${
+                                            index < comment.rate ? 'text-yellow-500' : 'text-gray-200'
+                                          }`}
+                                        />
+                                      ))}
+                                    </div>
+                                  )}
                                 </div>
                                 <p className="mt-3 text-gray-600">{comment.content}</p>
+                                {comment.replies && comment.replies.length > 0 && (
+                                  <div className="mt-4 space-y-3 border-l-2 border-indigo-100 pl-4">
+                                    {comment.replies.map((reply) => (
+                                      <div key={reply.commentId} className="rounded-lg bg-indigo-50 p-3">
+                                        <p className="text-xs font-semibold text-indigo-700">Giảng viên phản hồi</p>
+                                        <p className="mt-1 text-sm text-gray-700">{reply.content}</p>
+                                        <p className="mt-1 text-xs text-gray-400">
+                                          {new Date(reply.timestamp).toLocaleDateString('vi-VN', {
+                                            year: 'numeric', month: 'long', day: 'numeric'
+                                          })}
+                                        </p>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
                               </div>
                             </div>
                           </div>
@@ -331,6 +490,49 @@ const DetailCourse: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* Video Preview Modal */}
+      {previewVideo && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-75 p-4"
+          onClick={closePreviewVideo}
+        >
+          <div
+            className="relative w-full max-w-4xl bg-white rounded-3xl shadow-2xl overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+              <h3 className="text-xl font-bold text-gray-900 truncate min-w-0 flex-1" title={previewVideo.name}>{previewVideo.name}</h3>
+              <button
+                onClick={closePreviewVideo}
+                className="p-2 rounded-full hover:bg-gray-100 transition flex-shrink-0"
+              >
+                <XMarkIcon className="h-6 w-6 text-gray-600" />
+              </button>
+            </div>
+
+            {/* Video Player */}
+            <div className="relative bg-black aspect-video">
+              <video
+                src={previewVideo.url}
+                controls
+                autoPlay
+                className="w-full h-full"
+              >
+                Trình duyệt của bạn không hỗ trợ phát video.
+              </video>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-6 bg-gray-50 text-center">
+              <p className="text-sm text-gray-600">
+                Đây là video xem thử. Đăng ký khóa học để xem toàn bộ nội dung.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     </UserLayout>
   );
 };

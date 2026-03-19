@@ -10,14 +10,16 @@ import {
   MagnifyingGlassIcon,
   SparklesIcon,
   XMarkIcon,
+  ChatBubbleLeftRightIcon,
 } from "@heroicons/react/24/outline";
 import { StarIcon } from "@heroicons/react/24/solid";
 // 1. THÊM useNavigate
 import { Link, useNavigate } from "react-router-dom";
 import UserLayout from "../user/layout/layout"; 
 
-import type { MyCourse } from './models/course.ts';
-import { useCourses } from './hooks/useCourses'; 
+import type { MyCourse, CourseCommentsData } from './models/course.ts';
+import { useCourses } from './hooks/useCourses';
+import { courseService } from './services/course.service'; 
 
 // --- TYPES ---
 
@@ -66,26 +68,54 @@ const MyCoursePage: React.FC = () => {
   const [activeFilter, setActiveFilter] = useState<FilterValue>("all");
   const [searchTerm, setSearchTerm] = useState("");
 
+  // State cho modal nhận xét
+  const [commentsModal, setCommentsModal] = useState<CourseProgress | null>(null);
+  const [commentsData, setCommentsData] = useState<CourseCommentsData | null>(null);
+  const [isLoadingComments, setIsLoadingComments] = useState(false);
+
   // State cho modal đánh giá
-  const [ratingModal, setRatingModal] = useState<CourseProgress | null>(null);
-  const [ratingValue, setRatingValue] = useState(0);
-  const [hoverRating, setHoverRating] = useState(0);
+  const [ratingModal, setRatingModal] = useState(false);
+  const [ratingValue, setRatingValue] = useState(5);
   const [ratingContent, setRatingContent] = useState("");
+  const [isSubmittingRating, setIsSubmittingRating] = useState(false);
 
   const {
     myCourses,
     isMyCoursesLoading,
     myCoursesError,
     getMyCourses,
-    addComment,
-    isAddingComment,
-    addCommentError,
+    updateComment,
   } = useCourses();
 
   // Gọi API một lần khi component được tải
   useEffect(() => {
     getMyCourses();
-  }, [getMyCourses]); // [getMyCourses] an toàn vì đã được bọc trong useCallback ở hook
+  }, [getMyCourses]);
+
+  // Đóng Popup khi nhấn ESC - Tắt lần lượt từ popup trên cùng
+  useEffect(() => {
+    const handleEscKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        // Nếu rating modal đang mở, tắt nó trước (vì nó nằm trên cùng)
+        if (ratingModal) {
+          closeRatingModal();
+        }
+        // Nếu không có rating modal, mới tắt comments modal
+        else if (commentsModal) {
+          closeCommentsModal();
+        }
+      }
+    };
+
+    // Chỉ thêm listener khi có ít nhất một modal đang mở
+    if (commentsModal || ratingModal) {
+      document.addEventListener('keydown', handleEscKey);
+    }
+
+    return () => {
+      document.removeEventListener('keydown', handleEscKey);
+    };
+  }, [commentsModal, ratingModal]);
 
   // Biến đổi dữ liệu: Gắn dữ liệu hardcode (progress) vào dữ liệu thật (myCourses)
   const coursesWithProgress: CourseProgress[] = useMemo(() => {
@@ -121,27 +151,103 @@ const MyCoursePage: React.FC = () => {
     coursesWithProgress.reduce((sum: number, course) => sum + course.progress, 0) / (coursesWithProgress.length || 1)
   );
 
-  const openRatingModal = (course: CourseProgress) => {
-    setRatingModal(course);
-    setRatingValue(0);
-    setHoverRating(0);
-    setRatingContent("");
+  const openCommentsModal = async (course: CourseProgress) => {
+    setCommentsModal(course);
+    setIsLoadingComments(true);
+    setCommentsData(null);
+
+    try {
+      const response = await courseService.getCourseComments(course.id);
+
+      if (response.success) {
+        setCommentsData(response.data);
+      }
+    } catch (error) {
+      console.error('Failed to fetch comments:', error);
+    } finally {
+      setIsLoadingComments(false);
+    }
+  };
+
+  const closeCommentsModal = () => {
+    setCommentsModal(null);
+    setCommentsData(null);
+  };
+
+  const openRatingModal = () => {
+    // Nếu đã có myComment, điền sẵn dữ liệu
+    if (commentsData?.myComment) {
+      setRatingValue(commentsData.myComment.rate);
+      setRatingContent(commentsData.myComment.content);
+    } else {
+      setRatingValue(5);
+      setRatingContent("");
+    }
+    setRatingModal(true);
   };
 
   const closeRatingModal = () => {
-    setRatingModal(null);
+    setRatingModal(false);
+    setRatingValue(5);
+    setRatingContent("");
   };
 
   const handleSubmitRating = async () => {
-    if (!ratingModal || ratingValue === 0) return;
-    const success = await addComment({
-      courseId: ratingModal.id,
-      rate: ratingValue,
-      content: ratingContent,
-    });
-    if (success) {
-      closeRatingModal();
+    if (!commentsModal) return;
+
+    setIsSubmittingRating(true);
+    try {
+      let success = false;
+
+      // Kiểm tra xem đã có comment chưa
+      if (commentsData?.myComment) {
+        // Đã có comment -> Gọi API update
+        success = await updateComment(
+          commentsData.myComment.commentId,
+          {
+            rate: ratingValue,
+            content: ratingContent,
+          },
+          commentsModal.id
+        );
+      } else {
+        // Chưa có comment -> Gọi API add
+        const response = await courseService.addComment({
+          courseId: commentsModal.id,
+          rate: ratingValue,
+          content: ratingContent,
+        });
+        success = response.success;
+        if (!success) {
+          alert(response.message || 'Không thể gửi đánh giá');
+        }
+      }
+
+      if (success) {
+        // Đóng modal đánh giá và tải lại comments
+        closeRatingModal();
+        const commentsResponse = await courseService.getCourseComments(commentsModal.id);
+        if (commentsResponse.success) {
+          setCommentsData(commentsResponse.data);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to submit rating:', error);
+      alert('Đã xảy ra lỗi khi gửi đánh giá');
+    } finally {
+      setIsSubmittingRating(false);
     }
+  };
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('vi-VN', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
   };
 
   // Lọc danh sách khóa học hiển thị dựa trên filter và search term
@@ -332,11 +438,13 @@ const MyCoursePage: React.FC = () => {
                     <div className="flex flex-1 flex-col justify-between gap-4">
                       <div className="space-y-3">
                         <div className="flex items-start justify-between gap-3">
-                          <div>
-                            <h2 className="text-lg font-semibold text-gray-900">
+                          <div className="min-w-0 flex-1">
+                            <h2 className="text-lg font-semibold text-gray-900 truncate min-w-0 max-w-xs"
+                                title={course.name}>
                               {course.name}
                             </h2>
-                            <p className="text-sm text-gray-500">
+                            <p className="text-sm text-gray-500 truncate min-w-0 max-w-xs"
+                               title={course.instructorName}>
                               {course.instructorName}
                             </p>
                           </div>
@@ -378,17 +486,11 @@ const MyCoursePage: React.FC = () => {
                           </button>
                           <button
                             type="button"
-                            className="rounded-full border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-600 transition hover:border-[#5a2dff] hover:text-[#5a2dff]"
+                            onClick={() => openCommentsModal(course)}
+                            className="inline-flex items-center gap-1.5 rounded-full border border-indigo-300 bg-indigo-50 px-4 py-2 text-sm font-semibold text-indigo-600 transition hover:bg-indigo-100 hover:border-indigo-400"
                           >
-                            Tải tài liệu
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => openRatingModal(course)}
-                            className="inline-flex items-center gap-1.5 rounded-full border border-amber-300 bg-amber-50 px-4 py-2 text-sm font-semibold text-amber-600 transition hover:bg-amber-100 hover:border-amber-400"
-                          >
-                            <StarIcon className="h-4 w-4" />
-                            Đánh giá
+                            <ChatBubbleLeftRightIcon className="h-4 w-4" />
+                            Nhận xét
                           </button>
                         </div>
                       </div>
@@ -493,88 +595,283 @@ const MyCoursePage: React.FC = () => {
         </div>
       </div>
 
-      {/* Rating Modal */}
-      {ratingModal && (
+      {/* Comments Modal */}
+      {commentsModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="w-full max-w-md rounded-3xl bg-white p-8 shadow-2xl">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <h2 className="text-xl font-bold text-gray-900">Đánh giá khóa học</h2>
-                <p className="mt-1 text-sm text-gray-500 line-clamp-2">{ratingModal.name}</p>
+          <div className="w-full max-w-3xl max-h-[90vh] overflow-hidden rounded-3xl bg-white shadow-2xl flex flex-col">
+            {/* Header */}
+            <div className="flex items-start justify-between gap-4 p-8 pb-6 border-b border-gray-100">
+              <div className="flex-1">
+                <h2 className="text-xl font-bold text-gray-900">
+                  Nhận xét khóa học
+                </h2>
+                <p className="mt-1 text-sm text-gray-500 line-clamp-2">{commentsModal.name}</p>
               </div>
+              <div className="flex items-center gap-2">
+                {!isLoadingComments && commentsData && (
+                  <button
+                    type="button"
+                    onClick={openRatingModal}
+                    className="rounded-full bg-[#5a2dff] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#4a21eb] flex items-center gap-2"
+                  >
+                    <StarIcon className="h-4 w-4" />
+                    {commentsData.myComment ? 'Đánh giá lại' : 'Đánh giá'}
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={closeCommentsModal}
+                  className="flex-shrink-0 rounded-full p-1 text-gray-400 transition hover:bg-gray-100 hover:text-gray-600"
+                >
+                  <XMarkIcon className="h-5 w-5" />
+                </button>
+              </div>
+            </div>
+
+            {/* Content */}
+            <div className="flex-1 overflow-y-auto p-8">
+              {isLoadingComments ? (
+                <div className="text-center py-12 text-gray-500">
+                  Đang tải nhận xét...
+                </div>
+              ) : commentsData ? (
+                <div className="space-y-6">
+                  {/* My Comment Section */}
+                  {commentsData.myComment && (
+                    <div className="rounded-2xl border-2 border-indigo-100 bg-indigo-50/50 p-6">
+                      <div className="flex items-start gap-4">
+                        <div className="flex-shrink-0">
+                          {commentsData.myComment.avatarUrl ? (
+                            <img
+                              src={commentsData.myComment.avatarUrl}
+                              alt={commentsData.myComment.userName}
+                              className="h-12 w-12 rounded-full object-cover"
+                            />
+                          ) : (
+                            <div className="h-12 w-12 rounded-full bg-indigo-200 flex items-center justify-center">
+                              <span className="text-indigo-700 font-semibold text-lg">
+                                {commentsData.myComment.userName.charAt(0).toUpperCase()}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="font-semibold text-gray-900">{commentsData.myComment.userName} <span className="text-xs font-normal text-indigo-600">(Bạn)</span></p>
+                              <div className="flex items-center gap-1 mt-1">
+                                {[...Array(5)].map((_, i) => (
+                                  <StarIcon
+                                    key={i}
+                                    className={`h-4 w-4 ${
+                                      i < commentsData.myComment!.rate ? 'text-amber-400' : 'text-gray-300'
+                                    }`}
+                                  />
+                                ))}
+                              </div>
+                            </div>
+                            <span className="text-xs text-gray-400">
+                              {formatDate(commentsData.myComment.timestamp)}
+                            </span>
+                          </div>
+                          <p className="mt-3 text-sm text-gray-700">{commentsData.myComment.content}</p>
+
+                          {/* Replies from instructor for my comment */}
+                          {commentsData.myComment.replies && commentsData.myComment.replies.length > 0 && (
+                            <div className="mt-4 space-y-3 pl-4 border-l-2 border-indigo-300">
+                              {commentsData.myComment.replies.map((reply) => (
+                                <div key={reply.commentId} className="rounded-xl bg-white p-4 shadow-sm">
+                                  <div className="flex items-start justify-between">
+                                    <div className="flex items-center gap-2">
+                                      <div className="h-8 w-8 rounded-full bg-indigo-500 flex items-center justify-center">
+                                        <span className="text-white font-semibold text-xs">GV</span>
+                                      </div>
+                                      <p className="text-sm font-semibold text-indigo-700">Phản hồi từ giảng viên</p>
+                                    </div>
+                                    <span className="text-xs text-gray-400">
+                                      {formatDate(reply.timestamp)}
+                                    </span>
+                                  </div>
+                                  <p className="mt-2 text-sm text-gray-700">{reply.content}</p>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* All Comments Section */}
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                      Tất cả nhận xét ({commentsData.allComments.length})
+                    </h3>
+                    <div className="space-y-5">
+                      {commentsData.allComments.map((comment) => (
+                        <div key={comment.commentId} className="rounded-2xl border border-gray-100 bg-white p-6">
+                          <div className="flex items-start gap-4">
+                            <div className="flex-shrink-0">
+                              {comment.avatarUrl ? (
+                                <img
+                                  src={comment.avatarUrl}
+                                  alt={comment.userName}
+                                  className="h-10 w-10 rounded-full object-cover"
+                                />
+                              ) : (
+                                <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
+                                  <span className="text-gray-700 font-semibold">
+                                    {comment.userName.charAt(0).toUpperCase()}
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                            <div className="flex-1">
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <p className="font-semibold text-gray-900">{comment.userName}</p>
+                                  <div className="flex items-center gap-1 mt-1">
+                                    {[...Array(5)].map((_, i) => (
+                                      <StarIcon
+                                        key={i}
+                                        className={`h-4 w-4 ${
+                                          i < comment.rate ? 'text-amber-400' : 'text-gray-300'
+                                        }`}
+                                      />
+                                    ))}
+                                  </div>
+                                </div>
+                                <span className="text-xs text-gray-400">
+                                  {formatDate(comment.timestamp)}
+                                </span>
+                              </div>
+                              <p className="mt-3 text-sm text-gray-700">{comment.content}</p>
+
+                              {/* Replies */}
+                              {comment.replies && comment.replies.length > 0 && (
+                                <div className="mt-4 space-y-3 pl-4 border-l-2 border-indigo-200">
+                                  {comment.replies.map((reply) => (
+                                    <div key={reply.commentId} className="rounded-xl bg-indigo-50 p-4 shadow-sm">
+                                      <div className="flex items-start justify-between">
+                                        <div className="flex items-center gap-2">
+                                          <div className="h-8 w-8 rounded-full bg-indigo-500 flex items-center justify-center">
+                                            <span className="text-white font-semibold text-xs">GV</span>
+                                          </div>
+                                          <p className="text-sm font-semibold text-indigo-700">Phản hồi từ giảng viên</p>
+                                        </div>
+                                        <span className="text-xs text-gray-400">
+                                          {formatDate(reply.timestamp)}
+                                        </span>
+                                      </div>
+                                      <p className="mt-2 text-sm text-gray-700">{reply.content}</p>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {commentsData.allComments.length === 0 && !commentsData.myComment && (
+                    <div className="text-center py-12 text-gray-500">
+                      Chưa có nhận xét nào cho khóa học này
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="text-center py-12 text-red-500">
+                  Không thể tải nhận xét. Vui lòng thử lại.
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Rating Modal */}
+      {ratingModal && commentsModal && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-md rounded-3xl bg-white shadow-2xl">
+            {/* Header */}
+            <div className="flex items-center justify-between p-6 border-b border-gray-100">
+              <h3 className="text-lg font-bold text-gray-900">
+                {commentsData?.myComment ? 'Đánh giá lại khóa học' : 'Đánh giá khóa học'}
+              </h3>
               <button
                 type="button"
                 onClick={closeRatingModal}
-                className="flex-shrink-0 rounded-full p-1 text-gray-400 transition hover:bg-gray-100 hover:text-gray-600"
+                className="rounded-full p-1 text-gray-400 transition hover:bg-gray-100 hover:text-gray-600"
               >
                 <XMarkIcon className="h-5 w-5" />
               </button>
             </div>
 
-            {/* Stars */}
-            <div className="mt-6">
-              <p className="mb-3 text-sm font-semibold text-gray-700">Chọn số sao</p>
-              <div className="flex gap-2">
-                {[1, 2, 3, 4, 5].map((star) => (
-                  <button
-                    key={star}
-                    type="button"
-                    onClick={() => setRatingValue(star)}
-                    onMouseEnter={() => setHoverRating(star)}
-                    onMouseLeave={() => setHoverRating(0)}
-                    className="transition-transform hover:scale-110"
-                  >
-                    <StarIcon
-                      className={`h-9 w-9 transition-colors ${
-                        star <= (hoverRating || ratingValue)
-                          ? "text-amber-400"
-                          : "text-gray-200"
-                      }`}
-                    />
-                  </button>
-                ))}
+            {/* Content */}
+            <div className="p-6 space-y-6">
+              <p className="text-sm text-gray-600">{commentsModal.name}</p>
+
+              {/* Star Rating */}
+              <div className="space-y-2">
+                <label className="block text-sm font-semibold text-gray-900">
+                  Đánh giá của bạn
+                </label>
+                <div className="flex items-center gap-2">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      key={star}
+                      type="button"
+                      onClick={() => setRatingValue(star)}
+                      className="transition hover:scale-110"
+                    >
+                      <StarIcon
+                        className={`h-8 w-8 ${
+                          star <= ratingValue ? 'text-amber-400' : 'text-gray-300'
+                        }`}
+                      />
+                    </button>
+                  ))}
+                  <span className="ml-2 text-sm font-semibold text-gray-700">
+                    {ratingValue}/5
+                  </span>
+                </div>
               </div>
-              {ratingValue > 0 && (
-                <p className="mt-2 text-xs font-semibold text-amber-500">
-                  {["", "Rất tệ", "Tệ", "Bình thường", "Tốt", "Rất tốt"][ratingValue]}
-                </p>
-              )}
+
+              {/* Content */}
+              <div className="space-y-2">
+                <label htmlFor="rating-content" className="block text-sm font-semibold text-gray-900">
+                  Nhận xét của bạn
+                </label>
+                <textarea
+                  id="rating-content"
+                  value={ratingContent}
+                  onChange={(e) => setRatingContent(e.target.value)}
+                  rows={4}
+                  className="w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 outline-none transition focus:border-[#5a2dff] focus:bg-white resize-none"
+                  placeholder="Chia sẻ trải nghiệm của bạn về khóa học này..."
+                ></textarea>
+              </div>
             </div>
 
-            {/* Comment textarea */}
-            <div className="mt-5">
-              <label className="mb-2 block text-sm font-semibold text-gray-700">
-                Nhận xét của bạn
-              </label>
-              <textarea
-                rows={4}
-                value={ratingContent}
-                onChange={(e) => setRatingContent(e.target.value)}
-                placeholder="Chia sẻ trải nghiệm của bạn về khóa học này..."
-                className="w-full resize-none rounded-2xl border border-gray-200 bg-gray-50 p-4 text-sm text-gray-700 outline-none transition focus:border-[#5a2dff] focus:bg-white"
-              />
-            </div>
-
-            {addCommentError && (
-              <p className="mt-3 text-sm font-medium text-red-500">{addCommentError}</p>
-            )}
-
-            <div className="mt-6 flex items-center justify-end gap-3">
+            {/* Footer */}
+            <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-100">
               <button
                 type="button"
                 onClick={closeRatingModal}
-                disabled={isAddingComment}
-                className="rounded-full border border-gray-200 px-5 py-2.5 text-sm font-semibold text-gray-600 transition hover:border-gray-300 hover:text-gray-900 disabled:opacity-50"
+                disabled={isSubmittingRating}
+                className="rounded-full px-5 py-2.5 text-sm font-semibold text-gray-700 transition hover:bg-gray-100 disabled:opacity-50"
               >
                 Hủy
               </button>
               <button
                 type="button"
                 onClick={handleSubmitRating}
-                disabled={ratingValue === 0 || isAddingComment}
-                className="rounded-full bg-[#5a2dff] px-5 py-2.5 text-sm font-semibold text-white shadow-sm shadow-[#5a2dff]/30 transition hover:bg-[#4a21eb] disabled:cursor-not-allowed disabled:opacity-50"
+                disabled={isSubmittingRating || !ratingContent.trim()}
+                className="rounded-full bg-[#5a2dff] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#4a21eb] disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isAddingComment ? "Đang gửi..." : "Gửi đánh giá"}
+                {isSubmittingRating ? 'Đang gửi...' : 'Gửi đánh giá'}
               </button>
             </div>
           </div>

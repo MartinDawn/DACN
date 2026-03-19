@@ -7,6 +7,33 @@ export interface RecommendedCourse {
   price: number;
 }
 
+export interface Video {
+  id: string;
+  name: string;
+  duration: number;
+  displayOrder: number;
+  videoUrl: string | null;
+  isTrial: boolean;
+}
+
+export interface Quiz {
+  name: string;
+}
+
+export interface Document {
+  name: string;
+}
+
+export interface Lecture {
+  id: string;
+  name: string;
+  description: string;
+  displayOrder: number;
+  videos: Video[];
+  quizzes: Quiz[];
+  documents: Document[];
+}
+
 export interface CourseDetail {
   name: string;
   description: string;
@@ -18,6 +45,8 @@ export interface CourseDetail {
   totalReviews: number;
   totalStudents: number;
   totalHours: number;
+  isEnrolled: boolean;
+  lectures: Lecture[];
   categories?: string[];
   originalPrice?: number;
   discountPercent?: number;
@@ -30,12 +59,30 @@ export interface CourseDetail {
   }[];
 }
 
-export interface CourseComment {
+export interface CourseCommentReply {
   commentId: string;
-  studentName: string;
-  rate: number;
   content: string;
   timestamp: string;
+  isMyComment: boolean;
+  canDelete: boolean;
+}
+
+export interface CourseComment {
+  commentId: string;
+  userName: string;
+  avatarUrl: string | null;
+  rate: number;
+  content: string;
+  isMyComment: boolean;
+  canDelete: boolean;
+  timestamp: string;
+  replies?: CourseCommentReply[];
+}
+
+export interface CourseCommentsData {
+  isInstructor: boolean;
+  myComment: CourseComment | null;
+  allComments: CourseComment[];
 }
 
 export interface ApiResponse<T> {
@@ -50,13 +97,14 @@ export interface MyCourse {
   imageUrl: string;
   name: string;
   instructorName: string;
-  averageRating: number;
-  totalReviews: number;
+  rating: number;
   price: number;
+  averageRating?: number;
+  totalReviews?: number;
   originalPrice?: number | null;
-  totalHours: number;
-  totalStudents: number;
-  isBestseller: boolean;
+  totalHours?: number;
+  totalStudents?: number;
+  isBestseller?: boolean;
 }
 
 export interface PaginatedCourses {
@@ -228,6 +276,11 @@ export interface AddCommentRequest {
   content: string;
 }
 
+export interface UpdateCommentRequest {
+  rate: number;
+  content: string;
+}
+
 // GET /api/Quiz/{quizId}/attempts  — one entry in history list
 export interface ApiQuizAttemptSummary {
   attemptId?: string;
@@ -244,4 +297,45 @@ export interface ApiQuizAttemptSummary {
   completedAt?: string;
   // cho phép các field không biết trước từ backend
   [key: string]: unknown;
+}
+
+// Video response structure for get-video API
+export interface VideoResponse {
+  name: string;
+  duration: number;
+  displayOrder: number;
+  videoUrl: string | null;
+  isTrial: boolean;
+}
+
+export interface QuizResponse {
+  name: string;
+}
+
+export interface DocumentResponse {
+  name: string;
+}
+
+export interface LectureResponse {
+  name: string;
+  description: string;
+  displayOrder: number;
+  videos: VideoResponse[];
+  quizzes: QuizResponse[];
+  documents: DocumentResponse[];
+}
+
+// Response from /api/Lecture/get-video/{videoId}
+export interface GetVideoApiResponse {
+  name: string;
+  description: string;
+  price: number;
+  imageUrl: string;
+  instructorName: string;
+  rating: number;
+  totalReviews: number;
+  totalStudents: number;
+  totalHours: number;
+  isEnrolled: boolean;
+  lectures: LectureResponse[];
 }

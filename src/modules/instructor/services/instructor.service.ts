@@ -1,6 +1,6 @@
 import apiClient from "../../auth/services/apiClient";
 import type { ApiResponse, Tag } from "../../course/models/course";
-import type { InstructorCourse, CreateCourseResponse, BecomeInstructorResponse } from "../models/instructor";
+import type { InstructorCourse, CreateCourseResponse, BecomeInstructorResponse, CourseCommentsResponse } from "../models/instructor";
 import type { RequestInstructorPayload, RequestInstructorResponse, InstructorStatusResponse } from "../models/instructor";
 
 export const instructorService = {
@@ -8,7 +8,7 @@ export const instructorService = {
    * Fetches the courses for the current instructor.
    */
   async getMyCourses(): Promise<ApiResponse<InstructorCourse[]>> {
-    const response = await apiClient.get<ApiResponse<InstructorCourse[]>>('/Course/my-courses');
+    const response = await apiClient.get<ApiResponse<InstructorCourse[]>>('/Course/instructor-courses');
     return response.data;
   },
 
@@ -109,6 +109,45 @@ export const instructorService = {
    */
   async getInstructorStatus(): Promise<ApiResponse<InstructorStatusResponse>> {
     const response = await apiClient.get<ApiResponse<InstructorStatusResponse>>('/Account/my-request-status');
+    return response.data;
+  },
+
+  /**
+   * Fetches the list of comments/ratings for a course.
+   * @param courseId The ID of the course.
+   */
+  async getCourseComments(courseId: string): Promise<CourseCommentsResponse> {
+    const response = await apiClient.get<CourseCommentsResponse>(`/Course/course-comments/${courseId}`);
+    return response.data;
+  },
+
+  /**
+   * Replies to a comment/rating.
+   * @param parentCommentId The ID of the parent comment.
+   * @param content The reply content.
+   */
+  async replyComment(parentCommentId: string, content: string): Promise<any> {
+    const response = await apiClient.post('/Course/reply-comment', { parentCommentId, content });
+    return response.data;
+  },
+
+  /**
+   * Updates an existing comment/reply.
+   * @param commentId The ID of the comment to update.
+   * @param rate The rating (0 for replies from instructor).
+   * @param content The updated content.
+   */
+  async updateComment(commentId: string, rate: number, content: string): Promise<any> {
+    const response = await apiClient.put(`/Course/update-comment/${commentId}`, { rate, content });
+    return response.data;
+  },
+
+  /**
+   * Deletes a comment/reply.
+   * @param commentId The ID of the comment to delete.
+   */
+  async deleteComment(commentId: string): Promise<any> {
+    const response = await apiClient.delete(`/Course/delete-comment/${commentId}`);
     return response.data;
   },
 };

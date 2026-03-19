@@ -90,9 +90,13 @@ export const CourseService = {
 
   approveRequest: async (requestId: string): Promise<void> => {
     try {
-      await apiClient.post(`/Course/approve-request/${requestId}`, {});
-    } catch (error) {
+      await apiClient.post(`/Course/approve-request/${requestId}`, {
+        title: 'Khóa học được duyệt',
+        message: 'Khóa học của bạn đã được phê duyệt thành công.',
+      });
+    } catch (error: any) {
       console.error('Error approving course request:', error);
+      console.error('Response data:', error?.response?.data);
       throw error;
     }
   },

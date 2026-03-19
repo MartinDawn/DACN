@@ -68,6 +68,21 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ course, onClose, onProcee
     cardName: "NGUYEN VAN A",
   });
 
+  // Handle ESC key to close modal
+  React.useEffect(() => {
+    const handleEscKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        onClose();
+      }
+    };
+
+    document.addEventListener('keydown', handleEscKey);
+
+    return () => {
+      document.removeEventListener('keydown', handleEscKey);
+    };
+  }, [onClose]);
+
   const priceValue = parseCurrencyToNumber(course.price);
   const originalValue = parseCurrencyToNumber(course.originalPrice);
   const subtotal = originalValue > 0 ? originalValue : priceValue;
