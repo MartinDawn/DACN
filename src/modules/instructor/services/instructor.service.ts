@@ -130,4 +130,15 @@ export const instructorService = {
     const response = await apiClient.post('/Course/reply-comment', { parentCommentId, content });
     return response.data;
   },
+
+  /**
+   * Updates an existing comment/reply.
+   * @param commentId The ID of the comment to update.
+   * @param rate The rating (0 for replies from instructor).
+   * @param content The updated content.
+   */
+  async updateComment(commentId: string, rate: number, content: string): Promise<any> {
+    const response = await apiClient.put(`/Course/update-comment/${commentId}`, { rate, content });
+    return response.data;
+  },
 };

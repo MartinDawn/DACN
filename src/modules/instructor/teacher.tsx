@@ -35,6 +35,11 @@ const InstructorDashboard: React.FC = () => {
   const [replyContent, setReplyContent] = useState("");
   const [replyLoading, setReplyLoading] = useState(false);
 
+  // State for Edit Reply
+  const [editingReplyId, setEditingReplyId] = useState<string | null>(null);
+  const [editContent, setEditContent] = useState("");
+  const [editLoading, setEditLoading] = useState(false);
+
   const [courseName, setCourseName] = useState("");
   const [coursePrice, setCoursePrice] = useState<number | string>("");
   const [courseDescription, setCourseDescription] = useState("");
@@ -136,6 +141,42 @@ const InstructorDashboard: React.FC = () => {
     }
   };
 
+  const handleEditReply = (replyId: string, currentContent: string) => {
+    setEditingReplyId(replyId);
+    setEditContent(currentContent);
+  };
+
+  const handleUpdateReply = async (commentId: string) => {
+    if (!editContent.trim()) return;
+    setEditLoading(true);
+    try {
+      await instructorService.updateComment(commentId, 0, editContent.trim());
+      toast.success("Cập nhật phản hồi thành công!");
+      setEditingReplyId(null);
+      setEditContent("");
+      if (selectedCourseForComments) {
+        const res = await instructorService.getCourseComments(selectedCourseForComments.id);
+        // Chỉ lấy comment của học viên: rate >= 1 VÀ không phải comment của giảng viên
+        const filtered = (res?.data?.allComments ?? []).filter(
+          (c) => Number(c.rate) >= 1 && c.isMyComment !== true
+        );
+        setCourseComments(filtered);
+        // Tính average rating chỉ từ đánh giá học viên (loại bỏ hoàn toàn reply của giảng viên)
+        const correctRating = filtered.length > 0
+          ? filtered.reduce((sum, c) => sum + (c.rate || 0), 0) / filtered.length
+          : 0;
+        setCourses(prev => prev.map(c =>
+          c.id === selectedCourseForComments.id ? { ...c, rating: correctRating } : c
+        ));
+      }
+    } catch (error: any) {
+      console.error(error);
+      toast.error(error.response?.data?.message || "Không thể cập nhật phản hồi.");
+    } finally {
+      setEditLoading(false);
+    }
+  };
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
@@ -144,6 +185,8 @@ const InstructorDashboard: React.FC = () => {
           setSelectedCourseForComments(null);
           setReplyingToCommentId(null);
           setReplyContent("");
+          setEditingReplyId(null);
+          setEditContent("");
         } else if (showDeleteModal) {
           setShowDeleteModal(false);
           setCourseToDelete(null);
@@ -872,7 +915,13 @@ const InstructorDashboard: React.FC = () => {
                 <p className="mt-1 text-sm text-gray-500 truncate max-w-xs">{selectedCourseForComments?.name}</p>
               </div>
               <button
-                onClick={() => { setShowCommentsModal(false); setReplyingToCommentId(null); setReplyContent(""); }}
+                onClick={() => {
+                  setShowCommentsModal(false);
+                  setReplyingToCommentId(null);
+                  setReplyContent("");
+                  setEditingReplyId(null);
+                  setEditContent("");
+                }}
                 className="rounded-full p-2 text-gray-400 transition hover:bg-gray-100 hover:text-gray-600"
               >
                 <X size={20} />
@@ -933,21 +982,76 @@ const InstructorDashboard: React.FC = () => {
                         <ul className="mt-3 space-y-2 border-l-2 border-[#5a2dff]/20 pl-4">
                           {c.replies.map((reply, rIdx) => (
                             <li key={rIdx} className="rounded-lg border border-gray-100 bg-white p-3">
-                              <div className="flex items-center gap-2">
-                                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#eef2ff] text-xs font-bold text-[#5a2dff]">
-                                  G
+                              {editingReplyId === reply.commentId ? (
+                                <div className="space-y-2">
+                                  <div className="flex items-center gap-2">
+                                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#eef2ff] text-xs font-bold text-[#5a2dff]">
+                                      G
+                                    </div>
+                                    <div>
+                                      <p className="text-xs font-semibold text-gray-900">Giảng viên</p>
+                                      {reply.timestamp && (
+                                        <p className="text-xs text-gray-400">
+                                          {new Date(reply.timestamp).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" })}
+                                        </p>
+                                      )}
+                                    </div>
+                                  </div>
+                                  <div className="flex gap-2">
+                                    <input
+                                      type="text"
+                                      value={editContent}
+                                      onChange={(e) => setEditContent(e.target.value)}
+                                      onKeyDown={(e) => e.key === "Enter" && !editLoading && handleUpdateReply(reply.commentId!)}
+                                      placeholder="Chỉnh sửa phản hồi..."
+                                      className="flex-1 rounded-lg border border-gray-200 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#5a2dff]/40"
+                                      autoFocus
+                                    />
+                                    <button
+                                      onClick={() => handleUpdateReply(reply.commentId!)}
+                                      disabled={editLoading || !editContent.trim()}
+                                      className="flex items-center gap-1 rounded-lg bg-[#5a2dff] px-3 py-1.5 text-sm text-white transition hover:bg-[#4a1fe0] disabled:opacity-50"
+                                    >
+                                      <CheckCircle2 size={13} />
+                                      Lưu
+                                    </button>
+                                    <button
+                                      onClick={() => { setEditingReplyId(null); setEditContent(""); }}
+                                      className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm text-gray-500 transition hover:bg-gray-100"
+                                    >
+                                      Hủy
+                                    </button>
+                                  </div>
                                 </div>
-                                <div>
-                                  <p className="text-xs font-semibold text-gray-900">Giảng viên</p>
-                                  {reply.timestamp && (
-                                    <p className="text-xs text-gray-400">
-                                      {new Date(reply.timestamp).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" })}
-                                    </p>
+                              ) : (
+                                <>
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#eef2ff] text-xs font-bold text-[#5a2dff]">
+                                        G
+                                      </div>
+                                      <div>
+                                        <p className="text-xs font-semibold text-gray-900">Giảng viên</p>
+                                        {reply.timestamp && (
+                                          <p className="text-xs text-gray-400">
+                                            {new Date(reply.timestamp).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" })}
+                                          </p>
+                                        )}
+                                      </div>
+                                    </div>
+                                    <button
+                                      onClick={() => handleEditReply(reply.commentId!, reply.content || "")}
+                                      className="flex items-center gap-1 rounded-lg border border-gray-200 px-2 py-1 text-xs text-gray-600 transition hover:bg-gray-50"
+                                      title="Chỉnh sửa phản hồi"
+                                    >
+                                      <FileEdit size={12} />
+                                      Sửa
+                                    </button>
+                                  </div>
+                                  {reply.content && (
+                                    <p className="mt-2 text-sm text-gray-600 leading-relaxed">{reply.content}</p>
                                   )}
-                                </div>
-                              </div>
-                              {reply.content && (
-                                <p className="mt-2 text-sm text-gray-600 leading-relaxed">{reply.content}</p>
+                                </>
                               )}
                             </li>
                           ))}

@@ -7,6 +7,33 @@ export interface RecommendedCourse {
   price: number;
 }
 
+export interface Video {
+  id: string;
+  name: string;
+  duration: number;
+  displayOrder: number;
+  videoUrl: string | null;
+  isTrial: boolean;
+}
+
+export interface Quiz {
+  name: string;
+}
+
+export interface Document {
+  name: string;
+}
+
+export interface Lecture {
+  id: string;
+  name: string;
+  description: string;
+  displayOrder: number;
+  videos: Video[];
+  quizzes: Quiz[];
+  documents: Document[];
+}
+
 export interface CourseDetail {
   name: string;
   description: string;
@@ -18,6 +45,8 @@ export interface CourseDetail {
   totalReviews: number;
   totalStudents: number;
   totalHours: number;
+  isEnrolled: boolean;
+  lectures: Lecture[];
   categories?: string[];
   originalPrice?: number;
   discountPercent?: number;
@@ -263,4 +292,45 @@ export interface ApiQuizAttemptSummary {
   completedAt?: string;
   // cho phép các field không biết trước từ backend
   [key: string]: unknown;
+}
+
+// Video response structure for get-video API
+export interface VideoResponse {
+  name: string;
+  duration: number;
+  displayOrder: number;
+  videoUrl: string | null;
+  isTrial: boolean;
+}
+
+export interface QuizResponse {
+  name: string;
+}
+
+export interface DocumentResponse {
+  name: string;
+}
+
+export interface LectureResponse {
+  name: string;
+  description: string;
+  displayOrder: number;
+  videos: VideoResponse[];
+  quizzes: QuizResponse[];
+  documents: DocumentResponse[];
+}
+
+// Response from /api/Lecture/get-video/{videoId}
+export interface GetVideoApiResponse {
+  name: string;
+  description: string;
+  price: number;
+  imageUrl: string;
+  instructorName: string;
+  rating: number;
+  totalReviews: number;
+  totalStudents: number;
+  totalHours: number;
+  isEnrolled: boolean;
+  lectures: LectureResponse[];
 }
