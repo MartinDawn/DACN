@@ -479,6 +479,30 @@ const QuizContent: React.FC<QuizContentProps> = ({
     onSubmitRef.current(payload);
   }, [timeLeft]);
 
+  // Handle ESC key to close modals
+  React.useEffect(() => {
+    const handleEscKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        // Đóng modal theo thứ tự ưu tiên (modal trên cùng đóng trước)
+        if (showReview) {
+          setShowReview(false);
+          onClearReview();
+          setShowHistory(true);
+        } else if (showHistory) {
+          setShowHistory(false);
+        }
+      }
+    };
+
+    if (showHistory || showReview) {
+      document.addEventListener('keydown', handleEscKey);
+    }
+
+    return () => {
+      document.removeEventListener('keydown', handleEscKey);
+    };
+  }, [showHistory, showReview, onClearReview]);
+
   // ── History panel ──
   if (showHistory) {
     return (
@@ -1645,7 +1669,7 @@ const LessonContentPage: React.FC = () => {
                     Bài {currentIndex + 1} / {timeline.length}
                   </span>
                 </div>
-                <h1 className="text-xl font-bold text-slate-900 leading-snug truncate" title={lesson.title}>{lesson.title}</h1>
+                <h1 className="text-xl font-bold text-slate-900 leading-snug truncate overflow-hidden max-w-md" title={lesson.title}>{lesson.title}</h1>
                 <p className="text-sm text-slate-500">{section.title}</p>
               </div>
 

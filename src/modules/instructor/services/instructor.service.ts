@@ -141,4 +141,13 @@ export const instructorService = {
     const response = await apiClient.put(`/Course/update-comment/${commentId}`, { rate, content });
     return response.data;
   },
+
+  /**
+   * Deletes a comment/reply.
+   * @param commentId The ID of the comment to delete.
+   */
+  async deleteComment(commentId: string): Promise<any> {
+    const response = await apiClient.delete(`/Course/delete-comment/${commentId}`);
+    return response.data;
+  },
 };

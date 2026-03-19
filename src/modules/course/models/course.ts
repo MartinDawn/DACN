@@ -63,6 +63,8 @@ export interface CourseCommentReply {
   commentId: string;
   content: string;
   timestamp: string;
+  isMyComment: boolean;
+  canDelete: boolean;
 }
 
 export interface CourseComment {
@@ -72,11 +74,13 @@ export interface CourseComment {
   rate: number;
   content: string;
   isMyComment: boolean;
+  canDelete: boolean;
   timestamp: string;
   replies?: CourseCommentReply[];
 }
 
 export interface CourseCommentsData {
+  isInstructor: boolean;
   myComment: CourseComment | null;
   allComments: CourseComment[];
 }

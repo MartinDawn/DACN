@@ -268,10 +268,10 @@ const DetailCourse: React.FC = () => {
                                   key={video.id}
                                   className="flex items-center justify-between gap-2 rounded-2xl bg-[#f8f8ff] p-4"
                                 >
-                                  <div className="flex items-center gap-3 flex-1">
+                                  <div className="flex items-center gap-3 flex-1 min-w-0">
                                     <PlayCircleIcon className="h-5 w-5 flex-shrink-0 text-[#5a2dff]" />
-                                    <div className="flex-1">
-                                      <p className="text-sm font-semibold text-gray-700">{video.name}</p>
+                                    <div className="flex-1 min-w-0">
+                                      <p className="text-sm font-semibold text-gray-700 truncate min-w-0" title={video.name}>{video.name}</p>
                                       <p className="text-xs text-gray-500">
                                         {Math.floor(video.duration / 60)}:{String(Math.floor(video.duration % 60)).padStart(2, '0')} phút
                                       </p>
@@ -281,7 +281,7 @@ const DetailCourse: React.FC = () => {
                                     <button
                                       onClick={() => handlePreviewVideo(video.id, video.name)}
                                       disabled={isLoadingVideo}
-                                      className="px-3 py-1.5 text-xs font-semibold text-white bg-[#5a2dff] rounded-full hover:bg-[#3c1cd6] transition disabled:opacity-50"
+                                      className="px-3 py-1.5 text-xs font-semibold text-white bg-[#5a2dff] rounded-full hover:bg-[#3c1cd6] transition disabled:opacity-50 flex-shrink-0"
                                     >
                                       Xem thử
                                     </button>
@@ -503,10 +503,10 @@ const DetailCourse: React.FC = () => {
           >
             {/* Modal Header */}
             <div className="flex items-center justify-between p-6 border-b border-gray-200">
-              <h3 className="text-xl font-bold text-gray-900">{previewVideo.name}</h3>
+              <h3 className="text-xl font-bold text-gray-900 truncate min-w-0 flex-1" title={previewVideo.name}>{previewVideo.name}</h3>
               <button
                 onClick={closePreviewVideo}
-                className="p-2 rounded-full hover:bg-gray-100 transition"
+                className="p-2 rounded-full hover:bg-gray-100 transition flex-shrink-0"
               >
                 <XMarkIcon className="h-6 w-6 text-gray-600" />
               </button>

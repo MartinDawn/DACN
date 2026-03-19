@@ -30,6 +30,10 @@ const InstructorDashboard: React.FC = () => {
   const [courseComments, setCourseComments] = useState<CourseComment[]>([]);
   const [commentsLoading, setCommentsLoading] = useState(false);
 
+  // State for Delete Reply Confirmation Modal
+  const [showDeleteReplyModal, setShowDeleteReplyModal] = useState(false);
+  const [replyToDelete, setReplyToDelete] = useState<{ commentId: string; content: string } | null>(null);
+
   // State for Reply
   const [replyingToCommentId, setReplyingToCommentId] = useState<string | null>(null);
   const [replyContent, setReplyContent] = useState("");
@@ -177,10 +181,50 @@ const InstructorDashboard: React.FC = () => {
     }
   };
 
+  const handleDeleteReply = (commentId: string, content: string) => {
+    setReplyToDelete({ commentId, content });
+    setShowDeleteReplyModal(true);
+  };
+
+  const confirmDeleteReply = async () => {
+    if (!replyToDelete) return;
+
+    try {
+      await instructorService.deleteComment(replyToDelete.commentId);
+      toast.success("Đã xóa phản hồi thành công!");
+
+      if (selectedCourseForComments) {
+        const res = await instructorService.getCourseComments(selectedCourseForComments.id);
+        // Chỉ lấy comment của học viên: rate >= 1 VÀ không phải comment của giảng viên
+        const filtered = (res?.data?.allComments ?? []).filter(
+          (c) => Number(c.rate) >= 1 && c.isMyComment !== true
+        );
+        setCourseComments(filtered);
+        // Tính average rating chỉ từ đánh giá học viên (loại bỏ hoàn toàn reply của giảng viên)
+        const correctRating = filtered.length > 0
+          ? filtered.reduce((sum, c) => sum + (c.rate || 0), 0) / filtered.length
+          : 0;
+        setCourses(prev => prev.map(c =>
+          c.id === selectedCourseForComments.id ? { ...c, rating: correctRating } : c
+        ));
+      }
+    } catch (error: any) {
+      console.error(error);
+      toast.error(error.response?.data?.message || "Không thể xóa phản hồi.");
+    } finally {
+      setShowDeleteReplyModal(false);
+      setReplyToDelete(null);
+    }
+  };
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
-        if (showCommentsModal) {
+        // Đóng modal theo thứ tự ưu tiên (modal trên cùng đóng trước)
+        if (showDeleteReplyModal) {
+          setShowDeleteReplyModal(false);
+          setReplyToDelete(null);
+        } else if (showCommentsModal) {
           setShowCommentsModal(false);
           setSelectedCourseForComments(null);
           setReplyingToCommentId(null);
@@ -200,7 +244,7 @@ const InstructorDashboard: React.FC = () => {
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [showDeleteModal, showPublishModal, showCreateCourseForm, showCommentsModal]);
+  }, [showDeleteModal, showPublishModal, showCreateCourseForm, showCommentsModal, showDeleteReplyModal]);
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -871,6 +915,47 @@ const InstructorDashboard: React.FC = () => {
         </div>
       )}
 
+      {/* Delete Reply Confirmation Modal */}
+      {showDeleteReplyModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4 backdrop-blur-sm transition-all">
+          <div className="w-full max-w-md transform overflow-hidden rounded-2xl bg-white p-6 shadow-2xl transition-all animate-in fade-in zoom-in duration-200">
+            <div className="text-center">
+              <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[#eef2ff]">
+                <AlertTriangle className="h-8 w-8 text-[#5a2dff]" />
+              </div>
+              <h3 className="mb-2 text-xl font-bold text-gray-900">Xóa Phản Hồi?</h3>
+              <p className="text-sm text-gray-500">
+                Bạn có chắc chắn muốn xóa phản hồi này?
+                {replyToDelete?.content && (
+                  <>
+                    <br />
+                    <span className="mt-2 inline-block max-w-full truncate rounded-lg bg-gray-100 px-3 py-2 text-xs italic text-gray-700">
+                      "{replyToDelete.content.length > 100 ? replyToDelete.content.slice(0, 100) + '...' : replyToDelete.content}"
+                    </span>
+                  </>
+                )}
+                <br />Hành động này không thể hoàn tác.
+              </p>
+            </div>
+
+            <div className="mt-8 flex gap-3">
+              <button
+                onClick={() => setShowDeleteReplyModal(false)}
+                className="flex-1 rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 shadow-sm transition-all hover:bg-gray-50 hover:text-[#5a2dff] hover:border-[#5a2dff]"
+              >
+                Hủy bỏ
+              </button>
+              <button
+                onClick={confirmDeleteReply}
+                className="flex-1 rounded-xl bg-[#5a2dff] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-[#4a21eb] hover:shadow-lg hover:shadow-[#5a2dff]/30"
+              >
+                Xóa ngay
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Publish Request Confirmation Modal */}
       {showPublishModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4 backdrop-blur-sm transition-all">
@@ -1039,14 +1124,24 @@ const InstructorDashboard: React.FC = () => {
                                         )}
                                       </div>
                                     </div>
-                                    <button
-                                      onClick={() => handleEditReply(reply.commentId!, reply.content || "")}
-                                      className="flex items-center gap-1 rounded-lg border border-gray-200 px-2 py-1 text-xs text-gray-600 transition hover:bg-gray-50"
-                                      title="Chỉnh sửa phản hồi"
-                                    >
-                                      <FileEdit size={12} />
-                                      Sửa
-                                    </button>
+                                    <div className="flex items-center gap-2">
+                                      <button
+                                        onClick={() => handleEditReply(reply.commentId!, reply.content || "")}
+                                        className="flex items-center gap-1 rounded-lg border border-gray-200 px-2 py-1 text-xs text-gray-600 transition hover:bg-gray-50"
+                                        title="Chỉnh sửa phản hồi"
+                                      >
+                                        <FileEdit size={12} />
+                                        Sửa
+                                      </button>
+                                      <button
+                                        onClick={() => handleDeleteReply(reply.commentId!, reply.content || '')}
+                                        className="flex items-center gap-1 rounded-lg border border-red-200 px-2 py-1 text-xs text-red-600 transition hover:bg-red-50"
+                                        title="Xóa phản hồi"
+                                      >
+                                        <Trash2 size={12} />
+                                        Xóa
+                                      </button>
+                                    </div>
                                   </div>
                                   {reply.content && (
                                     <p className="mt-2 text-sm text-gray-600 leading-relaxed">{reply.content}</p>

@@ -43,6 +43,23 @@ const QuizModal: React.FC<QuizModalProps> = ({ isOpen, onClose, lectureId, quizI
     }
   }, [isOpen, quizIdToEdit]);
 
+  // Handle ESC key to close modal
+  useEffect(() => {
+    const handleEscKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && isOpen && !isLoading) {
+        onClose();
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener('keydown', handleEscKey);
+    }
+
+    return () => {
+      document.removeEventListener('keydown', handleEscKey);
+    };
+  }, [isOpen, isLoading, onClose]);
+
   const resetForm = () => {
     setName("");
     setDescription("");
