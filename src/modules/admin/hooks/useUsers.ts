@@ -1,11 +1,15 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { userService } from '../services/user.service';
+import { useRefreshOnLanguageChange } from '../../../hooks/useRefreshOnLanguageChange';
 import type { UserResponse, InstructorRequest } from '../models/user.model';
 
 export const useUsers = () => {
   const [users, setUsers] = useState<UserResponse[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Track if users have been loaded for language refresh
+  const usersLoaded = useRef(false);
 
   const fetchUsers = useCallback(async () => {
     setIsLoading(true);
@@ -32,12 +36,20 @@ export const useUsers = () => {
 
       const unique = Array.from(new Map(combined.map(u => [u.id, u])).values());
       setUsers(unique);
+      usersLoaded.current = true;
     } catch {
       setError('Lỗi kết nối. Vui lòng thử lại.');
     } finally {
       setIsLoading(false);
     }
   }, []);
+
+  // Auto refresh on language change
+  useRefreshOnLanguageChange(() => {
+    if (usersLoaded.current) {
+      fetchUsers();
+    }
+  });
 
   useEffect(() => {
     fetchUsers();
@@ -68,6 +80,9 @@ export const useInstructorRequests = () => {
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
+  // Track if requests have been loaded for language refresh
+  const requestsLoaded = useRef(false);
+
   const fetchRequests = useCallback(async () => {
     setIsLoading(true);
     setError(null);
@@ -75,6 +90,7 @@ export const useInstructorRequests = () => {
       const response = await userService.getInstructorRequests();
       if (response.success) {
         setRequests(response.data || []);
+        requestsLoaded.current = true;
       } else {
         setError(response.message || 'Không thể tải danh sách yêu cầu giảng viên');
       }
@@ -84,6 +100,13 @@ export const useInstructorRequests = () => {
       setIsLoading(false);
     }
   }, []);
+
+  // Auto refresh on language change
+  useRefreshOnLanguageChange(() => {
+    if (requestsLoaded.current) {
+      fetchRequests();
+    }
+  });
 
   useEffect(() => {
     fetchRequests();

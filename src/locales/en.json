@@ -1,0 +1,892 @@
+{
+  "common": {
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "save": "Save",
+    "edit": "Edit",
+    "delete": "Delete",
+    "search": "Search",
+    "filter": "Filter",
+    "reset": "Reset",
+    "next": "Next",
+    "previous": "Previous",
+    "close": "Close",
+    "submit": "Submit",
+    "back": "Back",
+    "selectLanguage": "Select Language",
+    "overview": "Overview",
+    "downloadCertificate": "Download Certificate",
+    "certification": "Certificate"
+  },
+  "navigation": {
+    "home": "Home",
+    "courses": "Courses",
+    "myCourses": "My Courses",
+    "profile": "Profile",
+    "settings": "Settings",
+    "logout": "Logout",
+    "login": "Login",
+    "register": "Register",
+    "dashboard": "Dashboard",
+    "notifications": "Notifications",
+    "curriculum": "Curriculum"
+  },
+  "auth": {
+    "login": "Login",
+    "register": "Register",
+    "logout": "Logout",
+    "email": "Email",
+    "password": "Password",
+    "confirmPassword": "Confirm Password",
+    "firstName": "First Name",
+    "lastName": "Last Name",
+    "forgotPassword": "Forgot Password?",
+    "rememberMe": "Remember me",
+    "orLoginWith": "Or login with",
+    "alreadyHaveAccount": "Already have an account?",
+    "dontHaveAccount": "Don't have an account?",
+    "loginSuccess": "Login successful",
+    "loginDescription": "Login to continue learning",
+    "registerSuccess": "Registration successful",
+    "loginFailed": "Login failed",
+    "registerFailed": "Registration failed",
+    "invalidCredentials": "Invalid credentials",
+    "emailAlreadyExists": "Email already exists"
+  },
+  "course": {
+    "title": "Course",
+    "description": "Description",
+    "price": "Price",
+    "free": "Free",
+    "enrolled": "Enrolled",
+    "duration": "Duration",
+    "level": "Level",
+    "beginner": "Beginner",
+    "intermediate": "Intermediate",
+    "advanced": "Advanced",
+    "instructor": "Instructor",
+    "rating": "Rating",
+    "reviews": "Reviews",
+    "enroll": "Enroll",
+    "continue": "Continue Learning",
+    "completed": "Completed",
+    "inProgress": "In Progress",
+    "notStarted": "Not Started",
+    "searchPlaceholder": "Search courses...",
+    "noCoursesFound": "No courses found",
+    "addToCart": "Add to Cart",
+    "removeFromCart": "Remove from Cart",
+    "removeError": "Cannot remove course",
+    "removeConnectionError": "Connection error occurred. Please try again"
+  },
+  "user": {
+    "profile": "Profile",
+    "personalInfo": "Personal Information",
+    "changePassword": "Change Password",
+    "accountSettings": "Account Settings",
+    "notifications": "Notifications",
+    "privacy": "Privacy",
+    "language": "Language",
+    "theme": "Theme",
+    "profileLoadError": "Could not load profile",
+    "paymentError": "Payment Error!"
+  },
+  "admin": {
+    "dashboard": "Dashboard",
+    "users": "Users",
+    "courses": "Manage Courses",
+    "statistics": "Statistics",
+    "reports": "Reports",
+    "settings": "System Settings"
+  },
+  "instructor": {
+    "dashboard": "Teach",
+    "myCourses": "My Courses",
+    "createCourse": "Create New Course",
+    "students": "Students",
+    "earnings": "Earnings",
+    "analytics": "Analytics",
+    "teacher": {
+      "dashboardTitle": "Instructor Dashboard",
+      "dashboardSubtitle": "Manage your courses and track your performance.",
+      "createCourseButton": "Create New Course",
+      "backButton": "Back",
+      "tabs": {
+        "overview": "Overview",
+        "courses": "Courses",
+        "analytics": "Analytics",
+        "activity": "Activity"
+      },
+      "form": {
+        "title": "Create New Course",
+        "subtitle": "Enter basic information to get started",
+        "courseInfoTitle": "Course Information",
+        "courseInfoSubtitle": "After creating the course, you can add chapters, lessons and videos in the course management section",
+        "courseName": "Course Name",
+        "courseNamePlaceholder": "Example: Complete React Course",
+        "courseCategory": "Course Category",
+        "courseDescription": "Course Description",
+        "courseDescriptionPlaceholder": "Detailed description of the course content and objectives...",
+        "courseDescriptionHelp": "Clear description of what students will learn in this course",
+        "courseImage": "Course Cover Image",
+        "coursePrice": "Course Price (VND)",
+        "coursePricePlaceholder": "Example: 1999000 (enter 0 if free)",
+        "imagePreview": "Preview",
+        "imageUploadText": "Upload course cover image",
+        "imageUploadHelp": "Recommended: 1280x720px, JPG or PNG, max 5MB",
+        "selectImage": "Select Image",
+        "categoryLoading": "Loading categories...",
+        "categoryPlaceholder": "-- Add category --",
+        "removeCategoryAriaLabel": "Remove category {name}",
+        "noteTitle": "Note",
+        "noteItems": {
+          "afterCreation": "After creating the course, you will be redirected to the course management page",
+          "addContent": "There you can add chapters, lessons and upload videos",
+          "editAnytime": "You can edit course information anytime"
+        },
+        "cancelButton": "Cancel",
+        "createButton": "Create Course",
+        "creatingButton": "Creating..."
+      },
+      "overview": {
+        "totalStudents": "Total Students",
+        "totalRevenue": "Total Revenue",
+        "averageRating": "Average Rating",
+        "totalCourses": "Courses",
+        "studentGrowth": "+12% from last month",
+        "revenueGrowth": "+8% from last month",
+        "ratingGrowth": "+0.2 from last month",
+        "courseGrowth": "+1 new course this month",
+        "quickActions": "Quick Actions",
+        "quickActionsSubtitle": "Manage your courses and content",
+        "createCourseAction": "Create Course",
+        "becomeInstructorAction": "Become Instructor",
+        "checkMessagesAction": "Check Messages",
+        "processingAction": "Processing..."
+      },
+      "courseList": {
+        "title": "My Courses",
+        "loading": "Loading course list...",
+        "empty": "You don't have any courses yet",
+        "emptySubtitle": "Create your first course to start sharing your knowledge",
+        "createFirstCourse": "Create first course",
+        "free": "Free",
+        "students": "students",
+        "ratings": "Ratings",
+        "viewRatings": "View student ratings",
+        "manage": "Manage",
+        "published": "Published",
+        "pending": "Pending",
+        "draft": "Draft",
+        "publishedTooltip": "Published",
+        "pendingTooltip": "Pending approval",
+        "requestPublishTooltip": "Request approval",
+        "deleteTooltip": "Delete course"
+      },
+      "activity": {
+        "title": "Recent Activity",
+        "subtitle": "Updates on your course activities",
+        "newRating": "New 5-star rating for course",
+        "newStudents": "25 new students",
+        "registeredToday": "registered today",
+        "newQuestion": "New question in Q&A section of course",
+        "sampleCourse1": "Complete React Course",
+        "sampleCourse2": "Master JavaScript",
+        "hoursAgo2": "2 hours ago",
+        "hoursAgo4": "4 hours ago",
+        "hoursAgo6": "6 hours ago"
+      },
+      "analytics": {
+        "title": "Detailed Analytics",
+        "subtitle": "Quick reports on course performance.",
+        "weeklyViews": "Views this week",
+        "conversionRate": "Conversion rate"
+      },
+      "modals": {
+        "delete": {
+          "title": "Delete Course?",
+          "message": "Are you sure you want to delete the course",
+          "warning": "This action cannot be undone.",
+          "cancel": "Cancel",
+          "confirm": "Delete now"
+        },
+        "publish": {
+          "title": "Send Approval Request?",
+          "message": "Are you sure you want to send approval request for the course",
+          "info": "Admin will review the content before publishing.",
+          "cancel": "Cancel",
+          "confirm": "Send now"
+        },
+        "deleteReply": {
+          "title": "Delete Reply?",
+          "message": "Are you sure you want to delete this reply?",
+          "warning": "This action cannot be undone.",
+          "cancel": "Cancel",
+          "confirm": "Delete now"
+        }
+      },
+      "comments": {
+        "title": "Student Reviews",
+        "loading": "Loading reviews...",
+        "empty": "No reviews yet",
+        "emptySubtitle": "Students haven't left any reviews for this course.",
+        "anonymous": "Anonymous",
+        "instructor": "Instructor",
+        "reply": "Reply",
+        "edit": "Edit",
+        "delete": "Delete",
+        "save": "Save",
+        "cancel": "Cancel",
+        "send": "Send",
+        "replyPlaceholder": "Enter reply...",
+        "editReplyPlaceholder": "Edit reply...",
+        "editReplyTooltip": "Edit reply",
+        "deleteReplyTooltip": "Delete reply"
+      }
+    },
+    "hook": {
+      "cannotLoadCourses": "Cannot load course list",
+      "notInstructorYet": "You have not registered as an instructor",
+      "becomeInstructorSuccess": "You have become an instructor!",
+      "becomeInstructorFailed": "Failed to register as instructor.",
+      "createCourseSuccess": "Course created successfully!",
+      "createCourseFailed": "Course creation failed.",
+      "needInstructorRole": "You need to be an instructor to create a course. Please register as an instructor first.",
+      "createCourseError": "An error occurred while creating the course.",
+      "deleteCourseSuccess": "Course deleted successfully",
+      "deleteCourseError": "Cannot delete course",
+      "failedFetchTags": "Failed to fetch categories.",
+      "tagsFetchError": "An error occurred while fetching categories.",
+      "becomeInstructorGenericError": "An error occurred while registering as instructor."
+    },
+    "register": {
+      "requestSentSuccess": "Request sent successfully.",
+      "requestSentError": "Error sending request. Please try again.",
+      "requestAlreadySent": "You have already sent a request. Please wait...",
+      "form": {
+        "registrationInfo": "Registration Information",
+        "subtitle": "Please provide accurate information to increase the chance of approval.",
+        "professionalInfo": "Professional Information",
+        "expertise": "Field of expertise / expertise (e.g.: Web Development, Marketing...)",
+        "experience": "Teaching / Work experience (minimum 100 words)",
+        "certificate": "Degrees & Certificates (list)",
+        "introduction": "Brief introduction about yourself (goals, teaching style)...",
+        "socialLinks": "Social network links / Portfolio",
+        "socialLinksPlaceholder": "LinkedIn, Facebook, Personal website, GitHub, Behance...",
+        "cancel": "Cancel",
+        "submit": "Submit Registration",
+        "submitting": "Submitting..."
+      },
+      "faq": {
+        "title": "Frequently Asked Questions",
+        "requirements": {
+          "question": "What do I need to become an instructor?",
+          "answer": "You need professional knowledge in the field you want to teach and good communication skills."
+        },
+        "earnings": {
+          "question": "How much can I earn?",
+          "answer": "Instructors receive 70% of revenue from each course. Income also depends on quality and number of students."
+        },
+        "approval": {
+          "question": "How long does approval take?",
+          "answer": "Usually 2-3 business days. We may contact you for additional information."
+        }
+      }
+    },
+    "toast": {
+      "requestPublishSuccess": "Request for approval sent successfully!",
+      "requestPublishError": "Request failed. Please try again.",
+      "loadRatingError": "Cannot load ratings. Please try again.",
+      "replySuccess": "Reply has been sent!",
+      "replyError": "Cannot send reply. Please try again.",
+      "updateReplySuccess": "Reply updated successfully!",
+      "updateReplyError": "Cannot update reply.",
+      "deleteReplySuccess": "Reply deleted successfully!",
+      "deleteReplyError": "Cannot delete reply.",
+      "imageTooLarge": "Image too large. Please select an image under 5MB",
+      "selectImage": "Please select a course cover image.",
+      "fillRequiredFields": "Please fill in all required fields, including category.",
+      "createCourseSuccess": "Course created successfully!",
+      "createCourseError": "Course creation failed. Please try again.",
+      "deleteCourseSuccess": "Course deleted successfully!",
+      "deleteCourseError": "Course deletion failed. Please try again.",
+      "becomeInstructorError": "An error occurred. Please try again later."
+    }
+  },
+  "forgotPassword": {
+    "title": "Forgot Password",
+    "subtitle": "Enter your email to receive password reset instructions",
+    "newPasswordLabel": "New Password",
+    "emailPlaceholder": "Enter your email",
+    "newPasswordPlaceholder": "Enter new password",
+    "backToHome": "← Home",
+    "backToLogin": "Back to Login",
+    "noAccount": "Don't have an account?",
+    "registerNow": "Sign up now",
+    "buttons": {
+      "sendOtp": "Send OTP",
+      "resetPassword": "Reset Password",
+      "processing": "Processing..."
+    },
+    "messages": {
+      "otpSent": "OTP code has been sent to your email",
+      "otpVerified": "OTP verification successful",
+      "passwordReset": "Password reset successful"
+    },
+    "errors": {
+      "sendOtp": "Error occurred while sending OTP code",
+      "verifyOtp": "Error occurred while verifying OTP code",
+      "resetPassword": "Error occurred while resetting password"
+    }
+  },
+  "register": {
+    "title": "Create Account",
+    "subtitle": "Create an account to start your learning journey",
+    "googleSignup": "Sign up with Google",
+    "or": "or",
+    "username": "Username",
+    "fullName": "Full Name",
+    "phoneNumber": "Phone Number",
+    "placeholders": {
+      "username": "Enter username",
+      "fullName": "Enter your full name",
+      "phoneNumber": "Enter phone number",
+      "email": "Enter email address",
+      "password": "Enter password"
+    },
+    "terms": "I agree to the terms of service and privacy policy",
+    "buttons": {
+      "create": "Create Account"
+    },
+    "errors": {
+      "terms": "Please agree to the terms before proceeding.",
+      "failed": "Registration failed. Please try again.",
+      "google": "Error connecting to Google.",
+      "googleUrl": "Unable to get Google URL. Please try again."
+    }
+  },
+  "courseDetail": {
+    "backToCourses": "Back to Courses",
+    "loading": "Loading...",
+    "instructor": "Instructor",
+    "description": "Course Description",
+    "curriculum": {
+      "videos": "Videos",
+      "tests": "Tests",
+      "documents": "Documents",
+      "empty": "No curriculum available yet."
+    },
+    "reviews": {
+      "title": "Student Reviews",
+      "instructorReply": "Instructor Reply",
+      "loading": "Loading reviews...",
+      "empty": "No reviews to display.",
+      "anonymous": "Anonymous"
+    },
+    "buttons": {
+      "register": "Enroll Course",
+      "addToCart": "Add to Cart",
+      "addingToCart": "Adding...",
+      "inCart": "In Cart",
+      "preview": "Preview",
+      "favorite": "Favorite",
+      "share": "Share",
+      "save": "Save"
+    },
+    "messages": {
+      "addedToCart": "Successfully added to cart!",
+      "videoNotAvailable": "This video is not available for preview or has no URL"
+    },
+    "errors": {
+      "addToCart": "Failed to add to cart.",
+      "serverError": "Error: Unable to connect to server.",
+      "loadVideo": "Error loading video",
+      "submitRating": "Cannot submit rating"
+    },
+    "time": {
+      "minutes": "minutes",
+      "hours": "hours",
+      "onDemandVideo": "hours of on-demand video"
+    },
+    "counts": {
+      "students": "students",
+      "reviews": "reviews",
+      "quiz": "quiz",
+      "document": "document",
+      "documents": "documents"
+    },
+    "price": {
+      "free": "Free"
+    },
+    "includes": {
+      "title": "This course includes",
+      "learningMaterials": "Learning materials",
+      "certificate": "Certificate of completion",
+      "onlineSupport": "Online support"
+    },
+    "guaranteeInfo": {
+      "studyPlan": "The accompanying study plan helps you apply practical knowledge.",
+      "moneyBack": "30-day money-back guarantee."
+    },
+    "videoModal": {
+      "browserNotSupported": "Your browser does not support video playback.",
+      "previewDescription": "This is a preview video. Enroll in the course to view all content."
+    }
+  },
+  "myCourses": {
+    "title": "My Courses",
+    "subtitle": "Track progress and continue learning",
+    "backToHome": "Back to Home",
+    "searchPlaceholder": "Search courses...",
+    "tabs": ["Overview", "My Courses", "Achievements"],
+    "stats": {
+      "total": "Total",
+      "enrolled": "Courses Enrolled",
+      "completed": "Completed",
+      "finished": "Finished Courses",
+      "totalTime": "Total Time",
+      "studyTime": "Accumulated Study Time"
+    },
+    "filters": {
+      "all": "All Courses",
+      "inProgress": "In Progress",
+      "completed": "Completed",
+      "notStarted": "Not Started"
+    }
+  },
+  "home": {
+    "welcomeBack": "Welcome back, {name}!",
+    "continueJourney": "Continue your learning journey",
+    "continueStudying": "Continue Learning",
+    "loading": {
+      "courses": "Loading your courses...",
+      "stats": "Loading stats...",
+      "recommendations": "Loading courses..."
+    },
+    "stats": {
+      "courses": "Courses",
+      "completed": "Completed",
+      "studyTime": "Study Time",
+      "certificates": "Certificates",
+      "totalStudyTime": "Total Study Time",
+      "enrolledCourses": "Enrolled Courses",
+      "completedCourses": "Completed Courses",
+      "completionRate": "Completion Rate"
+    },
+    "tabs": {
+      "overview": "Overview",
+      "myCourses": "My Courses",
+      "achievements": "Achievements"
+    },
+    "quickActions": {
+      "title": "Quick Actions",
+      "description": "Quick actions to continue learning",
+      "myCourses": "My Courses",
+      "myCoursesDesc": "Courses you have enrolled in",
+      "browseCourses": "Browse Courses",
+      "browseCoursesDesc": "Explore our rich course library",
+      "categories": "Categories",
+      "categoriesDesc": "Choose your favorite field",
+      "teaching": "Teaching",
+      "teachingDesc": "Start becoming an instructor",
+      "extraCourses": "Explore more courses",
+      "setGoals": "Set study goals"
+    },
+    "recommendations": "Recommended Courses",
+    "recommendationDescription": "Based on your interests",
+    "empty": {
+      "title": "You haven't enrolled in any courses yet",
+      "description": "Start exploring EduViet's rich course library today.",
+      "browseCourses": "Browse Courses"
+    },
+    "coursePage": {
+      "registered": "Registered Courses",
+      "manageProgress": "Manage and track learning progress"
+    },
+    "achievements": {
+      "certificates": "Certificates",
+      "certificateDescription": "Complete your first course to receive your certificate.",
+      "learningStats": "Learning Statistics",
+      "firstCourse": "Complete your first course",
+      "studiedHours": "Studied 5 hours",
+      "studyStreak": "Study streak one week",
+      "jsExpert": "JavaScript Expert"
+    },
+    "noRecommendations": "No recommended courses"
+  },
+  "checkout": {
+    "title": "Checkout Order",
+    "subtitle": "Complete information to access all course content with just a few steps.",
+    "backToCart": "Back to Cart",
+    "loading": "Loading payment information...",
+    "buyerInfo": {
+      "title": "Buyer Information",
+      "fullName": "Full Name *",
+      "fullNamePlaceholder": "Enter full name",
+      "email": "Email *",
+      "emailPlaceholder": "Enter email",
+      "phone": "Phone Number *",
+      "phonePlaceholder": "0123456789",
+      "city": "Province/City *",
+      "cityPlaceholder": "Enter province/city"
+    },
+    "paymentMethod": {
+      "title": "Payment Method",
+      "creditCard": "Credit/Debit Card",
+      "creditCardDesc": "Visa, Mastercard, JCB",
+      "vnpay": "VNPay / Mobile Banking",
+      "vnpayDesc": "Scan QR code or use domestic ATM card",
+      "wallet": "Other E-wallets",
+      "walletDesc": "MoMo, ZaloPay, ShopeePay"
+    },
+    "cardDetails": {
+      "title": "Card Details",
+      "cardNumber": "Card Number *",
+      "cardNumberPlaceholder": "1234 5678 9012 3456",
+      "cardName": "Name on Card *",
+      "cardNamePlaceholder": "NGUYEN VAN A",
+      "expiry": "Expiration Date *",
+      "expiryPlaceholder": "MM/YY",
+      "cvv": "CVV *",
+      "cvvPlaceholder": "123",
+      "securityInfo": "Your payment information is encrypted with SSL 256-bit."
+    },
+    "orderSummary": {
+      "title": "Order Summary",
+      "subtotal": "Subtotal",
+      "discount": "Discount",
+      "tax": "Tax (8%)",
+      "total": "Total",
+      "processing": "Processing..."
+    },
+    "terms": {
+      "agree": "I agree to the",
+      "terms": "Terms of Service"
+    },
+    "completePayment": "Complete Payment",
+    "securityGuarantee": {
+      "title": "Payment Security",
+      "description": "30-day money back guarantee if you are not satisfied."
+    },
+    "errors": {
+      "cardMethodUnavailable": "Card payment feature is under development. Please choose VNPay.",
+      "methodUnavailable": "This payment method is not supported yet."
+    },
+    "empty": {
+      "title": "No courses in cart.",
+      "exploreCourses": "Explore Courses"
+    }
+  },
+  "cart": {
+    "title": "Your Cart",
+    "continueShopping": "Continue Shopping",
+    "itemCount": "{count} courses in cart",
+    "loading": "Loading your cart...",
+    "empty": {
+      "title": "Your cart is empty",
+      "subtitle": "It seems like you haven't added any courses to your cart yet.",
+      "exploreCourses": "Explore Courses"
+    },
+    "item": {
+      "by": "by",
+      "saveForLater": "Save for Later",
+      "remove": "Remove",
+      "removing": "Removing..."
+    },
+    "recommendations": {
+      "title": "Students who bought this course also bought",
+      "addToCart": "Add to Cart"
+    },
+    "orderSummary": {
+      "title": "Order Summary",
+      "subtotal": "Subtotal ({count} courses)",
+      "total": "Total",
+      "checkout": "Checkout"
+    },
+    "promoCode": {
+      "title": "Promo Code",
+      "placeholder": "Enter promo code",
+      "apply": "Apply"
+    },
+    "securePayment": {
+      "title": "Secure Payment",
+      "creditCard": "Credit/Debit Card",
+      "creditCardDesc": "Support for Visa, MasterCard, JCB",
+      "paypal": "PayPal",
+      "paypalDesc": "Quick payment through PayPal account",
+      "giftCard": "Gift Card",
+      "giftCardDesc": "Use EDUViet gift card code"
+    }
+  },
+  "dashboard": {
+    "stats": {
+      "totalStudents": "Total Students",
+      "instructors": "Instructors",
+      "approvedCourses": "Approved Courses",
+      "pendingCourses": "Pending Approval"
+    },
+    "charts": {
+      "userStats": "Student & Instructor Statistics",
+      "revenue": "Total Revenue"
+    },
+    "trending": {
+      "courses": "Trending Courses",
+      "tags": "Trending Tags"
+    }
+  },
+  "manageCourses": {
+    "searchPlaceholder": "Search courses/instructors...",
+    "errors": {
+      "noId": "Request ID not found. Please try again.",
+      "approve": "Error approving request. Please try again.",
+      "reject": "Error rejecting request. Please try again.",
+      "reasonRequired": "Please enter rejection reason"
+    }
+  },
+  "profile": {
+    "loading": "Loading profile...",
+    "backToHome": "Back to Home",
+    "title": "Personal Information",
+    "subtitle": "Update your profile to receive personalized course recommendations and connect with the learning community.",
+    "buttons": {
+      "edit": "Edit",
+      "save": "Save Changes",
+      "saving": "Saving..."
+    },
+    "placeholders": {
+      "notUpdated": "Not updated",
+      "selfIntroduction": "Introduce yourself",
+      "website": "https://"
+    }
+  },
+  "errors": {
+    "generic": {
+      "unexpected": "An unexpected error occurred",
+      "networkError": "Network error",
+      "serverError": "Server error",
+      "unauthorized": "Unauthorized access",
+      "forbidden": "Access forbidden",
+      "notFound": "Not found"
+    },
+    "auth": {
+      "loginFailed": "An error occurred during login",
+      "registerFailed": "An error occurred during registration",
+      "logoutFailed": "An error occurred during logout",
+      "invalidCredentials": "Invalid login credentials",
+      "userNotFound": "Could not get user information",
+      "passwordResetFailed": "An error occurred during password reset",
+      "otpSendFailed": "An error occurred while sending OTP code",
+      "otpVerifyFailed": "An error occurred while verifying OTP code",
+      "passwordResetError": "An error occurred while resetting password",
+      "googleAuthUrlFailed": "Cannot get Google URL. Please try again",
+      "googleAuthError": "Error connecting to Google",
+      "googleUrlNotFound": "Cannot get Google URL from server",
+      "googleUrlError": "Error getting Google URL",
+      "profileError": "Error getting user information",
+      "exchangeGoogleError": "Error processing Google callback",
+      "noAccessToken": "No access token received from callback backend",
+      "callbackError": "Error calling Google callback on server",
+      "loginFailedGeneric": "Login failed. Please try again",
+      "unauthorized": "Incorrect login credentials. Please check your email and password"
+    }
+  },
+  "registerTeacher": {
+    "pending": {
+      "title": "Pending Approval",
+      "message": "Your instructor registration request has been sent and is under review. Please be patient, we will notify you of the results as soon as possible.",
+      "backToHome": "Back to Home"
+    },
+    "hero": {
+      "badge": "Career Opportunity",
+      "title": "Become an Instructor at EduViet",
+      "subtitle": "Share your knowledge with millions of students worldwide and create passive income from online teaching.",
+      "registerNow": "Register Now"
+    },
+    "stats": {
+      "students": "1.2M+",
+      "studentsLabel": "Active Students",
+      "courses": "10,000+",
+      "coursesLabel": "Diverse Courses",
+      "revenue": "$50M+",
+      "revenueLabel": "Instructor Earnings",
+      "countries": "180+",
+      "countriesLabel": "Countries"
+    },
+    "howItWorks": {
+      "title": "How It Works",
+      "subtitle": "4 simple steps to start your teaching journey",
+      "steps": {
+        "register": {
+          "title": "Register",
+          "description": "Fill out the registration form and provide your professional information"
+        },
+        "review": {
+          "title": "Review",
+          "description": "Our team will review your profile within 2-3 days"
+        },
+        "create": {
+          "title": "Create Course",
+          "description": "Once approved, start creating and uploading your first course"
+        },
+        "earn": {
+          "title": "Earn Money",
+          "description": "Start earning income from students enrolling in your courses"
+        }
+      }
+    },
+    "benefits": {
+      "title": "Benefits of Becoming an Instructor",
+      "subtitle": "Join our leading instructor community and enjoy exclusive benefits",
+      "items": {
+        "income": {
+          "title": "Attractive Income",
+          "description": "Receive up to 70% of revenue from each course sold. More students means higher income."
+        },
+        "flexible": {
+          "title": "Flexible Schedule",
+          "description": "Freedom to arrange your teaching schedule. Work remotely, anytime you want."
+        },
+        "global": {
+          "title": "Global Reach",
+          "description": "Share knowledge with millions of students worldwide."
+        },
+        "support": {
+          "title": "Professional Support",
+          "description": "24/7 expert team support, guidance on creating quality content and marketing."
+        },
+        "tools": {
+          "title": "Powerful Tools",
+          "description": "Modern platform with full student management and data analysis tools."
+        },
+        "community": {
+          "title": "Dynamic Community",
+          "description": "Connect with thousands of other instructors to learn and collaborate."
+        }
+      }
+    },
+    "cta": {
+      "title": "Ready to Get Started?",
+      "subtitle": "Join the EduViet instructor community today and start your journey of sharing knowledge with the world.",
+      "button": "Register as Instructor Now"
+    }
+  },
+  "homepage": {
+    "nav": {
+      "benefits": "Benefits",
+      "courses": "Courses",
+      "offers": "Offers"
+    },
+    "hero": {
+      "badge": "Special Offer - 70% Off",
+      "title": "Learn New Skills Anytime, Anywhere",
+      "subtitle": "From web development to data science, thousands of high-quality courses to help you achieve your goals.",
+      "startFree": "Start for Free",
+      "viewCourses": "View Courses",
+      "imageAlt": "Family Learning"
+    },
+    "features": {
+      "title": "Why Choose EduViet?",
+      "subtitle": "Leading online learning platform trusted by millions of students",
+      "items": {
+        "students": {
+          "title": "Over 57 Million Students",
+          "description": "Join the world's largest learning community"
+        },
+        "certificates": {
+          "title": "Recognized Certificates",
+          "description": "Receive recognized completion certificates"
+        },
+        "anywhere": {
+          "title": "Learn Anytime, Anywhere",
+          "description": "Lifetime access to courses on all devices"
+        },
+        "courses": {
+          "title": "213,000+ Courses",
+          "description": "From basic to advanced in all fields"
+        }
+      }
+    },
+    "popularCourses": {
+      "title": "Popular Courses",
+      "subtitle": "Chosen by thousands of students",
+      "viewAll": "View All",
+      "badge": "Best Seller",
+      "studentsLabel": "students"
+    },
+    "cta": {
+      "title": "Ready to Get Started?",
+      "subtitle": "Join millions of other students and start your skills development journey today",
+      "registerFree": "Sign Up for Free Now"
+    }
+  },
+  "filters": {
+    "title": "Filters",
+    "clear": "Clear",
+    "category": "Category",
+    "all": "All",
+    "priceRange": "Price Range",
+    "maximum": "Maximum",
+    "allCourses": "All Courses",
+    "coursesFound": "courses found",
+    "loadingCourses": "Loading courses...",
+    "noCoursesMatch": "No courses match the current filters.",
+    "previousPage": "Previous Page",
+    "page": "Page",
+    "nextPage": "Next Page",
+    "sortOptions": {
+      "popularity": "Most Popular",
+      "highestRated": "Highest Rated",
+      "newest": "Newest",
+      "priceLowToHigh": "Price: Low to High",
+      "priceHighToLow": "Price: High to Low"
+    }
+  },
+  "notifications": {
+    "title": "Notifications",
+    "subtitle": "Update your learning progress and important notifications.",
+    "backToHome": "Back to Home",
+    "markAllRead": "Mark all as read",
+    "newCount": "{count} new",
+    "tabs": {
+      "all": "All",
+      "unread": "Unread",
+      "courses": "Courses",
+      "achievements": "Achievements",
+      "social": "Community",
+      "offers": "Offers"
+    },
+    "loading": "Loading notifications...",
+    "error": "{error}",
+    "empty": "No notifications in this list.",
+    "clickToMarkRead": "Click on notification to mark as read",
+    "markRead": "Mark as read",
+    "alreadyRead": "Read",
+    "delete": "Delete",
+    "unreadBadge": "Unread",
+    "stats": {
+      "title": "Quick Stats",
+      "total": "Total notifications",
+      "unread": "Unread",
+      "thisWeek": "This week"
+    },
+    "settings": {
+      "title": "Notification Settings",
+      "email": "Email",
+      "push": "Push Notifications",
+      "courseUpdates": "Course Updates",
+      "newMessages": "New Messages",
+      "achievements": "Achievements",
+      "promotions": "Promotions",
+      "learningReminders": "Learning Reminders"
+    },
+    "quickActions": {
+      "title": "Quick Actions",
+      "markAllRead": "Mark all as read",
+      "notificationSettings": "Notification Settings",
+      "testNotification": "Send Test Notification"
+    }
+  }
+}

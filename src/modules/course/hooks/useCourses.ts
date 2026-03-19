@@ -1,6 +1,6 @@
 // src/hooks/useCourses.ts
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import type {
   RecommendedCourse,
   CourseDetail,
@@ -10,8 +10,9 @@ import type {
   AddCommentRequest,
   UpdateCommentRequest,
   CourseCommentsData,
-} from '../models/course'; 
-import { courseService } from '../services/course.service'; 
+} from '../models/course';
+import { courseService } from '../services/course.service';
+import { useRefreshOnLanguageChange } from '../../../hooks/useRefreshOnLanguageChange'; 
 
 /**
  * Custom hook quản lý tất cả state và logic gọi API liên quan đến khóa học.
@@ -23,7 +24,7 @@ export const useCourses = () => {
   const [recommendedCourses, setRecommendedCourses] = useState<RecommendedCourse[]>([]);
   const [isRecommendedLoading, setIsRecommendedLoading] = useState(false);
   const [recommendedError, setRecommendedError] = useState<string | null>(null);
-  
+
   // State cho: My Courses (Tải khi được gọi)
   const [myCourses, setMyCourses] = useState<MyCourse[]>([]);
   const [isMyCoursesLoading, setIsMyCoursesLoading] = useState(false);
@@ -51,6 +52,14 @@ export const useCourses = () => {
   // STATE CHO MY COMMENTS MAP (courseId -> myComment)
   const [myCommentsMap, setMyCommentsMap] = useState<Record<string, CourseComment>>({});
 
+  // --- REFS FOR TRACKING LOADED DATA ---
+  const loadedDataTracker = useRef({
+    recommendedCourses: false,
+    myCourses: false,
+    currentCourseId: null as string | null,
+    currentCourseComments: null as string | null
+  });
+
   // --- LOGIC ---
 
   // 1. Hàm để tải Recommended Courses (gọi tường minh từ trang cần dùng)
@@ -61,6 +70,7 @@ export const useCourses = () => {
       const response = await courseService.getRecommendedCourses();
       if (response.success) {
         setRecommendedCourses(response.data || []);
+        loadedDataTracker.current.recommendedCourses = true;
       } else {
         setRecommendedError(response.message || 'Không thể tải khóa học đề xuất');
       }
@@ -79,6 +89,7 @@ export const useCourses = () => {
       const response = await courseService.getMyCourses();
       if (response.success) {
         setMyCourses(response.data || []);
+        loadedDataTracker.current.myCourses = true;
       } else {
         setMyCoursesError(response.message || 'Không thể tải khóa học của bạn');
       }
@@ -87,15 +98,16 @@ export const useCourses = () => {
     } finally {
       setIsMyCoursesLoading(false);
     }
-  }, []); // Mảng rỗng, hàm này ổn định
+  }, []);
 
   // 3. Hàm để tải Course Detail (dùng cho trang CourseDetail)
   const getCourseDetail = useCallback(async (courseId: string) => {
     if (!courseId) return;
-    
+
     setIsDetailLoading(true);
     setDetailError(null);
     setCourseDetail(null); // Xóa chi tiết cũ
+    loadedDataTracker.current.currentCourseId = courseId;
     try {
       const response = await courseService.getCourseDetail(courseId);
       if (response.success) {
@@ -108,7 +120,7 @@ export const useCourses = () => {
     } finally {
       setIsDetailLoading(false);
     }
-  }, []); // Mảng rỗng, hàm này ổn định
+  }, []);
 
   // 4. Hàm để tải Course Comments (dùng cho trang CourseDetail)
   const getCourseComments = useCallback(async (courseId: string) => {
@@ -116,6 +128,7 @@ export const useCourses = () => {
 
     setIsCommentsLoading(true);
     setCommentsError(null);
+    loadedDataTracker.current.currentCourseComments = courseId;
     try {
       const response = await courseService.getCourseComments(courseId);
       if (response.success) {
@@ -132,7 +145,7 @@ export const useCourses = () => {
     } finally {
       setIsCommentsLoading(false);
     }
-  }, []); // Mảng rỗng, hàm này ổn định
+  }, []);
 const getCourseContent = useCallback(async (courseId: string) => {
     if (!courseId) return;
     
@@ -242,6 +255,28 @@ const getCourseContent = useCallback(async (courseId: string) => {
       console.error('Failed to fetch my comments:', err);
     }
   }, []);
+
+  // --- AUTO REFRESH ON LANGUAGE CHANGE ---
+  useRefreshOnLanguageChange(() => {
+    const tracker = loadedDataTracker.current;
+
+    // Refresh data that has been previously loaded
+    if (tracker.recommendedCourses) {
+      getRecommendedCourses();
+    }
+
+    if (tracker.myCourses) {
+      getMyCourses();
+    }
+
+    if (tracker.currentCourseId) {
+      getCourseDetail(tracker.currentCourseId);
+    }
+
+    if (tracker.currentCourseComments) {
+      getCourseComments(tracker.currentCourseComments);
+    }
+  });
 
   // --- RETURN ---
   // Trả về tất cả state và các hàm để component sử dụng

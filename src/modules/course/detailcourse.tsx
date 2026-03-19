@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useMemo, useCallback } from "react";
 import { Link, useParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import {
   ArrowLeftIcon,
   BookmarkIcon,
@@ -23,14 +24,15 @@ import { cartService } from "../user/services/cart.service";
 import { toast } from "react-hot-toast"; // 1. Import toast đã có
 import { lectureService } from "./services/lecture.service";
 
-const tabs = [
-  { id: "overview", label: "Tổng quan" },
-  { id: "curriculum", label: "Chương trình học" },
-  { id: "reviews", label: "Đánh giá" },
-] as const;
-
 const DetailCourse: React.FC = () => {
+  const { t } = useTranslation();
   const { courseId } = useParams<{ courseId: string }>();
+
+  const tabs = [
+    { id: "overview", label: t('common.overview') },
+    { id: "curriculum", label: t('navigation.curriculum') },
+    { id: "reviews", label: t('course.reviews') },
+  ] as const;
 
   const {
     getCourseDetail,
@@ -73,13 +75,13 @@ const DetailCourse: React.FC = () => {
     try {
       const response = await cartService.addCourseToCart(courseId);
       if (response.success) {
-        toast.success("Đã thêm vào giỏ hàng thành công!");
+        toast.success(t('courseDetail.messages.addedToCart'));
         refreshCart();
       } else {
-        toast.error(response.message || "Thêm vào giỏ hàng thất bại.");
+        toast.error(response.message || t('courseDetail.errors.addToCart'));
       }
     } catch (err) {
-      toast.error("Lỗi: Không thể kết nối đến máy chủ.");
+      toast.error(t('courseDetail.errors.serverError'));
     } finally {
       setIsAdding(false);
     }
@@ -106,10 +108,10 @@ const DetailCourse: React.FC = () => {
       if (videoUrl) {
         setPreviewVideo({ id: videoId, name: videoName, url: videoUrl });
       } else {
-        toast.error("Video này không khả dụng để xem thử hoặc chưa có URL");
+        toast.error(t('courseDetail.messages.videoNotAvailable'));
       }
     } catch (error) {
-      toast.error("Lỗi khi tải video");
+      toast.error(t('courseDetail.errors.loadVideo'));
       console.error(error);
     } finally {
       setIsLoadingVideo(false);
@@ -146,11 +148,11 @@ const DetailCourse: React.FC = () => {
           className="inline-flex items-center gap-2 text-sm font-semibold text-[#5a2dff] transition hover:text-[#3c1cd6]"
         >
           <ArrowLeftIcon className="h-4 w-4" />
-          Quay lại khóa học
+          {t('courseDetail.backToCourses')}
         </Link>
 
         {/* 6. THAY ĐỔI: Dùng state `isDetailLoading` và `detailError` */}
-        {isDetailLoading && <div className="text-center p-12">Đang tải...</div>}
+        {isDetailLoading && <div className="text-center p-12">{t('courseDetail.loading')}</div>}
         {detailError && <div className="text-center p-12 text-red-500">{detailError}</div>}
         
         {!isDetailLoading && !detailError && courseDetail && (
@@ -165,15 +167,15 @@ const DetailCourse: React.FC = () => {
                   <div className="flex items-center gap-1 text-yellow-500">
                     <StarIcon className="h-5 w-5" />
                     <span className="font-semibold text-gray-900">{courseDetail.rating?.toFixed(1)}</span>
-                    <span>({courseDetail.totalReviews} đánh giá)</span>
+                    <span>({courseDetail.totalReviews} {t('courseDetail.counts.reviews')})</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <UserGroupIcon className="h-5 w-5" />
-                    {courseDetail.totalStudents} học viên
+                    {courseDetail.totalStudents} {t('courseDetail.counts.students')}
                   </div>
                   <div className="flex items-center gap-2">
                     <ClockIcon className="h-5 w-5" />
-                    {courseDetail.totalHours} giờ
+                    {courseDetail.totalHours} {t('courseDetail.time.hours')}
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
@@ -183,7 +185,7 @@ const DetailCourse: React.FC = () => {
                     className="h-14 w-14 rounded-full object-cover"
                   />
                   <div>
-                    <p className="text-sm text-gray-500">Giảng viên</p>
+                    <p className="text-sm text-gray-500">{t('courseDetail.instructor')}</p>
                     <p className="text-base font-semibold text-gray-900">{courseDetail.instructorName}</p>
                   </div>
                 </div>
@@ -217,7 +219,7 @@ const DetailCourse: React.FC = () => {
                 <div className="space-y-8">
                   {/* Mô tả khóa học */}
                   <div className="rounded-[28px] bg-white p-8 shadow-[0_16px_40px_rgba(15,23,42,0.08)]">
-                    <h2 className="text-xl font-bold text-gray-900">Mô tả khóa học</h2>
+                    <h2 className="text-xl font-bold text-gray-900">{t('courseDetail.description')}</h2>
                     <div className="mt-6">
                       <p className="text-base leading-relaxed text-gray-700 whitespace-pre-line">{courseDetail.description}</p>
                     </div>
@@ -252,8 +254,8 @@ const DetailCourse: React.FC = () => {
                             )}
                             <p className="text-sm text-gray-400 mt-1">
                               {lecture.videos.length} video{lecture.videos.length > 1 ? 's' : ''} • {' '}
-                              {lecture.quizzes?.length || 0} quiz • {' '}
-                              {lecture.documents?.length || 0} tài liệu
+                              {lecture.quizzes?.length || 0} {t('courseDetail.counts.quiz')} • {' '}
+                              {lecture.documents?.length || 0} {t('courseDetail.counts.documents')}
                             </p>
                           </div>
                         </div>
@@ -261,7 +263,7 @@ const DetailCourse: React.FC = () => {
                         {/* Videos */}
                         {lecture.videos && lecture.videos.length > 0 && (
                           <div className="mt-4">
-                            <h4 className="text-sm font-semibold text-gray-700 mb-2">Videos</h4>
+                            <h4 className="text-sm font-semibold text-gray-700 mb-2">{t('courseDetail.curriculum.videos')}</h4>
                             <ul className="space-y-3">
                               {lecture.videos.map((video) => (
                                 <li
@@ -273,7 +275,7 @@ const DetailCourse: React.FC = () => {
                                     <div className="flex-1 min-w-0">
                                       <p className="text-sm font-semibold text-gray-700 truncate min-w-0" title={video.name}>{video.name}</p>
                                       <p className="text-xs text-gray-500">
-                                        {Math.floor(video.duration / 60)}:{String(Math.floor(video.duration % 60)).padStart(2, '0')} phút
+                                        {Math.floor(video.duration / 60)}:{String(Math.floor(video.duration % 60)).padStart(2, '0')} {t('courseDetail.time.minutes')}
                                       </p>
                                     </div>
                                   </div>
@@ -283,7 +285,7 @@ const DetailCourse: React.FC = () => {
                                       disabled={isLoadingVideo}
                                       className="px-3 py-1.5 text-xs font-semibold text-white bg-[#5a2dff] rounded-full hover:bg-[#3c1cd6] transition disabled:opacity-50 flex-shrink-0"
                                     >
-                                      Xem thử
+                                      {t('courseDetail.buttons.preview')}
                                     </button>
                                   )}
                                 </li>
@@ -295,7 +297,7 @@ const DetailCourse: React.FC = () => {
                         {/* Quizzes */}
                         {lecture.quizzes && lecture.quizzes.length > 0 && (
                           <div className="mt-4">
-                            <h4 className="text-sm font-semibold text-gray-700 mb-2">Bài kiểm tra</h4>
+                            <h4 className="text-sm font-semibold text-gray-700 mb-2">{t('courseDetail.curriculum.tests')}</h4>
                             <ul className="space-y-3">
                               {lecture.quizzes.map((quiz, index) => (
                                 <li
@@ -313,7 +315,7 @@ const DetailCourse: React.FC = () => {
                         {/* Documents */}
                         {lecture.documents && lecture.documents.length > 0 && (
                           <div className="mt-4">
-                            <h4 className="text-sm font-semibold text-gray-700 mb-2">Tài liệu</h4>
+                            <h4 className="text-sm font-semibold text-gray-700 mb-2">{t('courseDetail.curriculum.documents')}</h4>
                             <ul className="space-y-3">
                               {lecture.documents.map((doc, index) => (
                                 <li
@@ -331,7 +333,7 @@ const DetailCourse: React.FC = () => {
                     ))
                   ) : (
                     <div className="rounded-[28px] border border-dashed border-gray-200 bg-white p-12 text-center text-sm font-semibold text-gray-500">
-                      Chưa có chương trình học nào.
+                      {t('courseDetail.curriculum.empty')}
                     </div>
                   )}
                 </div>
@@ -342,7 +344,7 @@ const DetailCourse: React.FC = () => {
                 <div className="rounded-[28px] bg-white p-8 shadow-[0_16px_40px_rgba(15,23,42,0.08)]">
                   {isCommentsLoading && (
                     <div className="flex items-center justify-center py-8">
-                      <div className="text-sm text-gray-500 animate-pulse">Đang tải đánh giá...</div>
+                      <div className="text-sm text-gray-500 animate-pulse">{t('courseDetail.reviews.loading')}</div>
                     </div>
                   )}
 
@@ -354,13 +356,13 @@ const DetailCourse: React.FC = () => {
 
                   {!isCommentsLoading && !commentsError && courseComments.length === 0 && (
                     <div className="rounded-[28px] border border-dashed border-gray-200 bg-white p-12 text-center text-sm font-semibold text-gray-500">
-                      Chưa có đánh giá nào được hiển thị.
+                      {t('courseDetail.reviews.empty')}
                     </div>
                   )}
 
                   {!isCommentsLoading && !commentsError && courseComments.length > 0 && (
                     <div className="space-y-6">
-                      <h2 className="text-xl font-bold text-gray-900">Đánh giá từ học viên</h2>
+                      <h2 className="text-xl font-bold text-gray-900">{t('courseDetail.reviews.title')}</h2>
                       <div className="divide-y divide-gray-100">
                         {courseComments.map((comment) => (
                           <div key={comment.commentId} className="py-6">
@@ -373,7 +375,7 @@ const DetailCourse: React.FC = () => {
                               <div className="flex-1">
                                 <div className="flex items-center justify-between">
                                   <div>
-                                    <p className="font-semibold text-gray-900">{comment.userName || 'Ẩn danh'}</p>
+                                    <p className="font-semibold text-gray-900">{comment.userName || t('courseDetail.reviews.anonymous')}</p>
                                     <p className="text-sm text-gray-500">
                                       {new Date(comment.timestamp).toLocaleDateString('vi-VN', {
                                         year: 'numeric', month: 'long', day: 'numeric'
@@ -398,7 +400,7 @@ const DetailCourse: React.FC = () => {
                                   <div className="mt-4 space-y-3 border-l-2 border-indigo-100 pl-4">
                                     {comment.replies.map((reply) => (
                                       <div key={reply.commentId} className="rounded-lg bg-indigo-50 p-3">
-                                        <p className="text-xs font-semibold text-indigo-700">Giảng viên phản hồi</p>
+                                        <p className="text-xs font-semibold text-indigo-700">{t('courseDetail.reviews.instructorReply')}</p>
                                         <p className="mt-1 text-sm text-gray-700">{reply.content}</p>
                                         <p className="mt-1 text-xs text-gray-400">
                                           {new Date(reply.timestamp).toLocaleDateString('vi-VN', {
@@ -426,65 +428,65 @@ const DetailCourse: React.FC = () => {
               <div className="space-y-4">
                 <div className="flex items-baseline gap-3">
                   <p className="text-3xl font-bold text-gray-900">
-                    {courseDetail.price === 0 ? "Miễn phí" : `${courseDetail.price?.toLocaleString()}đ`}
+                    {courseDetail.price === 0 ? t('courseDetail.price.free') : `${courseDetail.price?.toLocaleString()}đ`}
                   </p>
                 </div>
                 
-                <button 
+                <button
                   className="w-full rounded-full bg-[#5a2dff] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#3c1cd6]">
-                  Đăng ký khóa học
+                  {t('courseDetail.buttons.register')}
                 </button>
                 <button 
                   onClick={handleAddToCart}
                   disabled={isAdding || isInCart}
                   className="w-full rounded-full border border-[#e4e6f1] px-5 py-3 text-sm font-semibold text-gray-700 transition hover:border-[#d6d7e4] hover:bg-[#f7f7fb] disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400"
                 >
-                  {isAdding 
-                    ? "Đang thêm..." 
-                    : isInCart 
-                    ? "Đã có trong giỏ hàng" 
-                    : "Thêm vào giỏ hàng"
+                  {isAdding
+                    ? t('courseDetail.buttons.addingToCart')
+                    : isInCart
+                    ? t('courseDetail.buttons.inCart')
+                    : t('courseDetail.buttons.addToCart')
                   }
                 </button>
                 <div className="flex items-center justify-between text-sm text-gray-500">
                   <button className="inline-flex items-center gap-2 rounded-full border border-gray-200 px-4 py-2 transition hover:border-[#5a2dff] hover:text-[#5a2dff]">
                     <HeartIcon className="h-4 w-4" />
-                    Yêu thích
+                    {t('courseDetail.buttons.favorite')}
                   </button>
                   <button className="inline-flex items-center gap-2 rounded-full border border-gray-200 px-4 py-2 transition hover:border-[#5a2dff] hover:text-[#5a2dff]">
                     <ShareIcon className="h-4 w-4" />
-                    Chia sẻ
+                    {t('courseDetail.buttons.share')}
                   </button>
                   <button className="inline-flex items-center gap-2 rounded-full border border-gray-200 px-4 py-2 transition hover:border-[#5a2dff] hover:text-[#5a2dff]">
                     <BookmarkIcon className="h-4 w-4" />
-                    Lưu lại
+                    {t('courseDetail.buttons.save')}
                   </button>
                 </div>
               </div>
               <div className="space-y-3">
-                <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">Khóa học này bao gồm</p>
+                <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">{t('courseDetail.includes.title')}</p>
                 <ul className="space-y-3 text-sm text-gray-600">
                   <li className="flex items-center gap-3 rounded-2xl bg-[#f7f7fb] px-4 py-3">
                     <PlayCircleIcon className="h-5 w-5 text-[#5a2dff]" />
-                    <span className="font-semibold">{courseDetail.totalHours} giờ video theo yêu cầu</span>
+                    <span className="font-semibold">{courseDetail.totalHours} {t('courseDetail.time.onDemandVideo')}</span>
                   </li>
                   <li className="flex items-center gap-3 rounded-2xl bg-[#f7f7fb] px-4 py-3">
                     <DocumentArrowDownIcon className="h-5 w-5 text-[#5a2dff]" />
-                    <span className="font-semibold">Tài liệu học tập</span>
+                    <span className="font-semibold">{t('courseDetail.includes.learningMaterials')}</span>
                   </li>
                   <li className="flex items-center gap-3 rounded-2xl bg-[#f7f7fb] px-4 py-3">
                     <CheckBadgeIcon className="h-5 w-5 text-[#5a2dff]" />
-                    <span className="font-semibold">Chứng chỉ hoàn thành</span>
+                    <span className="font-semibold">{t('courseDetail.includes.certificate')}</span>
                   </li>
                   <li className="flex items-center gap-3 rounded-2xl bg-[#f7f7fb] px-4 py-3">
                     <LanguageIcon className="h-5 w-5 text-[#5a2dff]" />
-                    <span className="font-semibold">Hỗ trợ trực tuyến</span>
+                    <span className="font-semibold">{t('courseDetail.includes.onlineSupport')}</span>
                   </li>
                 </ul>
               </div>
               <div className="rounded-2xl bg-[#f6f7ff] p-4 text-sm text-gray-600">
-                <p>Kế hoạch học tập đi kèm giúp bạn triển khai kiến thức thực tế.</p>
-                <p className="mt-2 font-semibold text-gray-900">Bảo đảm hoàn tiền trong 30 ngày.</p>
+                <p>{t('courseDetail.guaranteeInfo.studyPlan')}</p>
+                <p className="mt-2 font-semibold text-gray-900">{t('courseDetail.guaranteeInfo.moneyBack')}</p>
               </div>
             </aside>
           </div>
@@ -520,14 +522,14 @@ const DetailCourse: React.FC = () => {
                 autoPlay
                 className="w-full h-full"
               >
-                Trình duyệt của bạn không hỗ trợ phát video.
+                {t('courseDetail.videoModal.browserNotSupported')}
               </video>
             </div>
 
             {/* Modal Footer */}
             <div className="p-6 bg-gray-50 text-center">
               <p className="text-sm text-gray-600">
-                Đây là video xem thử. Đăng ký khóa học để xem toàn bộ nội dung.
+                {t('courseDetail.videoModal.previewDescription')}
               </p>
             </div>
           </div>

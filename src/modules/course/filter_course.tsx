@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom"; 
+import { Link } from "react-router-dom";
 import { ArrowLeftIcon } from "@heroicons/react/24/outline";
+import { useTranslation } from "react-i18next";
 import UserLayout from "./layout/layout";
 import PostCard from "./components/post_card2";
 
 // Chỉ import hook cho LỌC
-import { useCoursesFilter } from "./hooks/useCoursesFilter"; 
+import { useCoursesFilter } from "./hooks/useCoursesFilter";
 import type { FilterParams, MyCourse } from './models/course'; 
 
 // interface CourseWithRating extends MyCourse {
@@ -18,11 +19,13 @@ const priceLimit = 5_000_000;
 const currencyFormatter = new Intl.NumberFormat("vi-VN");
 
 const ViewAllCourse: React.FC = () => {
+  const { t } = useTranslation();
+
   // 2. State cho bộ lọc - SỬA THÀNH MẢNG (string[])
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]); // Mặc định rỗng là "Tất cả"
   const [maxPrice, setMaxPrice] = useState<number>(priceLimit);
   const [sortOption, setSortOption] = useState<SortOption>("popularity");
-  
+
   // 3. State cho phân trang
   const [page, setPage] = useState(1);
 
@@ -103,7 +106,7 @@ const ViewAllCourse: React.FC = () => {
           className="inline-flex items-center gap-2 text-sm font-semibold text-[#5a2dff] transition hover:text-[#3c1cd6]"
         >
           <ArrowLeftIcon className="h-4 w-4" />
-          Quay lại trang chủ
+          {t('myCourses.backToHome')}
         </Link>
 
         <div className="grid gap-10 lg:grid-cols-[280px,1fr]">
@@ -112,17 +115,17 @@ const ViewAllCourse: React.FC = () => {
           <aside className="space-y-10 rounded-[32px] bg-white p-8 shadow-[0_16px_40px_rgba(15,23,42,0.08)] lg:sticky lg:top-28 lg:self-start">
             <div className="space-y-5">
               <div className="flex items-center justify-between">
-                <h2 className="text-xl font-bold text-gray-900">Bộ lọc</h2>
+                <h2 className="text-xl font-bold text-gray-900">{t('filters.title')}</h2>
                 <button
                   type="button"
                   onClick={resetFilters}
                   className="text-sm font-semibold text-[#5a2dff] transition hover:text-[#3c1cd6]"
                 >
-                  Xóa
+                  {t('filters.clear')}
                 </button>
               </div>
               <div className="space-y-1.5">
-                <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">Danh mục</p>
+                <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">{t('filters.category')}</p>
                 <div className="space-y-2">
                   {/* Nút "Tất cả" */}
                   <button
@@ -134,12 +137,12 @@ const ViewAllCourse: React.FC = () => {
                         : "text-gray-700 hover:bg-[#f3f4fb]"
                     }`}
                   >
-                    Tất cả
+                    {t('filters.all')}
                   </button>
 
                   {/* Danh sách Tags (Multi-select) */}
                   {tagsLoading ? (
-                    <p className="p-2 text-sm text-gray-400">Đang tải...</p>
+                    <p className="p-2 text-sm text-gray-400">{t('common.loading')}</p>
                   ) : tagsError ? (
                     <p className="p-2 text-sm text-red-500">{tagsError}</p>
                   ) : (
@@ -167,7 +170,7 @@ const ViewAllCourse: React.FC = () => {
             </div>
 
             <div className="space-y-4">
-              <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">Khoảng giá</p>
+              <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">{t('filters.priceRange')}</p>
               <div className="space-y-3">
                 <input
                   type="range"
@@ -178,7 +181,7 @@ const ViewAllCourse: React.FC = () => {
                   onChange={(event) => setMaxPrice(Number(event.target.value))}
                   className="h-2 w-full cursor-pointer appearance-none rounded-full bg-[#e7e9f5]"
                 />
-                <p className="text-right text-sm font-semibold text-gray-600">Tối đa: {formattedMaxPrice}</p>
+                <p className="text-right text-sm font-semibold text-gray-600">{t('filters.maximum')}: {formattedMaxPrice}</p>
               </div>
             </div>
           </aside>
@@ -187,30 +190,30 @@ const ViewAllCourse: React.FC = () => {
           <section className="space-y-8">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
               <div>
-                <h1 className="text-3xl font-bold text-gray-900">Tất cả khóa học</h1>
+                <h1 className="text-3xl font-bold text-gray-900">{t('filters.allCourses')}</h1>
                 <p className="text-sm text-gray-500">
-                  {pagination?.totalCount ?? 0} khóa học được tìm thấy
+                  {pagination?.totalCount ?? 0} {t('filters.coursesFound')}
                 </p>
               </div>
-              
+
               <div className="relative w-full sm:w-56">
                 <select
                   value={sortOption}
                   onChange={(event) => setSortOption(event.target.value as SortOption)}
                   className="h-12 w-full appearance-none rounded-2xl border border-[#e4e6f1] bg-white px-4 text-sm font-semibold text-gray-600 outline-none transition hover:border-[#d6d7e4] focus:border-[#5a2dff] focus:text-[#5a2dff]"
                 >
-                  <option value="popularity">Phổ biến nhất</option>
-                  <option value="rating">Đánh giá cao nhất</option>
-                  <option value="newest">Mới nhất</option>
-                  <option value="priceasc">Giá thấp đến cao</option>
-                  <option value="pricedesc">Giá cao đến thấp</option>
+                  <option value="popularity">{t('filters.sortOptions.popularity')}</option>
+                  <option value="rating">{t('filters.sortOptions.highestRated')}</option>
+                  <option value="newest">{t('filters.sortOptions.newest')}</option>
+                  <option value="priceasc">{t('filters.sortOptions.priceLowToHigh')}</option>
+                  <option value="pricedesc">{t('filters.sortOptions.priceHighToLow')}</option>
                 </select>
                 <span className="pointer-events-none absolute inset-y-0 right-4 flex items-center text-gray-400">▼</span>
               </div>
             </div>
 
             {isLoading ? (
-              <div className="text-center p-12 text-lg font-semibold text-gray-500">Đang tải các khóa học...</div>
+              <div className="text-center p-12 text-lg font-semibold text-gray-500">{t('filters.loadingCourses')}</div>
             ) : error ? (
               <div className="text-center p-12 text-lg font-semibold text-red-500">{error}</div>
             ) : courses.length > 0 ? (
@@ -227,8 +230,8 @@ const ViewAllCourse: React.FC = () => {
                     
                     price={`${currencyFormatter.format(course.price)}đ`}
                     image={course.imageUrl || "https://placehold.co/300x200"}
-                    students={`${course.totalStudents || 0} học viên`}
-                    duration={`${course.totalHours || 0} giờ`}
+                    students={`${course.totalStudents || 0} ${t('courseDetail.counts.students')}`}
+                    duration={`${course.totalHours || 0} ${t('courseDetail.time.hours')}`}
                     originalPrice={course.originalPrice ? `${currencyFormatter.format(course.originalPrice)}đ` : undefined}
                     ratingCount="0" 
                     description=""
@@ -238,10 +241,10 @@ const ViewAllCourse: React.FC = () => {
               </div>
             ) : (
               <div className="rounded-3xl border border-dashed border-gray-200 bg-white p-12 text-center text-sm font-semibold text-gray-500">
-                Không tìm thấy khóa học phù hợp với bộ lọc hiện tại.
+                {t('filters.noCoursesMatch')}
               </div>
             )}
-            
+
             {/* Phân Trang */}
             {pagination && pagination.totalPages > 1 && (
               <div className="flex items-center justify-center gap-4 text-sm font-semibold">
@@ -250,17 +253,17 @@ const ViewAllCourse: React.FC = () => {
                   disabled={!pagination.hasPreviousPage}
                   className="rounded-full bg-[#5a2dff] px-5 py-2 text-white shadow-lg shadow-[#5a2dff]/30 transition hover:bg-[#4a21eb] disabled:cursor-not-allowed disabled:bg-gray-300"
                 >
-                  Trang trước
+                  {t('filters.previousPage')}
                 </button>
                 <span className="text-gray-600">
-                  Trang {pagination.page} / {pagination.totalPages}
+                  {t('filters.page')} {pagination.page} / {pagination.totalPages}
                 </span>
                 <button
                   onClick={() => setPage(p => p + 1)}
                   disabled={!pagination.hasNextPage}
                   className="rounded-full bg-[#5a2dff] px-5 py-2 text-white shadow-lg shadow-[#5a2dff]/30 transition hover:bg-[#4a21eb] disabled:cursor-not-allowed disabled:bg-gray-300"
                 >
-                  Trang sau
+                  {t('filters.nextPage')}
                 </button>
               </div>
             )}

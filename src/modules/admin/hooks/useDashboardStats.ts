@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import dashboardService from '../services/dashboardService';
+import { useRefreshOnLanguageChange } from '../../../hooks/useRefreshOnLanguageChange';
 import type { DashboardData } from '../models/dashboard';
 
 export const useDashboardStats = () => {
@@ -7,20 +8,31 @@ export const useDashboardStats = () => {
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
 
-    useEffect(() => {
-        const fetchStats = async () => {
-            try {
-                setLoading(true);
-                const data = await dashboardService.getStats();
-                setStats(data);
-            } catch (err: any) {
-                console.error("Error fetching dashboard stats:", err);
-                setError(err.message || 'Có lỗi xảy ra khi tải dữ liệu thống kê.');
-            } finally {
-                setLoading(false);
-            }
-        };
+    // Track if stats have been loaded for language refresh
+    const statsLoaded = useRef(false);
 
+    const fetchStats = async () => {
+        try {
+            setLoading(true);
+            const data = await dashboardService.getStats();
+            setStats(data);
+            statsLoaded.current = true;
+        } catch (err: any) {
+            console.error("Error fetching dashboard stats:", err);
+            setError(err.message || 'Có lỗi xảy ra khi tải dữ liệu thống kê.');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // Auto refresh on language change
+    useRefreshOnLanguageChange(() => {
+        if (statsLoaded.current) {
+            fetchStats();
+        }
+    });
+
+    useEffect(() => {
         fetchStats();
     }, []);
 

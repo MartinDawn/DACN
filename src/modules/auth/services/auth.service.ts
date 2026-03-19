@@ -1,8 +1,9 @@
-import apiClient from './apiClient'; 
-import type { 
-    LoginRequest, 
-    RegisterRequest, 
-    ForgetPasswordRequest, 
+import apiClient from './apiClient';
+import i18n from '../../../i18n';
+import type {
+    LoginRequest,
+    RegisterRequest,
+    ForgetPasswordRequest,
     ApiResponse,
     RegisterResponse,
     LoginResponse,
@@ -126,10 +127,10 @@ export const authService = {
 
             return {
                 success: false,
-                message: 'Không tìm thấy đường dẫn Google từ server',
+                message: i18n.t('errors.auth.googleUrlNotFound'),
             };
         } catch (err: any) {
-            const message = err?.response?.data?.message || err?.message || 'Lỗi khi lấy đường dẫn Google';
+            const message = err?.response?.data?.message || err?.message || i18n.t('errors.auth.googleUrlError');
             return {
                 success: false,
                 message
@@ -180,9 +181,9 @@ export const authService = {
                 return { success: true, message: payload?.message || null, data: { accessToken: t } };
             }
 
-            return { success: false, message: 'Không nhận được access token từ callback backend' };
+            return { success: false, message: i18n.t('errors.auth.noAccessToken') };
         } catch (err: any) {
-            const message = err?.response?.data?.message || err?.message || 'Lỗi khi gọi callback Google trên server';
+            const message = err?.response?.data?.message || err?.message || i18n.t('errors.auth.callbackError');
             return { success: false, message };
         }
     },

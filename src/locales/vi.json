@@ -1,0 +1,892 @@
+{
+  "common": {
+    "loading": "Đang tải...",
+    "error": "Lỗi",
+    "success": "Thành công",
+    "cancel": "Hủy",
+    "confirm": "Xác nhận",
+    "save": "Lưu",
+    "edit": "Chỉnh sửa",
+    "delete": "Xóa",
+    "search": "Tìm kiếm",
+    "filter": "Lọc",
+    "reset": "Đặt lại",
+    "next": "Tiếp theo",
+    "previous": "Trước đó",
+    "close": "Đóng",
+    "submit": "Gửi",
+    "back": "Quay lại",
+    "selectLanguage": "Chọn ngôn ngữ",
+    "overview": "Tổng quan",
+    "downloadCertificate": "Tải chứng chỉ",
+    "certification": "Chứng chỉ"
+  },
+  "navigation": {
+    "home": "Trang chủ",
+    "courses": "Khóa học",
+    "myCourses": "Khóa học của tôi",
+    "profile": "Hồ sơ",
+    "settings": "Cài đặt",
+    "logout": "Đăng xuất",
+    "login": "Đăng nhập",
+    "register": "Đăng ký",
+    "dashboard": "Bảng điều khiển",
+    "notifications": "Thông báo",
+    "curriculum": "Chương trình học"
+  },
+  "auth": {
+    "login": "Đăng nhập",
+    "register": "Đăng ký",
+    "logout": "Đăng xuất",
+    "email": "Email",
+    "password": "Mật khẩu",
+    "confirmPassword": "Xác nhận mật khẩu",
+    "firstName": "Họ",
+    "lastName": "Tên",
+    "forgotPassword": "Quên mật khẩu?",
+    "rememberMe": "Ghi nhớ đăng nhập",
+    "orLoginWith": "Hoặc đăng nhập với",
+    "alreadyHaveAccount": "Đã có tài khoản?",
+    "dontHaveAccount": "Chưa có tài khoản?",
+    "loginSuccess": "Đăng nhập thành công",
+    "loginDescription": "Đăng nhập để tiếp tục học tập",
+    "registerSuccess": "Đăng ký thành công",
+    "loginFailed": "Đăng nhập thất bại",
+    "registerFailed": "Đăng ký thất bại",
+    "invalidCredentials": "Thông tin đăng nhập không hợp lệ",
+    "emailAlreadyExists": "Email đã tồn tại"
+  },
+  "course": {
+    "title": "Khóa học",
+    "description": "Mô tả",
+    "price": "Giá",
+    "free": "Miễn phí",
+    "enrolled": "Đã đăng ký",
+    "duration": "Thời lượng",
+    "level": "Cấp độ",
+    "beginner": "Người mới bắt đầu",
+    "intermediate": "Trung cấp",
+    "advanced": "Nâng cao",
+    "instructor": "Giảng viên",
+    "rating": "Đánh giá",
+    "reviews": "Nhận xét",
+    "enroll": "Đăng ký học",
+    "continue": "Tiếp tục học",
+    "completed": "Đã hoàn thành",
+    "inProgress": "Đang học",
+    "notStarted": "Chưa bắt đầu",
+    "searchPlaceholder": "Tìm kiếm khóa học...",
+    "noCoursesFound": "Không tìm thấy khóa học nào",
+    "addToCart": "Thêm vào giỏ hàng",
+    "removeFromCart": "Xóa khỏi giỏ hàng",
+    "removeError": "Không thể xóa khóa học",
+    "removeConnectionError": "Có lỗi kết nối occurred. Vui lòng thử lại"
+  },
+  "user": {
+    "profile": "Hồ sơ",
+    "personalInfo": "Thông tin cá nhân",
+    "changePassword": "Đổi mật khẩu",
+    "accountSettings": "Cài đặt tài khoản",
+    "notifications": "Thông báo",
+    "privacy": "Quyền riêng tư",
+    "language": "Ngôn ngữ",
+    "theme": "Giao diện",
+    "profileLoadError": "Không thể tải hồ sơ",
+    "paymentError": "Lỗi thanh toán!"
+  },
+  "admin": {
+    "dashboard": "Bảng điều khiển",
+    "users": "Người dùng",
+    "courses": "Quản lý khóa học",
+    "statistics": "Thống kê",
+    "reports": "Báo cáo",
+    "settings": "Cài đặt hệ thống"
+  },
+  "instructor": {
+    "dashboard": "Giảng dạy",
+    "myCourses": "Khóa học của tôi",
+    "createCourse": "Tạo khóa học mới",
+    "students": "Học viên",
+    "earnings": "Thu nhập",
+    "analytics": "Phân tích",
+    "teacher": {
+      "dashboardTitle": "Bảng điều khiển giảng viên",
+      "dashboardSubtitle": "Quản lý khóa học và theo dõi hiệu suất của bạn.",
+      "createCourseButton": "Tạo khóa học mới",
+      "backButton": "Quay lại",
+      "tabs": {
+        "overview": "Tổng quan",
+        "courses": "Khóa học",
+        "analytics": "Phân tích",
+        "activity": "Hoạt động"
+      },
+      "form": {
+        "title": "Tạo khóa học mới",
+        "subtitle": "Nhập thông tin cơ bản để bắt đầu",
+        "courseInfoTitle": "Thông tin khóa học",
+        "courseInfoSubtitle": "Sau khi tạo khóa học, bạn có thể thêm chương, bài học và video trong phần quản lý khóa học",
+        "courseName": "Tên khóa học",
+        "courseNamePlaceholder": "Ví dụ: Khóa học React hoàn chỉnh",
+        "courseCategory": "Danh mục khóa học",
+        "courseDescription": "Mô tả khóa học",
+        "courseDescriptionPlaceholder": "Mô tả chi tiết về nội dung và mục tiêu khóa học...",
+        "courseDescriptionHelp": "Mô tả rõ ràng về những gì học viên sẽ học được trong khóa học này",
+        "courseImage": "Ảnh bìa khóa học",
+        "coursePrice": "Giá khóa học (VND)",
+        "coursePricePlaceholder": "Ví dụ: 1999000 (nhập 0 nếu miễn phí)",
+        "imagePreview": "Xem trước",
+        "imageUploadText": "Tải lên ảnh bìa khóa học",
+        "imageUploadHelp": "Khuyến nghị: 1280x720px, JPG hoặc PNG, tối đa 5MB",
+        "selectImage": "Chọn ảnh",
+        "categoryLoading": "Đang tải danh mục...",
+        "categoryPlaceholder": "-- Thêm danh mục --",
+        "removeCategoryAriaLabel": "Xóa danh mục {name}",
+        "noteTitle": "Lưu ý",
+        "noteItems": {
+          "afterCreation": "Sau khi tạo khóa học, bạn sẽ được chuyển đến trang quản lý khóa học",
+          "addContent": "Tại đó bạn có thể thêm chương, bài học và tải lên video",
+          "editAnytime": "Bạn có thể chỉnh sửa thông tin khóa học bất cứ lúc nào"
+        },
+        "cancelButton": "Hủy",
+        "createButton": "Tạo khóa học",
+        "creatingButton": "Đang tạo..."
+      },
+      "overview": {
+        "totalStudents": "Tổng số học viên",
+        "totalRevenue": "Tổng doanh thu",
+        "averageRating": "Đánh giá trung bình",
+        "totalCourses": "Khóa học",
+        "studentGrowth": "+12% so với tháng trước",
+        "revenueGrowth": "+8% so với tháng trước",
+        "ratingGrowth": "+0.2 so với tháng trước",
+        "courseGrowth": "+1 khóa học mới tháng này",
+        "quickActions": "Thao tác nhanh",
+        "quickActionsSubtitle": "Quản lý khóa học và nội dung của bạn",
+        "createCourseAction": "Tạo khóa học",
+        "becomeInstructorAction": "Trở thành giảng viên",
+        "checkMessagesAction": "Kiểm tra tin nhắn",
+        "processingAction": "Đang xử lý..."
+      },
+      "courseList": {
+        "title": "Khóa học của tôi",
+        "loading": "Đang tải danh sách khóa học...",
+        "empty": "Bạn chưa có khóa học nào",
+        "emptySubtitle": "Tạo khóa học đầu tiên để bắt đầu chia sẻ kiến thức",
+        "createFirstCourse": "Tạo khóa học đầu tiên",
+        "free": "Miễn phí",
+        "students": "học viên",
+        "ratings": "Đánh giá",
+        "viewRatings": "Xem đánh giá của học viên",
+        "manage": "Quản lý",
+        "published": "Đã xuất bản",
+        "pending": "Đang chờ",
+        "draft": "Bản nháp",
+        "publishedTooltip": "Đã xuất bản",
+        "pendingTooltip": "Đang chờ duyệt",
+        "requestPublishTooltip": "Yêu cầu duyệt",
+        "deleteTooltip": "Xóa khóa học"
+      },
+      "activity": {
+        "title": "Hoạt động gần đây",
+        "subtitle": "Cập nhật về các hoạt động khóa học của bạn",
+        "newRating": "Đánh giá 5 sao mới cho khóa học",
+        "newStudents": "25 học viên mới",
+        "registeredToday": "đã đăng ký hôm nay",
+        "newQuestion": "Câu hỏi mới trong phần Q&A của khóa học",
+        "sampleCourse1": "Khóa học React hoàn chỉnh",
+        "sampleCourse2": "Thành thạo JavaScript",
+        "hoursAgo2": "2 giờ trước",
+        "hoursAgo4": "4 giờ trước",
+        "hoursAgo6": "6 giờ trước"
+      },
+      "analytics": {
+        "title": "Phân tích chi tiết",
+        "subtitle": "Báo cáo nhanh về hiệu suất khóa học.",
+        "weeklyViews": "Lượt xem tuần này",
+        "conversionRate": "Tỷ lệ chuyển đổi"
+      },
+      "modals": {
+        "delete": {
+          "title": "Xóa khóa học?",
+          "message": "Bạn có chắc chắn muốn xóa khóa học",
+          "warning": "Hành động này không thể hoàn tác.",
+          "cancel": "Hủy",
+          "confirm": "Xóa ngay"
+        },
+        "publish": {
+          "title": "Gửi yêu cầu duyệt?",
+          "message": "Bạn có chắc chắn muốn gửi yêu cầu duyệt cho khóa học",
+          "info": "Admin sẽ xem xét nội dung trước khi xuất bản.",
+          "cancel": "Hủy",
+          "confirm": "Gửi ngay"
+        },
+        "deleteReply": {
+          "title": "Xóa phản hồi?",
+          "message": "Bạn có chắc chắn muốn xóa phản hồi này?",
+          "warning": "Hành động này không thể hoàn tác.",
+          "cancel": "Hủy",
+          "confirm": "Xóa ngay"
+        }
+      },
+      "comments": {
+        "title": "Đánh giá của học viên",
+        "loading": "Đang tải đánh giá...",
+        "empty": "Chưa có đánh giá nào",
+        "emptySubtitle": "Học viên chưa để lại đánh giá nào cho khóa học này.",
+        "anonymous": "Ẩn danh",
+        "instructor": "Giảng viên",
+        "reply": "Phản hồi",
+        "edit": "Chỉnh sửa",
+        "delete": "Xóa",
+        "save": "Lưu",
+        "cancel": "Hủy",
+        "send": "Gửi",
+        "replyPlaceholder": "Nhập phản hồi...",
+        "editReplyPlaceholder": "Chỉnh sửa phản hồi...",
+        "editReplyTooltip": "Chỉnh sửa phản hồi",
+        "deleteReplyTooltip": "Xóa phản hồi"
+      }
+    },
+    "hook": {
+      "cannotLoadCourses": "Không thể tải danh sách khóa học",
+      "notInstructorYet": "Bạn chưa đăng ký làm giảng viên",
+      "becomeInstructorSuccess": "Bạn đã trở thành giảng viên!",
+      "becomeInstructorFailed": "Đăng ký làm giảng viên thất bại.",
+      "createCourseSuccess": "Tạo khóa học thành công!",
+      "createCourseFailed": "Tạo khóa học thất bại.",
+      "needInstructorRole": "Bạn cần là giảng viên để tạo khóa học. Vui lòng đăng ký làm giảng viên trước.",
+      "createCourseError": "Đã xảy ra lỗi khi tạo khóa học.",
+      "deleteCourseSuccess": "Xóa khóa học thành công",
+      "deleteCourseError": "Không thể xóa khóa học",
+      "failedFetchTags": "Tải danh mục thất bại.",
+      "tagsFetchError": "Đã xảy ra lỗi khi tải danh mục.",
+      "becomeInstructorGenericError": "Đã xảy ra lỗi khi đăng ký làm giảng viên."
+    },
+    "register": {
+      "requestSentSuccess": "Gửi yêu cầu thành công.",
+      "requestSentError": "Lỗi gửi yêu cầu. Vui lòng thử lại.",
+      "requestAlreadySent": "Bạn đã gửi yêu cầu rồi. Vui lòng chờ...",
+      "form": {
+        "registrationInfo": "Thông tin đăng ký",
+        "subtitle": "Vui lòng cung cấp thông tin chính xác để tăng cơ hội được duyệt.",
+        "professionalInfo": "Thông tin nghề nghiệp",
+        "expertise": "Lĩnh vực chuyên môn / chuyên sâu (VD: Web Development, Marketing...)",
+        "experience": "Kinh nghiệm giảng dạy / làm việc (tối thiểu 100 từ)",
+        "certificate": "Bằng cấp & Chứng chỉ (liệt kê)",
+        "introduction": "Giới thiệu ngắn về bản thân (mục tiêu, phong cách giảng dạy)...",
+        "socialLinks": "Liên kết mạng xã hội / Portfolio",
+        "socialLinksPlaceholder": "LinkedIn, Facebook, Website cá nhân, GitHub, Behance...",
+        "cancel": "Hủy",
+        "submit": "Gửi đăng ký",
+        "submitting": "Đang gửi..."
+      },
+      "faq": {
+        "title": "Câu hỏi thường gặp",
+        "requirements": {
+          "question": "Tôi cần gì để trở thành giảng viên?",
+          "answer": "Bạn cần có kiến thức chuyên môn trong lĩnh vực muốn giảng dạy và kỹ năng giao tiếp tốt."
+        },
+        "earnings": {
+          "question": "Tôi có thể kiếm được bao nhiêu?",
+          "answer": "Giảng viên nhận 70% doanh thu từ mỗi khóa học. Thu nhập cũng phụ thuộc vào chất lượng và số lượng học viên."
+        },
+        "approval": {
+          "question": "Thời gian duyệt bao lâu?",
+          "answer": "Thường là 2-3 ngày làm việc. Chúng tôi có thể liên hệ bạn để bổ sung thông tin."
+        }
+      }
+    },
+    "toast": {
+      "requestPublishSuccess": "Gửi yêu cầu duyệt thành công!",
+      "requestPublishError": "Yêu cầu thất bại. Vui lòng thử lại.",
+      "loadRatingError": "Không thể tải đánh giá. Vui lòng thử lại.",
+      "replySuccess": "Phản hồi đã được gửi!",
+      "replyError": "Không thể gửi phản hồi. Vui lòng thử lại.",
+      "updateReplySuccess": "Cập nhật phản hồi thành công!",
+      "updateReplyError": "Không thể cập nhật phản hồi.",
+      "deleteReplySuccess": "Xóa phản hồi thành công!",
+      "deleteReplyError": "Không thể xóa phản hồi.",
+      "imageTooLarge": "Ảnh quá lớn. Vui lòng chọn ảnh dưới 5MB",
+      "selectImage": "Vui lòng chọn ảnh bìa khóa học.",
+      "fillRequiredFields": "Vui lòng điền đầy đủ các trường bắt buộc, bao gồm danh mục.",
+      "createCourseSuccess": "Tạo khóa học thành công!",
+      "createCourseError": "Tạo khóa học thất bại. Vui lòng thử lại.",
+      "deleteCourseSuccess": "Xóa khóa học thành công!",
+      "deleteCourseError": "Xóa khóa học thất bại. Vui lòng thử lại.",
+      "becomeInstructorError": "Đã xảy ra lỗi. Vui lòng thử lại sau."
+    }
+  },
+  "forgotPassword": {
+    "title": "Quên mật khẩu",
+    "subtitle": "Nhập email để nhận hướng dẫn đặt lại mật khẩu",
+    "newPasswordLabel": "Mật khẩu mới",
+    "emailPlaceholder": "Nhập email của bạn",
+    "newPasswordPlaceholder": "Nhập mật khẩu mới",
+    "backToHome": "← Trang chủ",
+    "backToLogin": "Quay lại đăng nhập",
+    "noAccount": "Chưa có tài khoản?",
+    "registerNow": "Đăng ký ngay",
+    "buttons": {
+      "sendOtp": "Gửi mã OTP",
+      "resetPassword": "Đặt lại mật khẩu",
+      "processing": "Đang xử lý..."
+    },
+    "messages": {
+      "otpSent": "Mã OTP đã được gửi tới email của bạn",
+      "otpVerified": "Xác thực OTP thành công",
+      "passwordReset": "Đặt lại mật khẩu thành công"
+    },
+    "errors": {
+      "sendOtp": "Có lỗi xảy ra khi gửi mã OTP",
+      "verifyOtp": "Có lỗi xảy ra khi xác thực mã OTP",
+      "resetPassword": "Có lỗi xảy ra khi đặt lại mật khẩu"
+    }
+  },
+  "register": {
+    "title": "Tạo tài khoản",
+    "subtitle": "Tạo tài khoản để bắt đầu hành trình học tập",
+    "googleSignup": "Đăng ký bằng Google",
+    "or": "hoặc",
+    "username": "Tên đăng nhập",
+    "fullName": "Họ và tên",
+    "phoneNumber": "Số điện thoại",
+    "placeholders": {
+      "username": "Nhập tên đăng nhập",
+      "fullName": "Nhập họ và tên",
+      "phoneNumber": "Nhập số điện thoại",
+      "email": "Nhập địa chỉ email",
+      "password": "Nhập mật khẩu"
+    },
+    "terms": "Tôi đồng ý với điều khoản dịch vụ và chính sách bảo mật",
+    "buttons": {
+      "create": "Tạo tài khoản"
+    },
+    "errors": {
+      "terms": "Vui lòng đồng ý với các điều khoản trước khi tiếp tục.",
+      "failed": "Đăng ký thất bại. Vui lòng thử lại.",
+      "google": "Lỗi kết nối với Google.",
+      "googleUrl": "Không thể lấy URL Google. Vui lòng thử lại."
+    }
+  },
+  "courseDetail": {
+    "backToCourses": "Quay lại khóa học",
+    "loading": "Đang tải...",
+    "instructor": "Giảng viên",
+    "description": "Mô tả khóa học",
+    "curriculum": {
+      "videos": "Video",
+      "tests": "Bài kiểm tra",
+      "documents": "Tài liệu",
+      "empty": "Chưa có chương trình học nào."
+    },
+    "reviews": {
+      "title": "Đánh giá của học viên",
+      "instructorReply": "Phản hồi của giảng viên",
+      "loading": "Đang tải đánh giá...",
+      "empty": "Không có đánh giá để hiển thị.",
+      "anonymous": "Ẩn danh"
+    },
+    "buttons": {
+      "register": "Đăng ký khóa học",
+      "addToCart": "Thêm vào giỏ hàng",
+      "addingToCart": "Đang thêm...",
+      "inCart": "Trong giỏ hàng",
+      "preview": "Xem trước",
+      "favorite": "Yêu thích",
+      "share": "Chia sẻ",
+      "save": "Lưu"
+    },
+    "messages": {
+      "addedToCart": "Đã thêm vào giỏ hàng thành công!",
+      "videoNotAvailable": "Video này không có sẵn để xem trước hoặc không có URL"
+    },
+    "errors": {
+      "addToCart": "Thêm vào giỏ hàng thất bại.",
+      "serverError": "Lỗi: Không thể kết nối tới máy chủ.",
+      "loadVideo": "Lỗi tải video",
+      "submitRating": "Không thể gửi đánh giá"
+    },
+    "time": {
+      "minutes": "phút",
+      "hours": "giờ",
+      "onDemandVideo": "giờ video theo yêu cầu"
+    },
+    "counts": {
+      "students": "học viên",
+      "reviews": "đánh giá",
+      "quiz": "câu hỏi",
+      "document": "tài liệu",
+      "documents": "tài liệu"
+    },
+    "price": {
+      "free": "Miễn phí"
+    },
+    "includes": {
+      "title": "Khóa học này bao gồm",
+      "learningMaterials": "Tài liệu học tập",
+      "certificate": "Chứng chỉ hoàn thành",
+      "onlineSupport": "Hỗ trợ trực tuyến"
+    },
+    "guaranteeInfo": {
+      "studyPlan": "Kế hoạch học tập đi kèm giúp bạn ứng dụng kiến thức thực tế.",
+      "moneyBack": "Đảm bảo hoàn tiền trong 30 ngày."
+    },
+    "videoModal": {
+      "browserNotSupported": "Trình duyệt của bạn không hỗ trợ phát video.",
+      "previewDescription": "Đây là video xem trước. Đăng ký khóa học để xem toàn bộ nội dung."
+    }
+  },
+  "myCourses": {
+    "title": "Khóa học của tôi",
+    "subtitle": "Theo dõi tiến độ và tiếp tục học tập",
+    "backToHome": "Quay lại trang chủ",
+    "searchPlaceholder": "Tìm kiếm khóa học...",
+    "tabs": ["Tổng quan", "Khóa học của tôi", "Thành tích"],
+    "stats": {
+      "total": "Tổng cộng",
+      "enrolled": "Khóa học đã đăng ký",
+      "completed": "Đã hoàn thành",
+      "finished": "Khóa học đã hoàn thành",
+      "totalTime": "Tổng thời gian",
+      "studyTime": "Thời gian học tích lũy"
+    },
+    "filters": {
+      "all": "Tất cả khóa học",
+      "inProgress": "Đang học",
+      "completed": "Đã hoàn thành",
+      "notStarted": "Chưa bắt đầu"
+    }
+  },
+  "home": {
+    "welcomeBack": "Chào mừng trở lại, {name}!",
+    "continueJourney": "Tiếp tục hành trình học tập của bạn",
+    "continueStudying": "Tiếp tục học",
+    "loading": {
+      "courses": "Đang tải khóa học của bạn...",
+      "stats": "Đang tải thống kê...",
+      "recommendations": "Đang tải khóa học..."
+    },
+    "stats": {
+      "courses": "Khóa học",
+      "completed": "Đã hoàn thành",
+      "studyTime": "Thời gian học",
+      "certificates": "Chứng chỉ",
+      "totalStudyTime": "Tổng thời gian học",
+      "enrolledCourses": "Khóa học đã đăng ký",
+      "completedCourses": "Khóa học đã hoàn thành",
+      "completionRate": "Tỷ lệ hoàn thành"
+    },
+    "tabs": {
+      "overview": "Tổng quan",
+      "myCourses": "Khóa học của tôi",
+      "achievements": "Thành tích"
+    },
+    "quickActions": {
+      "title": "Thao tác nhanh",
+      "description": "Thao tác nhanh để tiếp tục học tập",
+      "myCourses": "Khóa học của tôi",
+      "myCoursesDesc": "Các khóa học bạn đã đăng ký",
+      "browseCourses": "Duyệt khóa học",
+      "browseCoursesDesc": "Khám phá thư viện khóa học phong phú",
+      "categories": "Danh mục",
+      "categoriesDesc": "Chọn lĩnh vực yêu thích",
+      "teaching": "Giảng dạy",
+      "teachingDesc": "Bắt đầu trở thành giảng viên",
+      "extraCourses": "Khám phá thêm khóa học",
+      "setGoals": "Đặt mục tiêu học tập"
+    },
+    "recommendations": "Khóa học gợi ý",
+    "recommendationDescription": "Dựa trên sở thích của bạn",
+    "empty": {
+      "title": "Bạn chưa đăng ký khóa học nào",
+      "description": "Hãy bắt đầu khám phá thư viện khóa học phong phú của EduViet hôm nay.",
+      "browseCourses": "Duyệt khóa học"
+    },
+    "coursePage": {
+      "registered": "Khóa học đã đăng ký",
+      "manageProgress": "Quản lý và theo dõi tiến độ học tập"
+    },
+    "achievements": {
+      "certificates": "Chứng chỉ",
+      "certificateDescription": "Hoàn thành khóa học đầu tiên để nhận chứng chỉ.",
+      "learningStats": "Thống kê học tập",
+      "firstCourse": "Hoàn thành khóa học đầu tiên",
+      "studiedHours": "Đã học 5 giờ",
+      "studyStreak": "Học liên tục một tuần",
+      "jsExpert": "Chuyên gia JavaScript"
+    },
+    "noRecommendations": "Không có khóa học gợi ý"
+  },
+  "checkout": {
+    "title": "Thanh toán đơn hàng",
+    "subtitle": "Hoàn thành thông tin để truy cập toàn bộ nội dung khóa học chỉ với vài bước.",
+    "backToCart": "Quay lại giỏ hàng",
+    "loading": "Đang tải thông tin thanh toán...",
+    "buyerInfo": {
+      "title": "Thông tin người mua",
+      "fullName": "Họ và tên *",
+      "fullNamePlaceholder": "Nhập họ và tên",
+      "email": "Email *",
+      "emailPlaceholder": "Nhập email",
+      "phone": "Số điện thoại *",
+      "phonePlaceholder": "0123456789",
+      "city": "Tỉnh/Thành phố *",
+      "cityPlaceholder": "Nhập tỉnh/thành phố"
+    },
+    "paymentMethod": {
+      "title": "Phương thức thanh toán",
+      "creditCard": "Thẻ tín dụng/Ghi nợ",
+      "creditCardDesc": "Visa, Mastercard, JCB",
+      "vnpay": "VNPay / Internet Banking",
+      "vnpayDesc": "Quét mã QR hoặc dùng thẻ ATM nội địa",
+      "wallet": "Ví điện tử khác",
+      "walletDesc": "MoMo, ZaloPay, ShopeePay"
+    },
+    "cardDetails": {
+      "title": "Thông tin thẻ",
+      "cardNumber": "Số thẻ *",
+      "cardNumberPlaceholder": "1234 5678 9012 3456",
+      "cardName": "Tên trên thẻ *",
+      "cardNamePlaceholder": "NGUYEN VAN A",
+      "expiry": "Ngày hết hạn *",
+      "expiryPlaceholder": "MM/YY",
+      "cvv": "CVV *",
+      "cvvPlaceholder": "123",
+      "securityInfo": "Thông tin thanh toán cua bạn được mã hóa bằng SSL 256-bit."
+    },
+    "orderSummary": {
+      "title": "Tóm tắt đơn hàng",
+      "subtotal": "Tạm tính",
+      "discount": "Giảm giá",
+      "tax": "Thuế (8%)",
+      "total": "Tổng cộng",
+      "processing": "Đang xử lý..."
+    },
+    "terms": {
+      "agree": "Tôi đồng ý với",
+      "terms": "Điều khoản dịch vụ"
+    },
+    "completePayment": "Hoàn tất thanh toán",
+    "securityGuarantee": {
+      "title": "Bảo mật thanh toán",
+      "description": "Đảm bảo hoàn tiền 30 ngày nếu không hài lòng."
+    },
+    "errors": {
+      "cardMethodUnavailable": "Tính năng thanh toán bằng thẻ đang phát triển. Vui lòng chọn VNPay.",
+      "methodUnavailable": "Phương thức thanh toán này chưa được hỗ trợ."
+    },
+    "empty": {
+      "title": "Không có khóa học trong giỏ hàng.",
+      "exploreCourses": "Khám phá khóa học"
+    }
+  },
+  "cart": {
+    "title": "Giỏ hàng của bạn",
+    "continueShopping": "Tiếp tục mua sắm",
+    "itemCount": "{count} khóa học trong giỏ hàng",
+    "loading": "Đang tải giỏ hàng...",
+    "empty": {
+      "title": "Giỏ hàng trống",
+      "subtitle": "Có vẻ như bạn chưa thêm khóa học nào vào giỏ hàng.",
+      "exploreCourses": "Khám phá khóa học"
+    },
+    "item": {
+      "by": "bởi",
+      "saveForLater": "Lưu để sau",
+      "remove": "Xóa",
+      "removing": "Đang xóa..."
+    },
+    "recommendations": {
+      "title": "Học viên mua khóa học này cũng đã mua",
+      "addToCart": "Thêm vào giỏ hàng"
+    },
+    "orderSummary": {
+      "title": "Tóm tắt đơn hàng",
+      "subtotal": "Tạm tính ({count} khóa học)",
+      "total": "Tổng cộng",
+      "checkout": "Thanh toán"
+    },
+    "promoCode": {
+      "title": "Mã khuyến mãi",
+      "placeholder": "Nhập mã khuyến mãi",
+      "apply": "Áp dụng"
+    },
+    "securePayment": {
+      "title": "Thanh toán an toàn",
+      "creditCard": "Thẻ tín dụng/Ghi nợ",
+      "creditCardDesc": "Hỗ trợ Visa, MasterCard, JCB",
+      "paypal": "PayPal",
+      "paypalDesc": "Thanh toán nhanh qua tài khoản PayPal",
+      "giftCard": "Thẻ quà tặng",
+      "giftCardDesc": "Sử dụng mã thẻ quà tặng EDUViet"
+    }
+  },
+  "dashboard": {
+    "stats": {
+      "totalStudents": "Tổng số học viên",
+      "instructors": "Giảng viên",
+      "approvedCourses": "Khóa học đã duyệt",
+      "pendingCourses": "Đang chờ duyệt"
+    },
+    "charts": {
+      "userStats": "Thống kê học viên & giảng viên",
+      "revenue": "Tổng doanh thu"
+    },
+    "trending": {
+      "courses": "Khóa học thịnh hành",
+      "tags": "Thẻ thịnh hành"
+    }
+  },
+  "manageCourses": {
+    "searchPlaceholder": "Tìm kiếm khóa học/giảng viên...",
+    "errors": {
+      "noId": "Không tìm thấy ID yêu cầu. Vui lòng thử lại.",
+      "approve": "Lỗi duyệt yêu cầu. Vui lòng thử lại.",
+      "reject": "Lỗi từ chối yêu cầu. Vui lòng thử lại.",
+      "reasonRequired": "Vui lòng nhập lý do từ chối"
+    }
+  },
+  "profile": {
+    "loading": "Đang tải hồ sơ...",
+    "backToHome": "Quay lại trang chủ",
+    "title": "Thông tin cá nhân",
+    "subtitle": "Cập nhật hồ sơ để nhận gợi ý khóa học cá nhân hóa và kết nối với cộng đồng học tập.",
+    "buttons": {
+      "edit": "Chỉnh sửa",
+      "save": "Lưu thay đổi",
+      "saving": "Đang lưu..."
+    },
+    "placeholders": {
+      "notUpdated": "Chưa cập nhật",
+      "selfIntroduction": "Giới thiệu về bản thân",
+      "website": "https://"
+    }
+  },
+  "errors": {
+    "generic": {
+      "unexpected": "Đã xảy ra lỗi không mong muốn",
+      "networkError": "Lỗi mạng",
+      "serverError": "Lỗi máy chủ",
+      "unauthorized": "Truy cập không được phép",
+      "forbidden": "Truy cập bị cấm",
+      "notFound": "Không tìm thấy"
+    },
+    "auth": {
+      "loginFailed": "Đã xảy ra lỗi trong quá trình đăng nhập",
+      "registerFailed": "Đã xảy ra lỗi trong quá trình đăng ký",
+      "logoutFailed": "Đã xảy ra lỗi trong quá trình đăng xuất",
+      "invalidCredentials": "Thông tin đăng nhập không hợp lệ",
+      "userNotFound": "Không thể lấy thông tin người dùng",
+      "passwordResetFailed": "Đã xảy ra lỗi trong quá trình đặt lại mật khẩu",
+      "otpSendFailed": "Đã xảy ra lỗi khi gửi mã OTP",
+      "otpVerifyFailed": "Đã xảy ra lỗi khi xác thực mã OTP",
+      "passwordResetError": "Đã xảy ra lỗi khi đặt lại mật khẩu",
+      "googleAuthUrlFailed": "Không thể lấy URL Google. Vui lòng thử lại",
+      "googleAuthError": "Lỗi kết nối với Google",
+      "googleUrlNotFound": "Không thể lấy URL Google từ máy chủ",
+      "googleUrlError": "Lỗi lấy URL Google",
+      "profileError": "Lỗi lấy thông tin người dùng",
+      "exchangeGoogleError": "Lỗi xử lý callback Google",
+      "noAccessToken": "Không nhận được access token từ callback backend",
+      "callbackError": "Lỗi gọi Google callback trên máy chủ",
+      "loginFailedGeneric": "Đăng nhập thất bại. Vui lòng thử lại",
+      "unauthorized": "Thông tin đăng nhập không chính xác. Vui lòng kiểm tra email và mật khẩu"
+    }
+  },
+  "registerTeacher": {
+    "pending": {
+      "title": "Đang chờ xét duyệt",
+      "message": "Yêu cầu đăng ký làm giảng viên của bạn đã được gửi và đang trong quá trình xét duyệt. Vui lòng kiên nhẫn đợi, chúng tôi sẽ thông báo kết quả sớm nhất có thể.",
+      "backToHome": "Quay về trang chủ"
+    },
+    "hero": {
+      "badge": "Cơ hội nghề nghiệp",
+      "title": "Trở thành Giảng viên tại EduViet",
+      "subtitle": "Chia sẻ kiến thức của bạn với hàng triệu học viên trên toàn thế giới và tạo thu nhập thụ động từ việc giảng dạy trực tuyến.",
+      "registerNow": "Đăng ký ngay"
+    },
+    "stats": {
+      "students": "1.2M+",
+      "studentsLabel": "Học viên đang học",
+      "courses": "10,000+",
+      "coursesLabel": "Khóa học đa dạng",
+      "revenue": "$50M+",
+      "revenueLabel": "Thu nhập giảng viên",
+      "countries": "180+",
+      "countriesLabel": "Quốc gia"
+    },
+    "howItWorks": {
+      "title": "Cách thức hoạt động",
+      "subtitle": "4 bước đơn giản để bắt đầu hành trình giảng dạy",
+      "steps": {
+        "register": {
+          "title": "Đăng ký",
+          "description": "Điền form đăng ký và cung cấp thông tin chuyên môn của bạn"
+        },
+        "review": {
+          "title": "Xét duyệt",
+          "description": "Đội ngũ sẽ xem xét hồ sơ trong vòng 2-3 ngày"
+        },
+        "create": {
+          "title": "Tạo khóa học",
+          "description": "Được duyệt, bắt đầu tạo và tải lên khóa học đầu tiên của bạn"
+        },
+        "earn": {
+          "title": "Kiếm tiền",
+          "description": "Bắt đầu kiếm thu nhập từ học viên đăng ký khóa học"
+        }
+      }
+    },
+    "benefits": {
+      "title": "Lợi ích khi trở thành giảng viên",
+      "subtitle": "Tham gia cộng đồng giảng viên hàng đầu và tận hưởng những lợi ích đặc biệt",
+      "items": {
+        "income": {
+          "title": "Thu nhập hấp dẫn",
+          "description": "Nhận tới 70% doanh thu từ mỗi khóa học bán được. Càng nhiều học viên, thu nhập càng cao."
+        },
+        "flexible": {
+          "title": "Linh hoạt thời gian",
+          "description": "Tự do sắp xếp lịch trình giảng dạy. Làm việc từ xa, bất cứ lúc nào bạn muốn."
+        },
+        "global": {
+          "title": "Tiếp cận toàn cầu",
+          "description": "Chia sẻ kiến thức với hàng triệu học viên trên toàn thế giới."
+        },
+        "support": {
+          "title": "Hỗ trợ chuyên nghiệp",
+          "description": "Đội ngũ chuyên gia hỗ trợ 24/7, hướng dẫn tạo nội dung chất lượng và marketing."
+        },
+        "tools": {
+          "title": "Công cụ mạnh mẽ",
+          "description": "Nền tảng hiện đại với đầy đủ công cụ quản lý học viên và phân tích dữ liệu."
+        },
+        "community": {
+          "title": "Cộng đồng năng động",
+          "description": "Kết nối với hàng ngàn giảng viên khác để học hỏi và hợp tác."
+        }
+      }
+    },
+    "cta": {
+      "title": "Sẵn sàng bắt đầu?",
+      "subtitle": "Tham gia cộng đồng giảng viên EduViet ngay hôm nay và bắt đầu hành trình chia sẻ kiến thức của bạn với thế giới.",
+      "button": "Đăng ký làm giảng viên ngay"
+    }
+  },
+  "homepage": {
+    "nav": {
+      "benefits": "Lợi ích",
+      "courses": "Khóa học",
+      "offers": "Ưu đãi"
+    },
+    "hero": {
+      "badge": "Ưu đãi đặc biệt - Giảm 70%",
+      "title": "Học kỹ năng mới mọi lúc, mọi nơi",
+      "subtitle": "Từ phát triển web đến khoa học dữ liệu, hàng nghìn khóa học chất lượng cao giúp bạn đạt được mục tiêu của mình.",
+      "startFree": "Bắt đầu miễn phí",
+      "viewCourses": "Xem khóa học",
+      "imageAlt": "Gia đình học tập"
+    },
+    "features": {
+      "title": "Tại sao chọn EduViet?",
+      "subtitle": "Nền tảng học tập trực tuyến hàng đầu với hàng triệu học viên tin tưởng",
+      "items": {
+        "students": {
+          "title": "Hơn 57 triệu học viên",
+          "description": "Tham gia cộng đồng học tập lớn nhất thế giới"
+        },
+        "certificates": {
+          "title": "Chứng chỉ uy tín",
+          "description": "Nhận chứng chỉ hoàn thành được công nhận"
+        },
+        "anywhere": {
+          "title": "Học mọi lúc, mọi nơi",
+          "description": "Truy cập khóa học trọn đời trên mọi thiết bị"
+        },
+        "courses": {
+          "title": "213,000+ khóa học",
+          "description": "Từ cơ bản đến nâng cao trong mọi lĩnh vực"
+        }
+      }
+    },
+    "popularCourses": {
+      "title": "Khóa học phổ biến",
+      "subtitle": "Được hàng nghìn học viên lựa chọn",
+      "viewAll": "Xem tất cả",
+      "badge": "Bán chạy nhất",
+      "studentsLabel": "học viên"
+    },
+    "cta": {
+      "title": "Sẵn sàng bắt đầu?",
+      "subtitle": "Tham gia cùng hàng triệu học viên khác và bắt đầu hành trình phát triển kỹ năng của bạn ngay hôm nay",
+      "registerFree": "Đăng ký miễn phí ngay"
+    }
+  },
+  "filters": {
+    "title": "Bộ lọc",
+    "clear": "Xóa",
+    "category": "Danh mục",
+    "all": "Tất cả",
+    "priceRange": "Khoảng giá",
+    "maximum": "Tối đa",
+    "allCourses": "Tất cả khóa học",
+    "coursesFound": "khóa học được tìm thấy",
+    "loadingCourses": "Đang tải các khóa học...",
+    "noCoursesMatch": "Không tìm thấy khóa học phù hợp với bộ lọc hiện tại.",
+    "previousPage": "Trang trước",
+    "page": "Trang",
+    "nextPage": "Trang sau",
+    "sortOptions": {
+      "popularity": "Phổ biến nhất",
+      "highestRated": "Đánh giá cao nhất",
+      "newest": "Mới nhất",
+      "priceLowToHigh": "Giá thấp đến cao",
+      "priceHighToLow": "Giá cao đến thấp"
+    }
+  },
+  "notifications": {
+    "title": "Thông báo",
+    "subtitle": "Cập nhật tiến độ học tập và các thông báo quan trọng.",
+    "backToHome": "Quay lại trang chủ",
+    "markAllRead": "Đánh dấu tất cả đã đọc",
+    "newCount": "{count} mới",
+    "tabs": {
+      "all": "Tất cả",
+      "unread": "Chưa đọc",
+      "courses": "Khóa học",
+      "achievements": "Thành tích",
+      "social": "Cộng đồng",
+      "offers": "Ưu đãi"
+    },
+    "loading": "Đang tải thông báo...",
+    "error": "{error}",
+    "empty": "Không có thông báo nào trong danh sách này.",
+    "clickToMarkRead": "Nhấn vào thông báo để đánh dấu đã đọc",
+    "markRead": "Đánh dấu đã đọc",
+    "alreadyRead": "Đã đọc",
+    "delete": "Xóa",
+    "unreadBadge": "Chưa đọc",
+    "stats": {
+      "title": "Thống kê nhanh",
+      "total": "Tổng thông báo",
+      "unread": "Chưa đọc",
+      "thisWeek": "Trong tuần này"
+    },
+    "settings": {
+      "title": "Cài đặt thông báo",
+      "email": "Email",
+      "push": "Thông báo đẩy",
+      "courseUpdates": "Cập nhật khóa học",
+      "newMessages": "Tin nhắn mới",
+      "achievements": "Thành tích",
+      "promotions": "Khuyến mãi",
+      "learningReminders": "Nhắc nhở học tập"
+    },
+    "quickActions": {
+      "title": "Hành động nhanh",
+      "markAllRead": "Đánh dấu tất cả đã đọc",
+      "notificationSettings": "Cài đặt thông báo",
+      "testNotification": "Gửi thông báo thử"
+    }
+  }
+}

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import InstructorLayout from "../user/layout/layout";
 import {
   ArrowLeft, Book, Camera, FileText, Lightbulb, UploadCloud, X, List,
@@ -11,8 +12,10 @@ import { toast } from "react-hot-toast";
 import { useInstructorCourses } from "./hooks/useInstructorCourses";
 import { instructorService } from "./services/instructor.service";
 import type { InstructorCourse, CourseComment } from "./models/instructor";
+import { useRefreshOnLanguageChange } from "../../hooks/useRefreshOnLanguageChange";
 
 const InstructorDashboard: React.FC = () => {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<"overview" | "courses" | "analytics" | "activity">("courses");
   const [showCreateCourseForm, setShowCreateCourseForm] = useState(false);
   
@@ -68,6 +71,32 @@ const InstructorDashboard: React.FC = () => {
     fetchCourses, // Thêm fetchCourses từ hook
   } = useInstructorCourses();
 
+  // Auto refresh comments when language changes
+  useRefreshOnLanguageChange(() => {
+    // Refresh comments if modal is open
+    if (showCommentsModal && selectedCourseForComments) {
+      const refreshComments = async () => {
+        setCommentsLoading(true);
+        try {
+          const res = await instructorService.getCourseComments(selectedCourseForComments.id);
+          const list: CourseComment[] = (res?.data?.allComments ?? []).filter(
+            (c) => Number(c.rate) >= 1 && c.isMyComment !== true
+          );
+          setCourseComments(list);
+          const correctRating = list.length > 0
+            ? list.reduce((sum, c) => sum + (c.rate || 0), 0) / list.length
+            : 0;
+          setCourses(prev => prev.map(c => c.id === selectedCourseForComments.id ? { ...c, rating: correctRating } : c));
+        } catch (error) {
+          console.error('Error refreshing comments on language change:', error);
+        } finally {
+          setCommentsLoading(false);
+        }
+      };
+      refreshComments();
+    }
+  }, [showCommentsModal, selectedCourseForComments]);
+
   const handleRequestPublish = (courseId: string, courseName: string) => {
     setCourseToPublish({ id: courseId, name: courseName });
     setShowPublishModal(true);
@@ -78,11 +107,11 @@ const InstructorDashboard: React.FC = () => {
 
     try {
       await instructorService.requestPublishCourse(courseToPublish.id);
-      toast.success("Gửi yêu cầu duyệt thành công!");
+      toast.success(t("instructor.toast.requestPublishSuccess"));
       await fetchCourses();
     } catch (error) {
       console.error(error);
-      toast.error("Gửi yêu cầu thất bại. Vui lòng thử lại.");
+      toast.error(t("instructor.toast.requestPublishError"));
     } finally {
       setShowPublishModal(false);
       setCourseToPublish(null);
@@ -108,7 +137,7 @@ const InstructorDashboard: React.FC = () => {
       setCourses(prev => prev.map(c => c.id === courseId ? { ...c, rating: correctRating } : c));
     } catch (error) {
       console.error(error);
-      toast.error("Không thể tải đánh giá. Vui lòng thử lại.");
+      toast.error(t("instructor.toast.loadRatingError"));
     } finally {
       setCommentsLoading(false);
     }
@@ -119,7 +148,7 @@ const InstructorDashboard: React.FC = () => {
     setReplyLoading(true);
     try {
       await instructorService.replyComment(commentId, replyContent.trim());
-      toast.success("Phản hồi đã được gửi!");
+      toast.success(t("instructor.toast.replySuccess"));
       setReplyingToCommentId(null);
       setReplyContent("");
       if (selectedCourseForComments) {
@@ -139,7 +168,7 @@ const InstructorDashboard: React.FC = () => {
       }
     } catch (error) {
       console.error(error);
-      toast.error("Không thể gửi phản hồi. Vui lòng thử lại.");
+      toast.error(t("instructor.toast.replyError"));
     } finally {
       setReplyLoading(false);
     }
@@ -155,7 +184,7 @@ const InstructorDashboard: React.FC = () => {
     setEditLoading(true);
     try {
       await instructorService.updateComment(commentId, 0, editContent.trim());
-      toast.success("Cập nhật phản hồi thành công!");
+      toast.success(t("instructor.toast.updateReplySuccess"));
       setEditingReplyId(null);
       setEditContent("");
       if (selectedCourseForComments) {
@@ -175,7 +204,7 @@ const InstructorDashboard: React.FC = () => {
       }
     } catch (error: any) {
       console.error(error);
-      toast.error(error.response?.data?.message || "Không thể cập nhật phản hồi.");
+      toast.error(error.response?.data?.message || t("instructor.toast.updateReplyError"));
     } finally {
       setEditLoading(false);
     }
@@ -191,7 +220,7 @@ const InstructorDashboard: React.FC = () => {
 
     try {
       await instructorService.deleteComment(replyToDelete.commentId);
-      toast.success("Đã xóa phản hồi thành công!");
+      toast.success(t("instructor.toast.deleteReplySuccess"));
 
       if (selectedCourseForComments) {
         const res = await instructorService.getCourseComments(selectedCourseForComments.id);
@@ -210,7 +239,7 @@ const InstructorDashboard: React.FC = () => {
       }
     } catch (error: any) {
       console.error(error);
-      toast.error(error.response?.data?.message || "Không thể xóa phản hồi.");
+      toast.error(error.response?.data?.message || t("instructor.toast.deleteReplyError"));
     } finally {
       setShowDeleteReplyModal(false);
       setReplyToDelete(null);
@@ -271,7 +300,7 @@ const InstructorDashboard: React.FC = () => {
     const file = e.target.files?.[0];
     if (file) {
       if (file.size > 5 * 1024 * 1024) {
-        toast.error("Ảnh quá lớn. Vui lòng chọn ảnh dưới 5MB");
+        toast.error(t("instructor.toast.imageTooLarge"));
         return;
       }
       setCourseImage(file);
@@ -287,13 +316,13 @@ const InstructorDashboard: React.FC = () => {
     e.preventDefault();
 
     if (!courseImage) {
-      toast.error("Vui lòng chọn ảnh đại diện cho khóa học.");
+      toast.error(t("instructor.toast.selectImage"));
       return;
     }
 
     // Cho phép giá là 0 (miễn phí), chỉ báo lỗi nếu để trống
     if (!courseName || coursePrice === "" || !courseDescription || selectedTagIds.length === 0) { // require at least one category
-      toast.error("Vui lòng điền đầy đủ các trường bắt buộc, bao gồm cả danh mục.");
+      toast.error(t("instructor.toast.fillRequiredFields"));
       return;
     }
 
@@ -361,33 +390,33 @@ const InstructorDashboard: React.FC = () => {
         <div className="mx-auto max-w-4xl">
           <button onClick={() => setShowCreateCourseForm(false)} className="mb-6 flex items-center gap-2 text-sm font-semibold text-[#5a2dff] hover:text-[#4a21eb]">
             <ArrowLeft size={16} />
-            Quay lại
+            {t("instructor.teacher.backButton")}
           </button>
           <div className="mb-6">
-            <h1 className="text-3xl font-bold text-gray-900">Tạo Khóa Học Mới</h1>
-            <p className="mt-2 text-sm text-gray-500">Nhập thông tin cơ bản để bắt đầu</p>
+            <h1 className="text-3xl font-bold text-gray-900">{t("instructor.teacher.form.title")}</h1>
+            <p className="mt-2 text-sm text-gray-500">{t("instructor.teacher.form.subtitle")}</p>
           </div>
 
           <form onSubmit={handleCreateCourse} className="space-y-8">
             <div className="rounded-2xl border border-gray-200 bg-white p-6">
               <div className="flex items-center gap-3">
                 <FileText className="text-gray-500" />
-                <h3 className="text-lg font-semibold text-gray-800">Thông Tin Khóa Học</h3>
+                <h3 className="text-lg font-semibold text-gray-800">{t("instructor.teacher.form.courseInfoTitle")}</h3>
               </div>
-              <p className="mt-1 ml-9 text-sm text-gray-500">Sau khi tạo khóa học, bạn có thể thêm chương, bài học và video trong phần quản lý khóa học</p>
+              <p className="mt-1 ml-9 text-sm text-gray-500">{t("instructor.teacher.form.courseInfoSubtitle")}</p>
 
               <div className="mt-6 space-y-6">
                 {/* Tên Khóa Học */}
                 <div>
                   <label htmlFor="name" className="flex items-center gap-2 text-sm font-medium text-gray-700">
-                    <Book size={16} /> Tên Khóa Học <span className="text-red-500">*</span>
+                    <Book size={16} /> {t("instructor.teacher.form.courseName")} <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
                     id="name"
                     value={courseName}
                     onChange={(e) => setCourseName(e.target.value)}
-                    placeholder="Ví dụ: Khóa học React Toàn Diện"
+                    placeholder={t("instructor.teacher.form.courseNamePlaceholder")}
                     className="mt-2 block w-full rounded-lg border-gray-200 bg-gray-50 p-3 text-sm focus:border-blue-500 focus:ring-blue-500"
                   />
                 </div>
@@ -395,7 +424,7 @@ const InstructorDashboard: React.FC = () => {
                 {/* Danh mục Khóa Học */}
                 <div>
                   <label htmlFor="category" className="flex items-center gap-2 text-sm font-medium text-gray-700">
-                    <List size={16} /> Danh Mục Khóa Học <span className="text-red-500">*</span>
+                    <List size={16} /> {t("instructor.teacher.form.courseCategory")} <span className="text-red-500">*</span>
                   </label>
                   <div className="mt-2 mb-3 flex flex-wrap gap-2">
                     {selectedTagIds.map((id) => {
@@ -407,7 +436,7 @@ const InstructorDashboard: React.FC = () => {
                             type="button"
                             onClick={() => setSelectedTagIds((prev) => prev.filter((x) => x !== id))}
                             className="text-xs font-bold text-[#5a2dff] opacity-80 hover:opacity-100"
-                            aria-label={`Xóa danh mục ${t?.name ?? id}`}
+                            aria-label={t("instructor.teacher.form.removeCategoryAriaLabel", { name: t?.name ?? id })}
                           >
                             ×
                           </button>
@@ -427,7 +456,7 @@ const InstructorDashboard: React.FC = () => {
                     className="mt-2 block w-full rounded-lg border-gray-200 bg-gray-50 p-3 text-sm focus:border-blue-500 focus:ring-blue-500"
                     disabled={tagsLoading}
                   >
-                    <option value="">{tagsLoading ? "Đang tải danh mục..." : "-- Thêm danh mục --"}</option>
+                    <option value="">{tagsLoading ? t("instructor.teacher.form.categoryLoading") : t("instructor.teacher.form.categoryPlaceholder")}</option>
                     {!tagsLoading &&
                       tags
                         .filter((tag) => !selectedTagIds.includes(tag.id))
@@ -442,7 +471,7 @@ const InstructorDashboard: React.FC = () => {
                 {/* Giá Khóa Học */}
                 <div>
                   <label htmlFor="price" className="flex items-center gap-2 text-sm font-medium text-gray-700">
-                    <span className="font-bold">$</span> Giá Khóa Học (VND) <span className="text-red-500">*</span>
+                    <span className="font-bold">$</span> {t("instructor.teacher.form.coursePrice")} <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="number"
@@ -460,7 +489,7 @@ const InstructorDashboard: React.FC = () => {
                         }
                       }
                     }}
-                    placeholder="Ví dụ: 1999000 (nhập 0 nếu miễn phí)"
+                    placeholder={t("instructor.teacher.form.coursePricePlaceholder")}
                     className="mt-2 block w-full rounded-lg border-gray-200 bg-gray-50 p-3 text-sm focus:border-blue-500 focus:ring-blue-500"
                     min="0"
                     step="1"
@@ -470,29 +499,29 @@ const InstructorDashboard: React.FC = () => {
                 {/* Mô Tả Khóa Học */}
                 <div>
                   <label htmlFor="description" className="flex items-center gap-2 text-sm font-medium text-gray-700">
-                    <FileText size={16} /> Mô Tả Khóa Học <span className="text-red-500">*</span>
+                    <FileText size={16} /> {t("instructor.teacher.form.courseDescription")} <span className="text-red-500">*</span>
                   </label>
                   <textarea
                     id="description"
                     rows={4}
                     value={courseDescription}
                     onChange={(e) => setCourseDescription(e.target.value)}
-                    placeholder="Mô tả chi tiết về nội dung và mục tiêu của khóa học..."
+                    placeholder={t("instructor.teacher.form.courseDescriptionPlaceholder")}
                     className="mt-2 block w-full rounded-lg border-gray-200 bg-gray-50 p-3 text-sm focus:border-blue-500 focus:ring-blue-500"
                     required
                   ></textarea>
-                  <p className="mt-2 text-xs text-gray-500">Mô tả rõ ràng về những gì học viên sẽ học được trong khóa học</p>
+                  <p className="mt-2 text-xs text-gray-500">{t("instructor.teacher.form.courseDescriptionHelp")}</p>
                 </div>
 
                 {/* Ảnh Hiển Thị */}
                 <div>
                   <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
-                    <Camera size={16} /> Ảnh Hiển Thị Khóa Học <span className="text-red-500">*</span>
+                    <Camera size={16} /> {t("instructor.teacher.form.courseImage")} <span className="text-red-500">*</span>
                   </label>
                   <div className="mt-2 flex justify-center rounded-lg border-2 border-dashed border-gray-300 px-6 py-10">
                     {imagePreview ? (
                       <div className="relative">
-                        <img src={imagePreview} alt="Xem trước" className="h-48 w-auto rounded-md object-cover" />
+                        <img src={imagePreview} alt={t("instructor.teacher.form.imagePreview")} className="h-48 w-auto rounded-md object-cover" />
                         <button
                           type="button"
                           onClick={() => {
@@ -507,11 +536,11 @@ const InstructorDashboard: React.FC = () => {
                     ) : (
                       <div className="text-center">
                         <UploadCloud className="mx-auto h-12 w-12 text-gray-400" />
-                        <p className="mt-2 text-sm text-gray-600">Tải ảnh hiển thị khóa học lên</p>
-                        <p className="text-xs text-gray-500">Khuyến nghị: 1280x720px, JPG hoặc PNG, tối đa 5MB</p>
+                        <p className="mt-2 text-sm text-gray-600">{t("instructor.teacher.form.imageUploadText")}</p>
+                        <p className="text-xs text-gray-500">{t("instructor.teacher.form.imageUploadHelp")}</p>
                         <label htmlFor="image-upload" className="mt-4 inline-flex cursor-pointer items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50">
                           <UploadCloud size={16} />
-                          Chọn Ảnh
+                          {t("instructor.teacher.form.selectImage")}
                         </label>
                         <input id="image-upload" type="file" className="sr-only" accept="image/*" onChange={handleImageChange} />
                       </div>
@@ -526,11 +555,11 @@ const InstructorDashboard: React.FC = () => {
               <div className="flex items-start gap-3">
                 <Lightbulb className="mt-1 text-purple-500" />
                 <div>
-                  <h4 className="font-semibold text-gray-800">Lưu ý</h4>
+                  <h4 className="font-semibold text-gray-800">{t("instructor.teacher.form.noteTitle")}</h4>
                   <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-gray-600">
-                    <li>Sau khi tạo khóa học, bạn sẽ được chuyển đến trang quản lý khóa học</li>
-                    <li>Tại đó bạn có thể thêm chương, bài học và upload video</li>
-                    <li>Bạn có thể chỉnh sửa thông tin khóa học bất cứ lúc nào</li>
+                    <li>{t("instructor.teacher.form.noteItems.afterCreation")}</li>
+                    <li>{t("instructor.teacher.form.noteItems.addContent")}</li>
+                    <li>{t("instructor.teacher.form.noteItems.editAnytime")}</li>
                   </ul>
                 </div>
               </div>
@@ -543,7 +572,7 @@ const InstructorDashboard: React.FC = () => {
                 onClick={() => setShowCreateCourseForm(false)}
                 className="rounded-lg border border-gray-300 bg-white px-6 py-2.5 text-sm font-semibold text-gray-700 shadow-sm transition hover:bg-gray-50"
               >
-                Hủy
+                {t("instructor.teacher.form.cancelButton")}
               </button>
               <button
                 type="submit"
@@ -551,7 +580,7 @@ const InstructorDashboard: React.FC = () => {
                 className="flex items-center gap-2 rounded-lg bg-[#5a2dff] px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#4a21eb] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <Book size={16} />
-                {isSubmitting ? "Đang tạo..." : "Tạo Khóa Học"}
+                {isSubmitting ? t("instructor.teacher.form.creatingButton") : t("instructor.teacher.form.createButton")}
               </button>
             </div>
           </form>
@@ -564,15 +593,15 @@ const InstructorDashboard: React.FC = () => {
     <InstructorLayout>
       <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Bảng Điều Khiển Giảng Viên</h1>
-          <p className="mt-2 text-sm text-gray-500">Quản lý khóa học và theo dõi hiệu suất của bạn.</p>
+          <h1 className="text-3xl font-bold text-gray-900">{t("instructor.teacher.dashboardTitle")}</h1>
+          <p className="mt-2 text-sm text-gray-500">{t("instructor.teacher.dashboardSubtitle")}</p>
         </div>
         <div className="pt-2">
-          <button 
+          <button
             onClick={() => setShowCreateCourseForm(true)}
             className="flex items-center gap-2 rounded-full bg-[#5a2dff] px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-[#5a2dff]/20 transition hover:-translate-y-0.5 hover:bg-[#4a21eb]">
             <PlusCircle size={18} />
-            Tạo Khóa Học Mới
+            {t("instructor.teacher.createCourseButton")}
           </button>
         </div>
       </div>
@@ -588,7 +617,7 @@ const InstructorDashboard: React.FC = () => {
             }`}
           >
             <LayoutDashboard size={16} />
-            Tổng Quan
+            {t("instructor.teacher.tabs.overview")}
           </button>
           <button
             onClick={() => setActiveTab("courses")}
@@ -597,7 +626,7 @@ const InstructorDashboard: React.FC = () => {
             }`}
           >
             <Book size={16} />
-            Khóa Học
+            {t("instructor.teacher.tabs.courses")}
           </button>
           <button
             onClick={() => setActiveTab("analytics")}
@@ -606,7 +635,7 @@ const InstructorDashboard: React.FC = () => {
             }`}
           >
             <BarChart2 size={16} />
-            Phân Tích
+            {t("instructor.teacher.tabs.analytics")}
           </button>
           <button
             onClick={() => setActiveTab("activity")}
@@ -615,7 +644,7 @@ const InstructorDashboard: React.FC = () => {
             }`}
           >
             <Activity size={16} />
-            Hoạt Động
+            {t("instructor.teacher.tabs.activity")}
           </button>
         </div>
       </div>
@@ -627,59 +656,58 @@ const InstructorDashboard: React.FC = () => {
           <section className="mb-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
             <div className="rounded-3xl bg-white p-6 shadow-lg shadow-slate-900/5">
               <div className="flex items-center justify-between mb-2">
-                <p className="text-sm font-semibold text-gray-500">Tổng Học Viên</p>
+                <p className="text-sm font-semibold text-gray-500">{t("instructor.teacher.overview.totalStudents")}</p>
                 <div className="p-2 bg-blue-50 rounded-lg text-blue-600"><Users size={20} /></div>
               </div>
               <p className="mt-2 text-3xl font-bold text-gray-900">{courses.reduce((sum, c) => sum + (c.totalStudents || 0), 0)}</p>
-              <p className="mt-1 text-xs text-green-500">+12% so với tháng trước</p>
+              <p className="mt-1 text-xs text-green-500">{t("instructor.teacher.overview.studentGrowth")}</p>
             </div>
             <div className="rounded-3xl bg-white p-6 shadow-lg shadow-slate-900/5">
               <div className="flex items-center justify-between mb-2">
-                <p className="text-sm font-semibold text-gray-500">Tổng Doanh Thu</p>
+                <p className="text-sm font-semibold text-gray-500">{t("instructor.teacher.overview.totalRevenue")}</p>
                 <div className="p-2 bg-purple-50 rounded-lg text-purple-600"><DollarSign size={20} /></div>
               </div>
               <p className="mt-2 text-3xl font-bold text-gray-900">{courses.reduce((sum, c) => sum + ((c.price || 0) * (c.totalStudents || 0)), 0).toLocaleString()}đ</p>
-              <p className="mt-1 text-xs text-green-500">+8% so với tháng trước</p>
+              <p className="mt-1 text-xs text-green-500">{t("instructor.teacher.overview.revenueGrowth")}</p>
             </div>
             <div className="rounded-3xl bg-white p-6 shadow-lg shadow-slate-900/5">
               <div className="flex items-center justify-between mb-2">
-                <p className="text-sm font-semibold text-gray-500">Đánh Giá Trung Bình</p>
+                <p className="text-sm font-semibold text-gray-500">{t("instructor.teacher.overview.averageRating")}</p>
                 <div className="p-2 bg-amber-50 rounded-lg text-amber-500"><Star size={20} /></div>
               </div>
               <p className="mt-2 text-3xl font-bold text-gray-900">{(() => { const ratedCourses = courses.filter(c => (c.rating || 0) > 0); return ratedCourses.length > 0 ? (ratedCourses.reduce((sum, c) => sum + c.rating, 0) / ratedCourses.length).toFixed(1) : "0.0"; })()}</p>
-              <p className="mt-1 text-xs text-green-500">+0.2 so với tháng trước</p>
+              <p className="mt-1 text-xs text-green-500">{t("instructor.teacher.overview.ratingGrowth")}</p>
             </div>
             <div className="rounded-3xl bg-white p-6 shadow-lg shadow-slate-900/5">
                <div className="flex items-center justify-between mb-2">
-                <p className="text-sm font-semibold text-gray-500">Khóa Học</p>
+                <p className="text-sm font-semibold text-gray-500">{t("instructor.teacher.overview.totalCourses")}</p>
                 <div className="p-2 bg-indigo-50 rounded-lg text-indigo-500"><Book size={20} /></div>
               </div>
               <p className="mt-2 text-3xl font-bold text-gray-900">{courses.length}</p>
-              <p className="mt-1 text-xs text-gray-500">+1 khóa học mới tháng này</p>
+              <p className="mt-1 text-xs text-gray-500">{t("instructor.teacher.overview.courseGrowth")}</p>
             </div>
           </section>
 
-          {/* Quick actions */}
           <section className="mb-8 rounded-3xl bg-white p-6 shadow-lg shadow-slate-900/5">
-            <h3 className="text-lg font-semibold">Hành Động Nhanh</h3>
-            <p className="mt-1 text-sm text-gray-500">Quản lý khóa học và nội dung của bạn</p>
+            <h3 className="text-lg font-semibold">{t("instructor.teacher.overview.quickActions")}</h3>
+            <p className="mt-1 text-sm text-gray-500">{t("instructor.teacher.overview.quickActionsSubtitle")}</p>
             <div className="mt-6 grid gap-4 sm:grid-cols-3">
-              <button 
+              <button
                 onClick={() => setShowCreateCourseForm(true)}
                 className="flex flex-col items-center gap-3 rounded-2xl border border-gray-200 bg-gray-50 p-6 text-center font-semibold text-gray-700 transition hover:border-[#5a2dff] hover:bg-white hover:text-[#5a2dff]">
                 <div className="rounded-full bg-white p-3 shadow-sm"><PlusCircle size={24} /></div>
-                Tạo Khóa Học
+                {t("instructor.teacher.overview.createCourseAction")}
               </button>
-              <button 
+              <button
                 onClick={handleBecomeInstructor}
                 disabled={isSubmitting}
                 className="flex flex-col items-center gap-3 rounded-2xl border border-gray-200 bg-gray-50 p-6 text-center font-semibold text-gray-700 transition hover:border-[#5a2dff] hover:bg-white hover:text-[#5a2dff] disabled:cursor-not-allowed disabled:opacity-50">
                 <div className="rounded-full bg-white p-3 shadow-sm"><UserPlus size={24} /></div>
-                  {isSubmitting ? "Đang xử lý..." : "Đăng ký làm giảng viên"}
+                  {isSubmitting ? t("instructor.teacher.overview.processingAction") : t("instructor.teacher.overview.becomeInstructorAction")}
               </button>
               <button className="flex flex-col items-center gap-3 rounded-2xl border border-gray-200 bg-gray-50 p-6 text-center font-semibold text-gray-700 transition hover:border-[#5a2dff] hover:bg-white hover:text-[#5a2dff]">
                 <div className="rounded-full bg-white p-3 shadow-sm"><MessageSquare size={24} /></div>
-                Kiểm Tra Tin Nhắn
+                {t("instructor.teacher.overview.checkMessagesAction")}
               </button>
             </div>
           </section>
@@ -689,20 +717,20 @@ const InstructorDashboard: React.FC = () => {
       {activeTab === "activity" && (
         <section className="mb-8">
           <div className="rounded-3xl bg-white p-6 shadow-lg shadow-slate-900/5">
-            <h3 className="text-lg font-semibold">Hoạt Động Gần Đây</h3>
-            <p className="mt-1 text-sm text-gray-500">Cập nhật hoạt động khóa học của bạn</p>
+            <h3 className="text-lg font-semibold">{t("instructor.teacher.activity.title")}</h3>
+            <p className="mt-1 text-sm text-gray-500">{t("instructor.teacher.activity.subtitle")}</p>
             <ul className="mt-4 space-y-3">
               <li className="flex gap-3 rounded-xl border border-gray-100 bg-gray-50/50 p-4 text-sm text-gray-700">
                 <div className="mt-0.5"><Star className="h-5 w-5 text-yellow-500 fill-yellow-500" /></div>
-                <div>Đánh giá 5 sao mới cho khóa học <span className="font-semibold">React Toàn Diện</span>. <span className="text-xs text-gray-400 block mt-1">2 giờ trước</span></div>
+                <div>{t("instructor.teacher.activity.newRating")} <span className="font-semibold">{t("instructor.teacher.activity.sampleCourse1")}</span>. <span className="text-xs text-gray-400 block mt-1">{t("instructor.teacher.activity.hoursAgo2")}</span></div>
               </li>
               <li className="flex gap-3 rounded-xl border border-gray-100 bg-gray-50/50 p-4 text-sm text-gray-700">
                  <div className="mt-0.5"><UserPlus className="h-5 w-5 text-blue-500" /></div>
-                 <div><span className="font-semibold">25 học viên mới</span> đã đăng ký hôm nay. <span className="text-xs text-gray-400 block mt-1">4 giờ trước</span></div>
+                 <div><span className="font-semibold">{t("instructor.teacher.activity.newStudents")}</span> {t("instructor.teacher.activity.registeredToday")}. <span className="text-xs text-gray-400 block mt-1">{t("instructor.teacher.activity.hoursAgo4")}</span></div>
               </li>
               <li className="flex gap-3 rounded-xl border border-gray-100 bg-gray-50/50 p-4 text-sm text-gray-700">
                  <div className="mt-0.5"><MessageCircle className="h-5 w-5 text-purple-500" /></div>
-                 <div>Câu hỏi mới trong phần Q&A của khóa <span className="font-semibold">Thành Thạo JavaScript</span>. <span className="text-xs text-gray-400 block mt-1">6 giờ trước</span></div>
+                 <div>{t("instructor.teacher.activity.newQuestion")} <span className="font-semibold">{t("instructor.teacher.activity.sampleCourse2")}</span>. <span className="text-xs text-gray-400 block mt-1">{t("instructor.teacher.activity.hoursAgo6")}</span></div>
               </li>
             </ul>
           </div>
@@ -711,11 +739,11 @@ const InstructorDashboard: React.FC = () => {
 
       {activeTab === "courses" && (
         <section>
-          <h3 className="mb-4 text-2xl font-bold">Khóa Học Của Tôi</h3>
+          <h3 className="mb-4 text-2xl font-bold">{t("instructor.teacher.courseList.title")}</h3>
           {isLoadingCourses ? (
             <div className="py-20 text-center">
               <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-[#5a2dff] border-r-transparent"></div>
-              <p className="mt-4 text-gray-500">Đang tải danh sách khóa học...</p>
+              <p className="mt-4 text-gray-500">{t("instructor.teacher.courseList.loading")}</p>
             </div>
           ) : courses.length > 0 ? (
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -735,17 +763,17 @@ const InstructorDashboard: React.FC = () => {
                     {(course.isPublished || course.status === 'Public') ? (
                       <span className="absolute top-3 left-3 inline-flex items-center gap-1.5 rounded-full bg-green-500 px-2.5 py-1 text-xs font-semibold text-white shadow">
                         <CheckCircle2 size={13} />
-                        Công khai
+                        {t("instructor.teacher.courseList.published")}
                       </span>
                     ) : course.status === 'Pending' ? (
                       <span className="absolute top-3 left-3 inline-flex items-center gap-1.5 rounded-full bg-amber-400 px-2.5 py-1 text-xs font-semibold text-white shadow">
                         <Clock size={13} />
-                        Chờ duyệt
+                        {t("instructor.teacher.courseList.pending")}
                       </span>
                     ) : (
                       <span className="absolute top-3 left-3 inline-flex items-center gap-1.5 rounded-full bg-gray-700/80 px-2.5 py-1 text-xs font-semibold text-white shadow">
                         <FileEdit size={13} />
-                        Bản nháp
+                        {t("instructor.teacher.courseList.draft")}
                       </span>
                     )}
                   </div>
@@ -765,14 +793,14 @@ const InstructorDashboard: React.FC = () => {
                     <div className="mt-3 flex items-center gap-1.5">
                       <DollarSign size={15} className="text-emerald-500" />
                       <span className="text-sm font-semibold text-emerald-600">
-                        {course.price === 0 ? "Miễn phí" : `${(course.price ?? 0).toLocaleString('vi-VN')}đ`}
+                        {course.price === 0 ? t("instructor.teacher.courseList.free") : `${(course.price ?? 0).toLocaleString('vi-VN')}đ`}
                       </span>
                     </div>
 
                     <div className="mt-4 flex items-center justify-between border-t border-gray-100 pt-4">
                       <div className="flex items-center gap-1.5 text-sm font-medium text-gray-500">
                         <Users size={16} className="text-gray-400"/>
-                        <span>{course.totalStudents ?? 0} học viên</span>
+                        <span>{course.totalStudents ?? 0} {t("instructor.teacher.courseList.students")}</span>
                       </div>
                       <div className="flex items-center gap-2">
                         {(course.rating ?? 0) > 0 ? (
@@ -789,20 +817,20 @@ const InstructorDashboard: React.FC = () => {
                         <button
                           onClick={() => handleViewComments(course.id, course.name)}
                           className="flex items-center gap-1 rounded-lg bg-amber-50 px-2 py-1 text-xs font-medium text-amber-600 transition hover:bg-amber-100 active:translate-y-0.5"
-                          title="Xem đánh giá học viên"
+                          title={t("instructor.teacher.courseList.viewRatings")}
                         >
                           <MessageSquare size={12} />
-                          Đánh giá
+                          {t("instructor.teacher.courseList.ratings")}
                         </button>
                       </div>
                     </div>
                     
                     <div className="mt-5 flex items-center gap-2">
-                      <button 
+                      <button
                         onClick={() => navigate(`/instructor/courses/manage/${course.id}`, { state: { course } })}
                         className="flex-1 flex w-full items-center justify-center gap-2 rounded-xl bg-[#5a2dff] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#4a21eb] active:translate-y-0.5">
                           <Settings size={18} />
-                          Quản lý
+                          {t("instructor.teacher.courseList.manage")}
                       </button>
 
                       {/* Button Request Publish */}
@@ -810,7 +838,7 @@ const InstructorDashboard: React.FC = () => {
                         <button
                           disabled
                           className="flex items-center justify-center rounded-xl bg-green-100 px-3 py-2.5 text-green-600 cursor-not-allowed"
-                          title="Đã công khai"
+                          title={t("instructor.teacher.courseList.publishedTooltip")}
                         >
                           <CheckCircle2 size={18} />
                         </button>
@@ -818,7 +846,7 @@ const InstructorDashboard: React.FC = () => {
                         <button
                           disabled
                           className="flex items-center justify-center rounded-xl bg-amber-100 px-3 py-2.5 text-amber-500 cursor-not-allowed"
-                          title="Đang chờ duyệt"
+                          title={t("instructor.teacher.courseList.pendingTooltip")}
                         >
                           <Clock size={18} />
                         </button>
@@ -826,16 +854,16 @@ const InstructorDashboard: React.FC = () => {
                         <button
                           onClick={() => handleRequestPublish(course.id, course.name)}
                           className="flex items-center justify-center rounded-xl bg-green-50 px-3 py-2.5 text-green-600 transition hover:bg-green-100 hover:text-green-700 active:translate-y-0.5"
-                          title="Gửi yêu cầu duyệt"
+                          title={t("instructor.teacher.courseList.requestPublishTooltip")}
                         >
                           <Send size={18} />
                         </button>
                       )}
 
-                      <button 
+                      <button
                         onClick={() => handleDeleteCourse(course.id, course.name)}
                         className="flex items-center justify-center rounded-xl bg-red-50 px-3 py-2.5 text-red-500 transition hover:bg-red-100 hover:text-red-700 active:translate-y-0.5"
-                        title="Xóa khóa học"
+                        title={t("instructor.teacher.courseList.deleteTooltip")}
                       >
                         <Trash2 size={18} />
                       </button>
@@ -849,14 +877,14 @@ const InstructorDashboard: React.FC = () => {
               <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-purple-100">
                 <Book className="h-8 w-8 text-purple-600" />
               </div>
-              <h4 className="mb-2 text-lg font-semibold text-gray-900">Bạn chưa có khóa học nào</h4>
-              <p className="mb-6 text-sm text-gray-500">Hãy tạo khóa học đầu tiên để bắt đầu chia sẻ kiến thức của bạn</p>
+              <h4 className="mb-2 text-lg font-semibold text-gray-900">{t("instructor.teacher.courseList.empty")}</h4>
+              <p className="mb-6 text-sm text-gray-500">{t("instructor.teacher.courseList.emptySubtitle")}</p>
               <button
                 onClick={() => setShowCreateCourseForm(true)}
                 className="inline-flex items-center gap-2 rounded-lg bg-[#5a2dff] px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#4a21eb]"
               >
                 <Book size={16} />
-                Tạo khóa học đầu tiên
+                {t("instructor.teacher.courseList.createFirstCourse")}
               </button>
             </div>
           )}
@@ -866,15 +894,15 @@ const InstructorDashboard: React.FC = () => {
       {activeTab === "analytics" && (
         <section className="mb-8">
           <div className="rounded-3xl bg-white p-6 shadow-lg shadow-slate-900/5">
-            <h3 className="text-lg font-semibold">Phân Tích Chi Tiết</h3>
-            <p className="mt-1 text-sm text-gray-500">Báo cáo nhanh về hiệu suất khóa học.</p>
+            <h3 className="text-lg font-semibold">{t("instructor.teacher.analytics.title")}</h3>
+            <p className="mt-1 text-sm text-gray-500">{t("instructor.teacher.analytics.subtitle")}</p>
             <div className="mt-6 grid gap-6 sm:grid-cols-2">
               <div className="rounded-2xl border border-gray-100 bg-gray-50/50 p-4">
-                <p className="text-sm text-gray-500">Lượt xem tuần này</p>
+                <p className="text-sm text-gray-500">{t("instructor.teacher.analytics.weeklyViews")}</p>
                 <p className="mt-2 text-2xl font-bold text-gray-800">12,345</p>
               </div>
               <div className="rounded-2xl border border-gray-100 bg-gray-50/50 p-4">
-                <p className="text-sm text-gray-500">Tỷ lệ chuyển đổi</p>
+                <p className="text-sm text-gray-500">{t("instructor.teacher.analytics.conversionRate")}</p>
                 <p className="mt-2 text-2xl font-bold text-gray-800">3.4%</p>
               </div>
             </div>
@@ -890,10 +918,10 @@ const InstructorDashboard: React.FC = () => {
               <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[#eef2ff]">
                 <AlertTriangle className="h-8 w-8 text-[#5a2dff]" />
               </div>
-              <h3 className="mb-2 text-xl font-bold text-gray-900">Xóa Khóa Học?</h3>
+              <h3 className="mb-2 text-xl font-bold text-gray-900">{t("instructor.teacher.modals.delete.title")}</h3>
               <p className="text-sm text-gray-500">
-                Bạn có chắc chắn muốn xóa khóa học <span className="font-semibold text-gray-900">"{courseToDelete?.name}"</span>?
-                <br />Hành động này không thể hoàn tác.
+                {t("instructor.teacher.modals.delete.message")} <span className="font-semibold text-gray-900">"{courseToDelete?.name}"</span>?
+                <br />{t("instructor.teacher.modals.delete.warning")}
               </p>
             </div>
             
@@ -902,13 +930,13 @@ const InstructorDashboard: React.FC = () => {
                 onClick={() => setShowDeleteModal(false)}
                 className="flex-1 rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 shadow-sm transition-all hover:bg-gray-50 hover:text-[#5a2dff] hover:border-[#5a2dff]"
               >
-                Hủy bỏ
+                {t("instructor.teacher.modals.delete.cancel")}
               </button>
               <button
                 onClick={confirmDelete}
                 className="flex-1 rounded-xl bg-[#5a2dff] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-[#4a21eb] hover:shadow-lg hover:shadow-[#5a2dff]/30"
               >
-                Xóa ngay
+                {t("instructor.teacher.modals.delete.confirm")}
               </button>
             </div>
           </div>
@@ -923,9 +951,9 @@ const InstructorDashboard: React.FC = () => {
               <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[#eef2ff]">
                 <AlertTriangle className="h-8 w-8 text-[#5a2dff]" />
               </div>
-              <h3 className="mb-2 text-xl font-bold text-gray-900">Xóa Phản Hồi?</h3>
+              <h3 className="mb-2 text-xl font-bold text-gray-900">{t("instructor.teacher.modals.deleteReply.title")}</h3>
               <p className="text-sm text-gray-500">
-                Bạn có chắc chắn muốn xóa phản hồi này?
+                {t("instructor.teacher.modals.deleteReply.message")}
                 {replyToDelete?.content && (
                   <>
                     <br />
@@ -934,7 +962,7 @@ const InstructorDashboard: React.FC = () => {
                     </span>
                   </>
                 )}
-                <br />Hành động này không thể hoàn tác.
+                <br />{t("instructor.teacher.modals.deleteReply.warning")}
               </p>
             </div>
 
@@ -943,13 +971,13 @@ const InstructorDashboard: React.FC = () => {
                 onClick={() => setShowDeleteReplyModal(false)}
                 className="flex-1 rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 shadow-sm transition-all hover:bg-gray-50 hover:text-[#5a2dff] hover:border-[#5a2dff]"
               >
-                Hủy bỏ
+                {t("instructor.teacher.modals.deleteReply.cancel")}
               </button>
               <button
                 onClick={confirmDeleteReply}
                 className="flex-1 rounded-xl bg-[#5a2dff] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-[#4a21eb] hover:shadow-lg hover:shadow-[#5a2dff]/30"
               >
-                Xóa ngay
+                {t("instructor.teacher.modals.deleteReply.confirm")}
               </button>
             </div>
           </div>
@@ -964,10 +992,10 @@ const InstructorDashboard: React.FC = () => {
               <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[#eef2ff]">
                 <Send className="h-8 w-8 text-[#5a2dff]" />
               </div>
-              <h3 className="mb-2 text-xl font-bold text-gray-900">Gửi Yêu Cầu Duyệt?</h3>
+              <h3 className="mb-2 text-xl font-bold text-gray-900">{t("instructor.teacher.modals.publish.title")}</h3>
               <p className="text-sm text-gray-500">
-                Bạn có chắc chắn muốn gửi yêu cầu duyệt cho khóa học <span className="font-semibold text-gray-900">"{courseToPublish?.name}"</span>?
-                <br />Admin sẽ xem xét nội dung trước khi công khai.
+                {t("instructor.teacher.modals.publish.message")} <span className="font-semibold text-gray-900">"{courseToPublish?.name}"</span>?
+                <br />{t("instructor.teacher.modals.publish.info")}
               </p>
             </div>
 
@@ -976,13 +1004,13 @@ const InstructorDashboard: React.FC = () => {
                 onClick={() => setShowPublishModal(false)}
                 className="flex-1 rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 shadow-sm transition-all hover:bg-gray-50 hover:text-[#5a2dff] hover:border-[#5a2dff]"
               >
-                Hủy bỏ
+                {t("instructor.teacher.modals.publish.cancel")}
               </button>
               <button
                 onClick={confirmRequestPublish}
                 className="flex-1 rounded-xl bg-[#5a2dff] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-[#4a21eb] hover:shadow-lg hover:shadow-[#5a2dff]/30"
               >
-                Gửi ngay
+                {t("instructor.teacher.modals.publish.confirm")}
               </button>
             </div>
           </div>
@@ -996,7 +1024,7 @@ const InstructorDashboard: React.FC = () => {
             {/* Header */}
             <div className="flex items-center justify-between border-b border-gray-100 p-6">
               <div>
-                <h3 className="text-xl font-bold text-gray-900">Đánh Giá Học Viên</h3>
+                <h3 className="text-xl font-bold text-gray-900">{t("instructor.teacher.comments.title")}</h3>
                 <p className="mt-1 text-sm text-gray-500 truncate max-w-xs">{selectedCourseForComments?.name}</p>
               </div>
               <button
@@ -1018,15 +1046,15 @@ const InstructorDashboard: React.FC = () => {
               {commentsLoading ? (
                 <div className="py-16 text-center">
                   <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-[#5a2dff] border-r-transparent" />
-                  <p className="mt-4 text-sm text-gray-500">Đang tải đánh giá...</p>
+                  <p className="mt-4 text-sm text-gray-500">{t("instructor.teacher.comments.loading")}</p>
                 </div>
               ) : courseComments.length === 0 ? (
                 <div className="py-16 text-center">
                   <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-amber-50">
                     <Star className="h-7 w-7 text-amber-400" />
                   </div>
-                  <p className="font-semibold text-gray-700">Chưa có đánh giá nào</p>
-                  <p className="mt-1 text-sm text-gray-400">Học viên chưa để lại đánh giá cho khóa học này.</p>
+                  <p className="font-semibold text-gray-700">{t("instructor.teacher.comments.empty")}</p>
+                  <p className="mt-1 text-sm text-gray-400">{t("instructor.teacher.comments.emptySubtitle")}</p>
                 </div>
               ) : (
                 <ul className="space-y-4">
@@ -1039,7 +1067,7 @@ const InstructorDashboard: React.FC = () => {
                           </div>
                           <div>
                             <p className="text-sm font-semibold text-gray-900">
-                              {c.userName || "Ẩn danh"}
+                              {c.userName || t("instructor.teacher.comments.anonymous")}
                             </p>
                             {c.timestamp && (
                               <p className="text-xs text-gray-400">
@@ -1074,7 +1102,7 @@ const InstructorDashboard: React.FC = () => {
                                       G
                                     </div>
                                     <div>
-                                      <p className="text-xs font-semibold text-gray-900">Giảng viên</p>
+                                      <p className="text-xs font-semibold text-gray-900">{t("instructor.teacher.comments.instructor")}</p>
                                       {reply.timestamp && (
                                         <p className="text-xs text-gray-400">
                                           {new Date(reply.timestamp).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" })}
@@ -1088,7 +1116,7 @@ const InstructorDashboard: React.FC = () => {
                                       value={editContent}
                                       onChange={(e) => setEditContent(e.target.value)}
                                       onKeyDown={(e) => e.key === "Enter" && !editLoading && handleUpdateReply(reply.commentId!)}
-                                      placeholder="Chỉnh sửa phản hồi..."
+                                      placeholder={t("instructor.teacher.comments.editReplyPlaceholder")}
                                       className="flex-1 rounded-lg border border-gray-200 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#5a2dff]/40"
                                       autoFocus
                                     />
@@ -1098,13 +1126,13 @@ const InstructorDashboard: React.FC = () => {
                                       className="flex items-center gap-1 rounded-lg bg-[#5a2dff] px-3 py-1.5 text-sm text-white transition hover:bg-[#4a1fe0] disabled:opacity-50"
                                     >
                                       <CheckCircle2 size={13} />
-                                      Lưu
+                                      {t("instructor.teacher.comments.save")}
                                     </button>
                                     <button
                                       onClick={() => { setEditingReplyId(null); setEditContent(""); }}
                                       className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm text-gray-500 transition hover:bg-gray-100"
                                     >
-                                      Hủy
+                                      {t("instructor.teacher.comments.cancel")}
                                     </button>
                                   </div>
                                 </div>
@@ -1116,7 +1144,7 @@ const InstructorDashboard: React.FC = () => {
                                         G
                                       </div>
                                       <div>
-                                        <p className="text-xs font-semibold text-gray-900">Giảng viên</p>
+                                        <p className="text-xs font-semibold text-gray-900">{t("instructor.teacher.comments.instructor")}</p>
                                         {reply.timestamp && (
                                           <p className="text-xs text-gray-400">
                                             {new Date(reply.timestamp).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" })}
@@ -1128,18 +1156,18 @@ const InstructorDashboard: React.FC = () => {
                                       <button
                                         onClick={() => handleEditReply(reply.commentId!, reply.content || "")}
                                         className="flex items-center gap-1 rounded-lg border border-gray-200 px-2 py-1 text-xs text-gray-600 transition hover:bg-gray-50"
-                                        title="Chỉnh sửa phản hồi"
+                                        title={t("instructor.teacher.comments.editReplyTooltip")}
                                       >
                                         <FileEdit size={12} />
-                                        Sửa
+                                        {t("instructor.teacher.comments.edit")}
                                       </button>
                                       <button
                                         onClick={() => handleDeleteReply(reply.commentId!, reply.content || '')}
                                         className="flex items-center gap-1 rounded-lg border border-red-200 px-2 py-1 text-xs text-red-600 transition hover:bg-red-50"
-                                        title="Xóa phản hồi"
+                                        title={t("instructor.teacher.comments.deleteReplyTooltip")}
                                       >
                                         <Trash2 size={12} />
-                                        Xóa
+                                        {t("instructor.teacher.comments.delete")}
                                       </button>
                                     </div>
                                   </div>
@@ -1160,7 +1188,7 @@ const InstructorDashboard: React.FC = () => {
                               value={replyContent}
                               onChange={(e) => setReplyContent(e.target.value)}
                               onKeyDown={(e) => e.key === "Enter" && !replyLoading && handleReply(c.commentId!)}
-                              placeholder="Nhập phản hồi..."
+                              placeholder={t("instructor.teacher.comments.replyPlaceholder")}
                               className="flex-1 rounded-lg border border-gray-200 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#5a2dff]/40"
                               autoFocus
                             />
@@ -1170,13 +1198,13 @@ const InstructorDashboard: React.FC = () => {
                               className="flex items-center gap-1 rounded-lg bg-[#5a2dff] px-3 py-1.5 text-sm text-white transition hover:bg-[#4a1fe0] disabled:opacity-50"
                             >
                               <Send size={13} />
-                              Gửi
+                              {t("instructor.teacher.comments.send")}
                             </button>
                             <button
                               onClick={() => { setReplyingToCommentId(null); setReplyContent(""); }}
                               className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm text-gray-500 transition hover:bg-gray-100"
                             >
-                              Hủy
+                              {t("instructor.teacher.comments.cancel")}
                             </button>
                           </div>
                         ) : (
@@ -1185,7 +1213,7 @@ const InstructorDashboard: React.FC = () => {
                             className="flex items-center gap-1 text-xs text-[#5a2dff] hover:underline"
                           >
                             <MessageCircle size={13} />
-                            Phản hồi
+                            {t("instructor.teacher.comments.reply")}
                           </button>
                         )}
                       </div>

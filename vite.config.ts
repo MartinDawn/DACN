@@ -12,7 +12,20 @@ export default defineConfig({
         target: 'http://localhost:5223',
         changeOrigin: true,
         secure: false, // Thêm dòng này nếu backend dùng https self-signed hoặc http thường để tránh lỗi SSL
-        rewrite: (path) => path.replace(/^\/api/, '/api') // Giữ nguyên '/api' trong path
+        rewrite: (path) => path.replace(/^\/api/, '/api'), // Giữ nguyên '/api' trong path
+        // Fallback khi backend không chạy
+        configure: (proxy, options) => {
+          proxy.on('error', (err, req, res) => {
+            console.warn('Backend proxy error:', err.message);
+            res.writeHead(503, {
+              'Content-Type': 'application/json',
+            });
+            res.end(JSON.stringify({
+              error: 'Backend server is not available',
+              message: 'Please start the backend server at http://localhost:5223'
+            }));
+          });
+        }
       }
     }
   }

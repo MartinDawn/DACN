@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import {
   ArrowLeftIcon,
   BellAlertIcon,
@@ -36,6 +37,7 @@ const categoryIcons: Record<
 };
 
 const NotificationPage: React.FC = () => {
+  const { t } = useTranslation();
   const {
     items,
     loading,
@@ -68,14 +70,14 @@ const NotificationPage: React.FC = () => {
 
   const tabs = React.useMemo(
     () => [
-      { label: "Tất cả", value: "all" as NotificationFilter, count: items.length },
-      { label: "Chưa đọc", value: "unread" as NotificationFilter, count: unreadCount },
-      { label: "Khóa học", value: "courses" as NotificationFilter },
-      { label: "Thành tích", value: "achievements" as NotificationFilter },
-      { label: "Cộng đồng", value: "social" as NotificationFilter },
-      { label: "Ưu đãi", value: "offers" as NotificationFilter },
+      { label: t('notifications.tabs.all'), value: "all" as NotificationFilter, count: items.length },
+      { label: t('notifications.tabs.unread'), value: "unread" as NotificationFilter, count: unreadCount },
+      { label: t('notifications.tabs.courses'), value: "courses" as NotificationFilter },
+      { label: t('notifications.tabs.achievements'), value: "achievements" as NotificationFilter },
+      { label: t('notifications.tabs.social'), value: "social" as NotificationFilter },
+      { label: t('notifications.tabs.offers'), value: "offers" as NotificationFilter },
     ],
-    [items.length, unreadCount],
+    [items.length, unreadCount, t],
   );
 
   const toggleEmailSetting = (key: keyof typeof emailSettings) =>
@@ -106,7 +108,7 @@ const NotificationPage: React.FC = () => {
           className="inline-flex items-center gap-2 text-sm font-semibold text-[#5a2dff] transition hover:text-[#3c1cd6]"
         >
           <ArrowLeftIcon className="h-4 w-4" />
-          Quay lại trang chủ
+          {t('notifications.backToHome')}
         </Link>
         <header className="flex flex-col gap-4 rounded-4xl bg-white p-8 shadow-[0_24px_60px_rgba(15,23,42,0.08)] lg:flex-row lg:items-center lg:justify-between">
           <div className="flex items-start gap-4">
@@ -115,15 +117,15 @@ const NotificationPage: React.FC = () => {
             </span>
             <div>
               <div className="flex items-center gap-3">
-                <h1 className="text-3xl font-bold text-gray-900">Thông báo</h1>
+                <h1 className="text-3xl font-bold text-gray-900">{t('notifications.title')}</h1>
                 {unreadCount > 0 && (
                   <span className="rounded-full bg-[#f5f0ff] px-3 py-1 text-xs font-semibold text-[#5a2dff]">
-                    {unreadCount} mới
+                    {t('notifications.newCount', { count: unreadCount })}
                   </span>
                 )}
               </div>
               <p className="mt-1 text-sm text-gray-500">
-                Cập nhật tiến độ học tập và các thông báo quan trọng.
+                {t('notifications.subtitle')}
               </p>
             </div>
           </div>
@@ -132,7 +134,7 @@ const NotificationPage: React.FC = () => {
             onClick={markAllAsRead}
             className="inline-flex items-center justify-center rounded-full border border-[#5a2dff]/40 px-5 py-2 text-sm font-semibold text-[#5a2dff] transition hover:bg-[#efe7ff]"
           >
-            Đánh dấu tất cả đã đọc
+            {t('notifications.markAllRead')}
           </button>
         </header>
 
@@ -167,12 +169,12 @@ const NotificationPage: React.FC = () => {
           <section className="space-y-4">
             {loading && (
               <div className="rounded-3xl border border-dashed border-gray-200 bg-white p-12 text-center text-sm font-semibold text-gray-500">
-                Đang tải thông báo...
+                {t('notifications.loading')}
               </div>
             )}
             {error && !loading && (
               <div className="rounded-3xl border border-red-200 bg-red-50 p-12 text-center text-sm font-semibold text-red-500">
-                {error}
+                {t('notifications.error', { error })}
               </div>
             )}
             {!loading &&
@@ -210,13 +212,13 @@ const NotificationPage: React.FC = () => {
                               {item.timeAgo}
                             </span>
                             {isUnread && (
-                              <span className="inline-flex h-2 w-2 rounded-full bg-[#5a2dff]" title="Chưa đọc" />
+                              <span className="inline-flex h-2 w-2 rounded-full bg-[#5a2dff]" title={t('notifications.unreadBadge')} />
                             )}
                           </div>
                           <p className="text-sm text-gray-600">{item.message}</p>
                           {isUnread && (
                             <p className="text-xs font-medium text-[#5a2dff]/70">
-                              Nhấn vào thông báo để đánh dấu đã đọc
+                              {t('notifications.clickToMarkRead')}
                             </p>
                           )}
                         </div>
@@ -235,14 +237,14 @@ const NotificationPage: React.FC = () => {
                           }`}
                           disabled={!isUnread}
                         >
-                          {isUnread ? "Đánh dấu đã đọc" : "Đã đọc"}
+                          {isUnread ? t('notifications.markRead') : t('notifications.alreadyRead')}
                         </button>
                         <button
                           type="button"
                           onClick={() => deleteNotification(item.id)}
                           className="rounded-full border border-gray-200 px-4 py-2 transition hover:border-red-400 hover:text-red-500"
                         >
-                          Xóa
+                          {t('notifications.delete')}
                         </button>
                       </div>
                     </div>
@@ -251,56 +253,56 @@ const NotificationPage: React.FC = () => {
               })}
             {!loading && !error && !filteredItems.length && (
               <div className="rounded-3xl border border-dashed border-gray-200 bg-white p-12 text-center text-sm font-semibold text-gray-500">
-                Không có thông báo nào trong danh sách này.
+                {t('notifications.empty')}
               </div>
             )}
           </section>
 
           <aside className="space-y-6">
             <div className="rounded-3xl bg-white p-6 shadow-[0_24px_56px_rgba(15,23,42,0.08)]">
-              <h3 className="text-lg font-semibold text-gray-900">Thống kê nhanh</h3>
+              <h3 className="text-lg font-semibold text-gray-900">{t('notifications.stats.title')}</h3>
               <div className="mt-4 space-y-4 text-sm text-gray-500">
                 <div className="flex items-center justify-between">
-                  <span>Tổng thông báo</span>
+                  <span>{t('notifications.stats.total')}</span>
                   <span className="text-base font-semibold text-gray-900">{items.length}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span>Chưa đọc</span>
+                  <span>{t('notifications.stats.unread')}</span>
                   <span className="text-base font-semibold text-[#ef4444]">{unreadCount}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span>Trong tuần này</span>
+                  <span>{t('notifications.stats.thisWeek')}</span>
                   <span className="text-base font-semibold text-[#5a2dff]">{thisWeekCount}</span>
                 </div>
               </div>
             </div>
 
             <div className="rounded-3xl bg-white p-6 shadow-[0_24px_56px_rgba(15,23,42,0.08)]">
-              <h3 className="text-lg font-semibold text-gray-900">Cài đặt thông báo</h3>
+              <h3 className="text-lg font-semibold text-gray-900">{t('notifications.settings.title')}</h3>
               <p className="mt-1 text-xs font-semibold uppercase tracking-[0.25em] text-gray-400">
-                Email
+                {t('notifications.settings.email')}
               </p>
               <div className="mt-3 space-y-3 text-sm font-semibold text-gray-600">
                 <div className="flex items-center justify-between">
-                  <span>Cập nhật khóa học</span>
+                  <span>{t('notifications.settings.courseUpdates')}</span>
                   {renderToggle(emailSettings.courseUpdates, () =>
                     toggleEmailSetting("courseUpdates"),
                   )}
                 </div>
                 <div className="flex items-center justify-between">
-                  <span>Tin nhắn mới</span>
+                  <span>{t('notifications.settings.newMessages')}</span>
                   {renderToggle(emailSettings.newMessages, () =>
                     toggleEmailSetting("newMessages"),
                   )}
                 </div>
                 <div className="flex items-center justify-between">
-                  <span>Thành tích</span>
+                  <span>{t('notifications.settings.achievements')}</span>
                   {renderToggle(emailSettings.achievements, () =>
                     toggleEmailSetting("achievements"),
                   )}
                 </div>
                 <div className="flex items-center justify-between">
-                  <span>Khuyến mãi</span>
+                  <span>{t('notifications.settings.promotions')}</span>
                   {renderToggle(emailSettings.promotions, () =>
                     toggleEmailSetting("promotions"),
                   )}
@@ -308,23 +310,23 @@ const NotificationPage: React.FC = () => {
               </div>
 
               <p className="mt-5 text-xs font-semibold uppercase tracking-[0.25em] text-gray-400">
-                Thông báo đẩy
+                {t('notifications.settings.push')}
               </p>
               <div className="mt-3 space-y-3 text-sm font-semibold text-gray-600">
                 <div className="flex items-center justify-between">
-                  <span>Cập nhật khóa học</span>
+                  <span>{t('notifications.settings.courseUpdates')}</span>
                   {renderToggle(pushSettings.courseUpdates, () =>
                     togglePushSetting("courseUpdates"),
                   )}
                 </div>
                 <div className="flex items-center justify-between">
-                  <span>Nhắc nhở học tập</span>
+                  <span>{t('notifications.settings.learningReminders')}</span>
                   {renderToggle(pushSettings.learningReminders, () =>
                     togglePushSetting("learningReminders"),
                   )}
                 </div>
                 <div className="flex items-center justify-between">
-                  <span>Thành tích</span>
+                  <span>{t('notifications.settings.achievements')}</span>
                   {renderToggle(pushSettings.achievements, () =>
                     togglePushSetting("achievements"),
                   )}
@@ -333,28 +335,28 @@ const NotificationPage: React.FC = () => {
             </div>
 
             <div className="rounded-3xl bg-white p-6 shadow-[0_24px_56px_rgba(15,23,42,0.08)]">
-              <h3 className="text-lg font-semibold text-gray-900">Hành động nhanh</h3>
+              <h3 className="text-lg font-semibold text-gray-900">{t('notifications.quickActions.title')}</h3>
               <div className="mt-4 space-y-3 text-sm font-semibold text-gray-600">
                 <button
                   type="button"
                   onClick={markAllAsRead}
                   className="flex w-full items-center justify-between rounded-2xl border border-gray-100 px-4 py-3 transition hover:border-[#5a2dff] hover:text-[#5a2dff]"
                 >
-                  <span>Đánh dấu tất cả đã đọc</span>
+                  <span>{t('notifications.quickActions.markAllRead')}</span>
                   <span className="text-lg text-gray-300">›</span>
                 </button>
                 <a
                   href="#settings"
                   className="flex w-full items-center justify-between rounded-2xl border border-gray-100 px-4 py-3 transition hover:border-[#5a2dff] hover:text-[#5a2dff]"
                 >
-                  <span>Cài đặt thông báo</span>
+                  <span>{t('notifications.quickActions.notificationSettings')}</span>
                   <span className="text-lg text-gray-300">›</span>
                 </a>
                 <button
                   type="button"
                   className="flex w-full items-center justify-between rounded-2xl border border-gray-100 px-4 py-3 transition hover:border-[#5a2dff] hover:text-[#5a2dff]"
                 >
-                  <span>Gửi thông báo thử</span>
+                  <span>{t('notifications.quickActions.testNotification')}</span>
                   <span className="text-lg text-gray-300">›</span>
                 </button>
               </div>

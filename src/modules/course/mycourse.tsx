@@ -1,6 +1,7 @@
 // src/modules/course/mycourse.tsx
 
 import React, { useState, useMemo, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import {
   ArrowLeftIcon,
   BookOpenIcon,
@@ -38,31 +39,32 @@ type CourseProgress = MyCourse & {
 
 // --- CONSTANTS ---
 
-const filters: { label: string; value: FilterValue }[] = [
-  { label: "Tất cả khóa học", value: "all" },
-  { label: "Đang học", value: "inProgress" },
-  { label: "Đã hoàn thành", value: "completed" },
-  { label: "Chưa bắt đầu", value: "notStarted" },
-];
-
-const quickActions = [
-  { title: "Khám phá thêm khóa học", icon: BookOpenIcon, href: "/courses" },
-  { title: "Đặt mục tiêu học tập", icon: SparklesIcon, href: "#" },
-  { title: "Tải chứng chỉ", icon: DocumentArrowDownIcon, href: "#" },
-];
-
-const achievements = [
-  { title: "Hoàn thành khóa học đầu tiên", date: "18 tháng 1, 2024" },
-  { title: "Đã học 5 giờ", date: "15 tháng 1, 2024" },
-  { title: "Chuyên gia JavaScript", date: "18 tháng 1, 2024" },
-  { title: "Học liên tục một tuần", date: "20 tháng 1, 2024" },
-];
-
 // --- COMPONENT ---
 
 const MyCoursePage: React.FC = () => {
+  const { t } = useTranslation();
   // 2. KHỞI TẠO NAVIGATE
   const navigate = useNavigate();
+
+  const quickActions = [
+    { title: t('home.quickActions.extraCourses'), icon: BookOpenIcon, href: "/courses" },
+    { title: t('home.quickActions.setGoals'), icon: SparklesIcon, href: "#" },
+    { title: t('common.downloadCertificate'), icon: DocumentArrowDownIcon, href: "#" },
+  ];
+
+  const achievements = [
+    { title: t('home.achievements.firstCourse'), date: "18 tháng 1, 2024" },
+    { title: t('home.achievements.studiedHours'), date: "15 tháng 1, 2024" },
+    { title: t('home.achievements.jsExpert'), date: "18 tháng 1, 2024" },
+    { title: t('home.achievements.studyStreak'), date: "20 tháng 1, 2024" },
+  ];
+
+  const filters: { label: string; value: FilterValue }[] = [
+    { label: t('myCourses.filters.all'), value: "all" },
+    { label: t('myCourses.filters.inProgress'), value: "inProgress" },
+    { label: t('myCourses.filters.completed'), value: "completed" },
+    { label: t('myCourses.filters.notStarted'), value: "notStarted" },
+  ];
 
   // State quản lý UI (filter và search)
   const [activeFilter, setActiveFilter] = useState<FilterValue>("all");
@@ -219,7 +221,7 @@ const MyCoursePage: React.FC = () => {
         });
         success = response.success;
         if (!success) {
-          alert(response.message || 'Không thể gửi đánh giá');
+          alert(response.message || t('courseDetail.errors.submitRating'));
         }
       }
 
@@ -271,7 +273,7 @@ const MyCoursePage: React.FC = () => {
           className="inline-flex items-center gap-2 text-sm font-semibold text-[#5a2dff] transition hover:text-[#3c1cd6]"
         >
           <ArrowLeftIcon className="h-4 w-4" />
-          Quay lại trang chủ
+          {t('myCourses.backToHome')}
         </Link>
         
         {/* Section Header & Stats */}
@@ -282,17 +284,17 @@ const MyCoursePage: React.FC = () => {
                 Dashboard
               </p> */}
               <h1 className="text-3xl font-bold text-gray-900">
-                Khóa học của tôi
+                {t('myCourses.title')}
               </h1>
               <p className="mt-2 text-sm text-gray-500">
-                Theo dõi tiến độ và tiếp tục học tập
+                {t('myCourses.subtitle')}
               </p>
             </div>
             <div className="relative w-full max-w-sm">
               <MagnifyingGlassIcon className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
               <input
                 type="search"
-                placeholder="Tìm kiếm khóa học..."
+                placeholder={t('myCourses.searchPlaceholder')}
                 value={searchTerm}
                 onChange={(event) => setSearchTerm(event.target.value)}
                 className="h-12 w-full rounded-full border border-gray-200 bg-gray-50 pl-12 pr-4 text-sm font-medium text-gray-600 outline-none transition focus:border-[#5a2dff] focus:bg-white"
@@ -308,13 +310,13 @@ const MyCoursePage: React.FC = () => {
                   <BookOpenIcon className="h-6 w-6" />
                 </span>
                 <span className="text-xs font-semibold uppercase text-indigo-400">
-                  Tổng cộng
+                  {t('myCourses.stats.total')}
                 </span>
               </div>
               <p className="mt-6 text-3xl font-semibold text-gray-900">
                 {coursesWithProgress.length}
               </p>
-              <p className="text-sm text-gray-500">Khóa học đã đăng ký</p>
+              <p className="text-sm text-gray-500">{t('myCourses.stats.enrolled')}</p>
             </div>
             {/* Stat: Completed */}
             <div className="rounded-3xl bg-white p-6 shadow-[0_18px_40px_rgba(15,23,42,0.08)]">
@@ -323,13 +325,13 @@ const MyCoursePage: React.FC = () => {
                   <CheckCircleIcon className="h-6 w-6" />
                 </span>
                 <span className="text-xs font-semibold uppercase text-emerald-400">
-                  Đã hoàn thành
+                  {t('myCourses.stats.completed')}
                 </span>
               </div>
               <p className="mt-6 text-3xl font-semibold text-gray-900">
                 {completedCount}
               </p>
-              <p className="text-sm text-gray-500">Khóa học đã kết thúc</p>
+              <p className="text-sm text-gray-500">{t('myCourses.stats.finished')}</p>
             </div>
             {/* Stat: Total Hours */}
             <div className="rounded-3xl bg-white p-6 shadow-[0_18px_40px_rgba(15,23,42,0.08)]">
@@ -338,13 +340,13 @@ const MyCoursePage: React.FC = () => {
                   <ClockIcon className="h-6 w-6" />
                 </span>
                 <span className="text-xs font-semibold uppercase text-sky-400">
-                  Tổng thời gian
+                  {t('myCourses.stats.totalTime')}
                 </span>
               </div>
               <p className="mt-6 text-3xl font-semibold text-gray-900">
                 {totalHours}h
               </p>
-              <p className="text-sm text-gray-500">Thời gian học tích lũy</p>
+              <p className="text-sm text-gray-500">{t('myCourses.stats.studyTime')}</p>
             </div>
             {/* Stat: In Progress */}
             <div className="rounded-3xl bg-white p-6 shadow-[0_18px_40px_rgba(15,23,42,0.08)]">
@@ -353,7 +355,7 @@ const MyCoursePage: React.FC = () => {
                   <SparklesIcon className="h-6 w-6" />
                 </span>
                 <span className="text-xs font-semibold uppercase text-indigo-400">
-                  Đang học
+                  {t('myCourses.filters.inProgress')}
                 </span>
               </div>
               <p className="mt-6 text-3xl font-semibold text-gray-900">
@@ -406,10 +408,10 @@ const MyCoursePage: React.FC = () => {
                     : "bg-gray-100 text-gray-500";
                 const statusText =
                   course.status === "completed"
-                    ? "Đã hoàn thành"
+                    ? t('myCourses.filters.completed')
                     : course.status === "inProgress"
-                    ? "Đang học"
-                    : "Chưa bắt đầu";
+                    ? t('myCourses.filters.inProgress')
+                    : t('myCourses.filters.notStarted');
                 const actionLabel =
                   course.status === "completed"
                     ? "Xem lại"
@@ -528,19 +530,19 @@ const MyCoursePage: React.FC = () => {
                 </div>
                 <div className="space-y-3 text-sm text-gray-500">
                   <div className="flex items-center justify-between">
-                    <span>Đã hoàn thành</span>
+                    <span>{t('myCourses.filters.completed')}</span>
                     <span className="font-semibold text-gray-900">
                       {completedCount}
                     </span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span>Đang học</span>
+                    <span>{t('myCourses.filters.inProgress')}</span>
                     <span className="font-semibold text-gray-900">
                       {inProgressCount}
                     </span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span>Chưa bắt đầu</span>
+                    <span>{t('myCourses.filters.notStarted')}</span>
                     <span className="font-semibold text-gray-900">
                       {notStartedCount}
                     </span>

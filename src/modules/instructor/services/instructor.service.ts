@@ -8,8 +8,18 @@ export const instructorService = {
    * Fetches the courses for the current instructor.
    */
   async getMyCourses(): Promise<ApiResponse<InstructorCourse[]>> {
-    const response = await apiClient.get<ApiResponse<InstructorCourse[]>>('/Course/instructor-courses');
-    return response.data;
+    try {
+      const response = await apiClient.get<ApiResponse<InstructorCourse[]>>('/Course/instructor-courses');
+      return response.data;
+    } catch (error: any) {
+      console.error('Error in getMyCourses:', error);
+      // Return a safe fallback response
+      return {
+        success: false,
+        message: error?.response?.data?.message || error?.message || 'Failed to fetch courses',
+        data: []
+      };
+    }
   },
 
   /**
@@ -25,8 +35,18 @@ export const instructorService = {
    * Fetches all available tags/categories.
    */
   async getAllTags(): Promise<ApiResponse<Tag[]>> {
-    const response = await apiClient.get<ApiResponse<Tag[]>>('/Tag/all-tags');
-    return response.data;
+    try {
+      const response = await apiClient.get<ApiResponse<Tag[]>>('/Tag/all-tags');
+      return response.data;
+    } catch (error: any) {
+      console.error('Error in getAllTags:', error);
+      // Return a safe fallback response
+      return {
+        success: false,
+        message: error?.response?.data?.message || error?.message || 'Failed to fetch tags',
+        data: []
+      };
+    }
   },
 
   /**
@@ -117,8 +137,22 @@ export const instructorService = {
    * @param courseId The ID of the course.
    */
   async getCourseComments(courseId: string): Promise<CourseCommentsResponse> {
-    const response = await apiClient.get<CourseCommentsResponse>(`/Course/course-comments/${courseId}`);
-    return response.data;
+    try {
+      const response = await apiClient.get<CourseCommentsResponse>(`/Course/course-comments/${courseId}`);
+      return response.data;
+    } catch (error: any) {
+      console.error(`Error in getCourseComments for course ${courseId}:`, error);
+      // Return a safe fallback response
+      return {
+        success: false,
+        code: 'ERROR',
+        message: error?.response?.data?.message || error?.message || 'Failed to fetch comments',
+        data: {
+          myComment: null,
+          allComments: []
+        }
+      };
+    }
   },
 
   /**

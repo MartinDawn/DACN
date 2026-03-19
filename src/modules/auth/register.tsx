@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { FcGoogle } from "react-icons/fc";
 import { FaFacebookF } from "react-icons/fa";
 import {
@@ -16,6 +17,7 @@ import type { RegisterRequest } from "./models/auth";
 import { AuthNotification } from "./components/AuthNotification";
 
 const RegisterPage: React.FC = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { register, loading, error, getGoogleAuthUrl } = useAuth();
   const [formData, setFormData] = useState<RegisterRequest>({
@@ -44,7 +46,7 @@ const RegisterPage: React.FC = () => {
       setNotification({
         show: true,
         type: 'error',
-        message: 'Vui lòng đồng ý với điều khoản trước khi tiếp tục.'
+        message: t('register.errors.terms')
       });
       return;
     }
@@ -66,7 +68,7 @@ const RegisterPage: React.FC = () => {
       setNotification({
         show: true,
         type: 'error',
-        message: error || 'Đăng ký thất bại. Vui lòng thử lại.'
+        message: error || t('register.errors.failed')
       });
     }
   };
@@ -81,7 +83,7 @@ const RegisterPage: React.FC = () => {
         setNotification({
           show: true,
           type: "error",
-          message: "Không thể lấy đường dẫn Google. Vui lòng thử lại."
+          message: t('register.errors.googleUrl')
         });
       }
     } catch (err) {
@@ -89,7 +91,7 @@ const RegisterPage: React.FC = () => {
       setNotification({
         show: true,
         type: "error",
-        message: (err instanceof Error && err.message) ? err.message : "Lỗi khi kết nối với Google."
+        message: (err instanceof Error && err.message) ? err.message : t('register.errors.google')
       });
     }
   };
@@ -103,15 +105,15 @@ const RegisterPage: React.FC = () => {
         onClose={() => setNotification(prev => ({ ...prev, show: false }))}
       />
       <Link to="/" className="absolute left-4 top-4 z-10 inline-flex items-center gap-2 text-sm font-medium text-indigo-500 hover:text-indigo-400">
-        ← Trang chủ
+        {t('forgotPassword.backToHome')}
       </Link>
       <div className="w-full max-w-md rounded-3xl border border-gray-200 bg-white p-8 shadow-[0_24px_80px_rgba(15,23,42,0.08)]">
         <div className="space-y-2 text-center">
           <h1 className="text-3xl font-semibold text-gray-900">
-            Đăng ký tài khoản
+            {t('register.title')}
           </h1>
           <p className="text-sm text-gray-500">
-            Tạo tài khoản để bắt đầu hành trình học tập của bạn
+            {t('register.subtitle')}
           </p>
         </div>
 
@@ -122,7 +124,7 @@ const RegisterPage: React.FC = () => {
             className="flex h-12 w-full items-center justify-center gap-3 rounded-2xl border border-gray-200 bg-white text-sm font-medium text-gray-700 transition-colors hover:border-gray-300 hover:bg-gray-50"
           >
             <FcGoogle className="text-lg" />
-            Đăng ký với Google
+            {t('register.googleSignup')}
           </button>
          
         </div>
@@ -130,7 +132,7 @@ const RegisterPage: React.FC = () => {
         <div className="mt-6 flex items-center gap-4">
           <span className="h-px flex-1 bg-gray-200" />
           <span className="text-xs font-semibold uppercase tracking-[0.3em] text-gray-400">
-            hoặc
+            {t('register.or')}
           </span>
           <span className="h-px flex-1 bg-gray-200" />
         </div>
@@ -138,7 +140,7 @@ const RegisterPage: React.FC = () => {
         <form className="mt-6 space-y-6" onSubmit={handleSubmit}>
           <div className="space-y-2">
             <label htmlFor="userName" className="text-sm font-medium text-gray-700">
-              Tên đăng nhập
+              {t('register.username')}
             </label>
             <div className="flex items-center gap-3 rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 transition focus-within:border-indigo-400 focus-within:bg-white focus-within:shadow-[0_0_0_4px_rgba(99,102,241,0.08)]">
               <HiOutlineIdentification className="text-lg text-gray-400" />
@@ -146,7 +148,7 @@ const RegisterPage: React.FC = () => {
                 id="userName"
                 name="userName"
                 type="text"
-                placeholder="Nhập tên đăng nhập"
+                placeholder={t('register.placeholders.username')}
                 className="w-full bg-transparent text-sm text-gray-900 placeholder-gray-400 outline-none"
                 value={formData.userName}
                 onChange={(e) => setFormData({...formData, userName: e.target.value})}
@@ -157,7 +159,7 @@ const RegisterPage: React.FC = () => {
 
           <div className="space-y-2">
             <label htmlFor="fullName" className="text-sm font-medium text-gray-700">
-              Họ và tên
+              {t('register.fullName')}
             </label>
             <div className="flex items-center gap-3 rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 transition focus-within:border-indigo-400 focus-within:bg-white focus-within:shadow-[0_0_0_4px_rgba(99,102,241,0.08)]">
               <HiOutlineUser className="text-lg text-gray-400" />
@@ -165,7 +167,7 @@ const RegisterPage: React.FC = () => {
                 id="fullName"
                 name="fullName"
                 type="text"
-                placeholder="Nhập họ và tên đầy đủ"
+                placeholder={t('register.placeholders.fullName')}
                 className="w-full bg-transparent text-sm text-gray-900 placeholder-gray-400 outline-none"
                 value={formData.fullName}
                 onChange={(e) => setFormData({...formData, fullName: e.target.value})}
@@ -176,7 +178,7 @@ const RegisterPage: React.FC = () => {
 
           <div className="space-y-2">
             <label htmlFor="phoneNumber" className="text-sm font-medium text-gray-700">
-              Số điện thoại
+              {t('register.phoneNumber')}
             </label>
             <div className="flex items-center gap-3 rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 transition focus-within:border-indigo-400 focus-within:bg-white focus-within:shadow-[0_0_0_4px_rgba(99,102,241,0.08)]">
               <HiOutlinePhone className="text-lg text-gray-400" />
@@ -184,7 +186,7 @@ const RegisterPage: React.FC = () => {
                 id="phoneNumber"
                 name="phoneNumber"
                 type="tel"
-                placeholder="Nhập số điện thoại"
+                placeholder={t('register.placeholders.phoneNumber')}
                 className="w-full bg-transparent text-sm text-gray-900 placeholder-gray-400 outline-none"
                 value={formData.phoneNumber}
                 onChange={(e) => setFormData({...formData, phoneNumber: e.target.value})}
@@ -195,7 +197,7 @@ const RegisterPage: React.FC = () => {
 
           <div className="space-y-2">
             <label htmlFor="email" className="text-sm font-medium text-gray-700">
-              Email
+              {t('auth.email')}
             </label>
             <div className="flex items-center gap-3 rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 transition focus-within:border-indigo-400 focus-within:bg-white focus-within:shadow-[0_0_0_4px_rgba(99,102,241,0.08)]">
               <HiOutlineEnvelope className="text-lg text-gray-400" />
@@ -203,7 +205,7 @@ const RegisterPage: React.FC = () => {
                 id="email"
                 name="email"
                 type="email"
-                placeholder="Nhập địa chỉ email"
+                placeholder={t('register.placeholders.email')}
                 className="w-full bg-transparent text-sm text-gray-900 placeholder-gray-400 outline-none"
                 value={formData.email}
                 onChange={(e) => setFormData({...formData, email: e.target.value})}
@@ -214,7 +216,7 @@ const RegisterPage: React.FC = () => {
 
           <div className="space-y-2">
             <label htmlFor="password" className="text-sm font-medium text-gray-700">
-              Mật khẩu
+              {t('auth.password')}
             </label>
             <div className="flex items-center gap-3 rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 transition focus-within:border-indigo-400 focus-within:bg-white focus-within:shadow-[0_0_0_4px_rgba(99,102,241,0.08)]">
               <HiOutlineLockClosed className="text-lg text-gray-400" />
@@ -222,7 +224,7 @@ const RegisterPage: React.FC = () => {
                 id="password"
                 name="password"
                 type={showPassword ? "text" : "password"}
-                placeholder="Tạo mật khẩu mạnh"
+                placeholder={t('register.placeholders.password')}
                 className="w-full bg-transparent text-sm text-gray-900 placeholder-gray-400 outline-none"
                 value={formData.password}
                 onChange={(e) => setFormData({...formData, password: e.target.value})}
@@ -252,14 +254,7 @@ const RegisterPage: React.FC = () => {
                 onChange={(e) => setAcceptTerms(e.target.checked)}
               />
               <span>
-                Tôi đồng ý với{" "}
-                <a href="/policy" className="font-semibold text-indigo-500 hover:text-indigo-400">
-                  Điều khoản dịch vụ
-                </a>{" "}
-                và{" "}
-                <a href="/policy" className="font-semibold text-indigo-500 hover:text-indigo-400">
-                  Chính sách bảo mật
-                </a>
+                {t('register.terms')}
               </span>
             </label>
           </div>
@@ -275,14 +270,14 @@ const RegisterPage: React.FC = () => {
             className="h-12 w-full rounded-2xl bg-[#8b3dff] text-sm font-semibold text-white shadow-[0_10px_30px_rgba(139,61,255,0.35)] transition hover:bg-[#7a2df0] disabled:opacity-60"
             disabled={loading || !formData.userName || !formData.email || !formData.password || !formData.fullName || !formData.phoneNumber || !acceptTerms}
           >
-            {loading ? "Đang xử lý..." : "Tạo tài khoản"}
+            {loading ? t('common.loading') : t('register.buttons.create')}
           </button>
         </form>
 
         <p className="mt-6 text-center text-sm text-gray-500">
-          Đã có tài khoản?{" "}
+          {t('auth.alreadyHaveAccount')}{" "}
           <Link to="/login" className="font-semibold text-indigo-500 hover:text-indigo-400">
-            Đăng nhập ngay
+            {t('auth.login')}
           </Link>
         </p>
       </div>

@@ -2,6 +2,7 @@
 
 import React from "react";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { ArrowLeftIcon, CameraIcon } from "@heroicons/react/24/outline";
 import { FaGithub, FaLinkedinIn, FaTwitter, FaInstagram, FaFacebookF } from "react-icons/fa";
 import AvatarLayout from "./layout/layout";
@@ -88,9 +89,23 @@ type ProfileSnapshot = {
 };
 
 const MyInfo: React.FC = () => {
+  const { t } = useTranslation();
+  // Effect để cập nhật initialPersonalInfo với translation
+  const initialPersonalInfoTranslated = React.useMemo(() => ({
+    fullName: t('common.loading') || "Đang tải...",
+    jobTitle: t('common.loading') || "Đang tải...",
+    phone: t('common.loading') || "Đang tải...",
+    address: t('common.loading') || "Đang tải...",
+    email: t('common.loading') || "Đang tải...",
+    company: t('common.loading') || "Đang tải...",
+    birthday: t('common.loading') || "Đang tải...",
+    gender: t('common.loading') || "Đang tải...",
+    experience: t('common.loading') || "Đang tải...",
+  }), [t]);
+
   // --- STATE TỪ COMPONENT ---
   const [isEditing, setIsEditing] = React.useState(false);
-  const [personalInfo, setPersonalInfo] = React.useState<PersonalInfo>(initialPersonalInfo);
+  const [personalInfo, setPersonalInfo] = React.useState<PersonalInfo>(initialPersonalInfoTranslated);
   const [about, setAbout] = React.useState(initialAbout);
   const [website, setWebsite] = React.useState(initialWebsite); // Giữ nguyên state này
   const [socialLinks, setSocialLinks] = React.useState<SocialLink[]>(socialLinkDefaults); // Giữ nguyên state này
@@ -122,24 +137,24 @@ const MyInfo: React.FC = () => {
     if (profileData) {
       // Map dữ liệu API vào state của component
       setPersonalInfo({
-        fullName: profileData.fullName || "Chưa cập nhật",
-        jobTitle: profileData.jobPosition || "Chưa cập nhật",
-        phone: profileData.phoneNumber || "Chưa cập nhật",
-        address: profileData.location || "Chưa cập nhật",
-        email: profileData.email || "Chưa cập nhật",
-        company: profileData.organization || "Chưa cập nhật",
+        fullName: profileData.fullName || t('profile.placeholders.notUpdated'),
+        jobTitle: profileData.jobPosition || t('profile.placeholders.notUpdated'),
+        phone: profileData.phoneNumber || t('profile.placeholders.notUpdated'),
+        address: profileData.location || t('profile.placeholders.notUpdated'),
+        email: profileData.email || t('profile.placeholders.notUpdated'),
+        company: profileData.organization || t('profile.placeholders.notUpdated'),
         birthday: formatBirthDateToInput(profileData.birthDate),
-        gender: profileData.gender || "Chưa cập nhật",
-        experience: profileData.experience || "Chưa cập nhật",
+        gender: profileData.gender || t('profile.placeholders.notUpdated'),
+        experience: profileData.experience || t('profile.placeholders.notUpdated'),
       });
-      setAbout(profileData.description || "Chưa cập nhật");
+      setAbout(profileData.description || t('profile.placeholders.notUpdated'));
       setAvatarPreview(profileData.avatarUrl || null);
 
       // Cập nhật state sidebar
       setUsername(profileData.username);
       setStats(profileData.stats);
       setMemberSinceYear(profileData.memberSinceYear);
-      setLocation(profileData.location || "Chưa cập nhật");
+      setLocation(profileData.location || t('profile.placeholders.notUpdated'));
 
       // Các trường này không có trong API, giữ giá trị default
       // setWebsite(profileData.website || initialWebsite);
@@ -285,7 +300,7 @@ const MyInfo: React.FC = () => {
     return (
       <AvatarLayout>
         <div className="flex h-96 items-center justify-center">
-          <p className="text-lg font-semibold text-[#5a2dff]">Đang tải thông tin...</p>
+          <p className="text-lg font-semibold text-[#5a2dff]">{t('profile.loading')}</p>
         </div>
       </AvatarLayout>
     );
@@ -304,7 +319,7 @@ const MyInfo: React.FC = () => {
           <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#efe7ff]">
             <ArrowLeftIcon className="h-4 w-4" />
           </span>
-          Quay lại trang chủ
+          {t('profile.backToHome')}
         </Link>
         <div className="hidden items-center gap-2 text-sm font-medium text-gray-500 md:flex">
           {["Thông tin", "Thành tích", "Bảo mật", "Thông báo", "Quyền riêng tư", "Thanh toán"].map(
@@ -436,9 +451,9 @@ const MyInfo: React.FC = () => {
           <header className="rounded-3xl border border-[#5a2dff]/10 bg-gradient-to-r from-[#efeaff] to-white p-6 shadow-sm">
             <div className="flex flex-wrap items-center justify-between gap-4">
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">Thông tin cá nhân</h1>
+                <h1 className="text-2xl font-bold text-gray-900">{t('profile.title')}</h1>
                 <p className="mt-1 text-sm text-gray-500">
-                  Cập nhật hồ sơ để nhận gợi ý khóa học phù hợp và kết nối cộng đồng học viên.
+                  {t('profile.subtitle')}
                 </p>
               </div>
               <button
@@ -451,7 +466,7 @@ const MyInfo: React.FC = () => {
                     : "bg-white text-[#5a2dff] hover:bg-[#efe7ff]"
                 } ${isSaving ? "cursor-not-allowed opacity-70" : ""}`}
               >
-                {isSaving ? "Đang lưu..." : isEditing ? "Lưu thay đổi" : "Chỉnh sửa"}
+                {isSaving ? t('profile.buttons.saving') : isEditing ? t('profile.buttons.save') : t('profile.buttons.edit')}
               </button>
               {isEditing && (
                 <button
@@ -473,7 +488,7 @@ const MyInfo: React.FC = () => {
               <div className="space-y-4">
                 {personalInfoConfig.left.map(({ key, label }) => {
                   const value = personalInfo[key];
-                  const isEmpty = !value || value === "Chưa cập nhật";
+                  const isEmpty = !value || value === t('profile.placeholders.notUpdated');
                   return (
                     <label key={key} className="block space-y-1">
                       <span className="text-xs font-semibold uppercase text-gray-400">{label}</span>
@@ -481,7 +496,7 @@ const MyInfo: React.FC = () => {
                         value={value}
                         onChange={(event) => handlePersonalInfoChange(key, event.target.value)}
                         disabled={!isEditing || key === "email"} // Không cho sửa email
-                        placeholder="Chưa cập nhật"
+                        placeholder={t('profile.placeholders.notUpdated')}
                         className={`h-11 w-full rounded-2xl border px-4 text-sm font-semibold outline-none transition ${
                           isEditing && key !== "email"
                             ? "border-[#d6d7e4] bg-white text-gray-900 focus:border-[#5a2dff] focus:shadow-[0_0_0_1px_rgba(98,70,234,0.12)]"
@@ -497,7 +512,7 @@ const MyInfo: React.FC = () => {
               <div className="space-y-4">
                 {personalInfoConfig.right.map(({ key, label }) => {
                   const value = personalInfo[key];
-                  const isEmpty = !value || value === "Chưa cập nhật";
+                  const isEmpty = !value || value === t('profile.placeholders.notUpdated');
                   return (
                     <label key={key} className="block space-y-1">
                       <span className="text-xs font-semibold uppercase text-gray-400">{label}</span>
@@ -505,7 +520,7 @@ const MyInfo: React.FC = () => {
                         value={value}
                         onChange={(event) => handlePersonalInfoChange(key, event.target.value)}
                         disabled={!isEditing || key === "email"}
-                        placeholder="Chưa cập nhật"
+                        placeholder={t('profile.placeholders.notUpdated')}
                         className={`h-11 w-full rounded-2xl border px-4 text-sm font-semibold outline-none transition ${
                           isEditing && key !== "email"
                             ? "border-[#d6d7e4] bg-white text-gray-900 focus:border-[#5a2dff] focus:shadow-[0_0_0_1px_rgba(98,70,234,0.12)]"
@@ -528,7 +543,7 @@ const MyInfo: React.FC = () => {
                   value={about}
                   onChange={(event) => setAbout(event.target.value)}
                   disabled={!isEditing}
-                  placeholder="Giới thiệu bản thân"
+                  placeholder={t('profile.placeholders.selfIntroduction')}
                   className={`min-h-[120px] w-full rounded-2xl border p-4 text-sm outline-none transition ${
                     isEditing
                       ? "border-[#d6d7e4] bg-white text-gray-700 focus:border-[#5a2dff] focus:shadow-[0_0_0_1px_rgba(98,70,234,0.12)]"
@@ -543,7 +558,7 @@ const MyInfo: React.FC = () => {
                   value={website}
                   onChange={(event) => setWebsite(event.target.value)}
                   disabled={!isEditing}
-                  placeholder="https://"
+                  placeholder={t('profile.placeholders.website')}
                   className={`w-full rounded-2xl border px-4 py-3 text-sm font-semibold outline-none transition ${
                     isEditing
                       ? "border-[#d6d7e4] bg-white text-[#5a2dff] focus:border-[#5a2dff] focus:shadow-[0_0_0_1px_rgba(98,70,234,0.12)]"

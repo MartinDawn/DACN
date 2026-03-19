@@ -1,7 +1,8 @@
 // src/hooks/useCourseSearch.ts
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { toast } from "react-hot-toast";
 import { courseService } from "../services/course.service.ts";
+import { useRefreshOnLanguageChange } from "../../../hooks/useRefreshOnLanguageChange";
 import type { SearchParams, CourseSearchItem, CourseSearchResponse } from "../models/course";
 
 // Kiểu cho toàn bộ đối tượng API trả về
@@ -19,15 +20,19 @@ export const useCourseSearch = () => {
   // chính là kiểu 'CourseSearchResponse'
   const [data, setData] = useState<CourseSearchResponse | null>(null);
 
+  // Track last search params for language refresh
+  const lastSearchParams = useRef<SearchParams | null>(null);
+
   const fetchSearchResults = useCallback(async (params: SearchParams) => {
     setIsLoading(true);
     setError(null);
+    lastSearchParams.current = params; // Track search params for refresh
     try {
       // Giả sử courseService.searchCourses trả về toàn bộ đối tượng ApiResponse
-      const responseData: ApiResponse<CourseSearchResponse> = 
+      const responseData: ApiResponse<CourseSearchResponse> =
         await courseService.searchCourses(params);
-        
-      console.log("Full API Response:", responseData); 
+
+      console.log("Full API Response:", responseData);
 
 
       if (responseData && responseData.success) {
@@ -50,6 +55,13 @@ export const useCourseSearch = () => {
       setIsLoading(false);
     }
   }, []);
+
+  // Auto refresh on language change
+  useRefreshOnLanguageChange(() => {
+    if (lastSearchParams.current) {
+      fetchSearchResults(lastSearchParams.current);
+    }
+  });
 
   return {
     isLoading,

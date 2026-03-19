@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
-import type { 
-    LoginRequest, 
-    RegisterRequest, 
-    ForgetPasswordRequest, 
-    User, 
-    ApiResponse, 
-    RegisterResponse, 
+import { useTranslation } from 'react-i18next';
+import type {
+    LoginRequest,
+    RegisterRequest,
+    ForgetPasswordRequest,
+    User,
+    ApiResponse,
+    RegisterResponse,
     LoginResponse,
     SendOTPRequest,
     VerifyOTPRequest,
@@ -13,6 +14,7 @@ import type {
     ServiceResponse
 } from '../models/auth';
 import { authService } from '../services/auth.service';
+import { mapAuthErrorToTranslation, mapStatusCodeToTranslation } from '../utils/auth.utils';
 import axios from 'axios';
 
 // Function to decode JWT payload
@@ -28,6 +30,7 @@ const decodeJWT = (token: string) => {
 };
 
 export const useAuth = () => {
+    const { t } = useTranslation();
     const [user, setUser] = useState<User | null>(() => {
         const savedUser = localStorage.getItem('user');
         return savedUser ? JSON.parse(savedUser) : null;
@@ -53,7 +56,7 @@ export const useAuth = () => {
             const response = await authService.login(data);
             
             if (!response.success) {
-                setError(response.message);
+                setError(mapAuthErrorToTranslation(response.message, t));
                 return null;
             }
 
@@ -77,9 +80,9 @@ export const useAuth = () => {
         } catch (err) {
             if (axios.isAxiosError(err) && err.response?.data) {
                 const apiError = err.response.data as ApiResponse<null>;
-                setError(apiError.message || 'Đã xảy ra lỗi khi đăng nhập');
+                setError(mapAuthErrorToTranslation(apiError.message, t));
             } else {
-                setError('Đã xảy ra lỗi khi đăng nhập');
+                setError(t('errors.auth.loginFailed'));
             }
             throw err;
         } finally {
@@ -92,9 +95,9 @@ export const useAuth = () => {
             setLoading(true);
             setError(null);
             const response = await authService.register(data);
-            
+
             if (!response.success) {
-                setError(response.message);
+                setError(mapAuthErrorToTranslation(response.message, t));
                 return null;
             }
 
@@ -102,9 +105,9 @@ export const useAuth = () => {
         } catch (err) {
             if (axios.isAxiosError(err) && err.response?.data) {
                 const apiError = err.response.data as ApiResponse<null>;
-                setError(apiError.message || 'Đã xảy ra lỗi khi đăng ký');
+                setError(mapAuthErrorToTranslation(apiError.message, t));
             } else {
-                setError('Đã xảy ra lỗi khi đăng ký');
+                setError(t('errors.auth.registerFailed'));
             }
             throw err;
         } finally {
@@ -118,7 +121,7 @@ export const useAuth = () => {
             setError(null);
             await authService.forgotPassword(data);
         } catch (err) {
-            const errorMessage = err instanceof Error ? err.message : 'An error occurred during password reset';
+            const errorMessage = err instanceof Error ? err.message : t('errors.auth.passwordResetFailed');
             setError(errorMessage);
             throw err;
         } finally {
@@ -144,7 +147,7 @@ export const useAuth = () => {
             window.location.href = '/homepage';
             
         } catch (err) {
-            const errorMessage = err instanceof Error ? err.message : 'An error occurred during logout';
+            const errorMessage = err instanceof Error ? err.message : t('errors.auth.logoutFailed');
             setError(errorMessage);
             // Still clear client-side data even if API fails
             setUser(null);
@@ -167,7 +170,7 @@ export const useAuth = () => {
             const response = await authService.sendOTP(data);
             
             if (!response.success) {
-                setError(response.message);
+                setError(mapAuthErrorToTranslation(response.message, t));
                 return null;
             }
 
@@ -175,9 +178,9 @@ export const useAuth = () => {
         } catch (err) {
             if (axios.isAxiosError(err) && err.response?.data) {
                 const apiError = err.response.data as ApiResponse<null>;
-                setError(apiError.message || 'Đã xảy ra lỗi khi gửi mã OTP');
+                setError(mapAuthErrorToTranslation(apiError.message, t));
             } else {
-                setError('Đã xảy ra lỗi khi gửi mã OTP');
+                setError(t('errors.auth.otpSendFailed'));
             }
             throw err;
         } finally {
@@ -192,7 +195,7 @@ export const useAuth = () => {
             const response = await authService.verifyOTP(data);
             
             if (!response.success) {
-                setError(response.message);
+                setError(mapAuthErrorToTranslation(response.message, t));
                 return null;
             }
 
@@ -200,9 +203,9 @@ export const useAuth = () => {
         } catch (err) {
             if (axios.isAxiosError(err) && err.response?.data) {
                 const apiError = err.response.data as ApiResponse<null>;
-                setError(apiError.message || 'Đã xảy ra lỗi khi xác thực mã OTP');
+                setError(mapAuthErrorToTranslation(apiError.message, t));
             } else {
-                setError('Đã xảy ra lỗi khi xác thực mã OTP');
+                setError(t('errors.auth.otpVerifyFailed'));
             }
             throw err;
         } finally {
@@ -217,7 +220,7 @@ export const useAuth = () => {
             const response = await authService.resetPassword(data);
             
             if (!response.success) {
-                setError(response.message);
+                setError(mapAuthErrorToTranslation(response.message, t));
                 return null;
             }
 
@@ -225,9 +228,9 @@ export const useAuth = () => {
         } catch (err) {
             if (axios.isAxiosError(err) && err.response?.data) {
                 const apiError = err.response.data as ApiResponse<null>;
-                setError(apiError.message || 'Đã xảy ra lỗi khi đặt lại mật khẩu');
+                setError(mapAuthErrorToTranslation(apiError.message, t));
             } else {
-                setError('Đã xảy ra lỗi khi đặt lại mật khẩu');
+                setError(t('errors.auth.passwordResetError'));
             }
             throw err;
         } finally {
@@ -259,14 +262,14 @@ export const useAuth = () => {
             }
 
             if (!url) {
-                const msg = res?.message || 'Không nhận được đường dẫn Google từ server';
+                const msg = res?.message || t('errors.auth.googleUrlNotFound');
                 setError(msg);
                 return null;
             }
 
             return url;
         } catch (err) {
-            const errorMessage = err instanceof Error ? err.message : 'Lỗi khi lấy Google auth url';
+            const errorMessage = err instanceof Error ? err.message : t('errors.auth.googleUrlError');
             setError(errorMessage);
             throw err;
         } finally {
@@ -307,7 +310,7 @@ export const useAuth = () => {
 
             return res;
         } catch (err) {
-            const errorMessage = err instanceof Error ? err.message : 'Lỗi khi lấy thông tin user';
+            const errorMessage = err instanceof Error ? err.message : t('errors.auth.profileError');
             setError(errorMessage);
             throw err;
         } finally {
@@ -322,13 +325,13 @@ export const useAuth = () => {
             const res = await authService.exchangeGoogleCode(code, state);
 
             if (!res.success) {
-                setError(res.message || 'Không thể xử lý Google callback');
+                setError(res.message || t('errors.auth.exchangeGoogleError'));
                 return null;
             }
 
             const token = res.data?.accessToken;
             if (!token) {
-                setError('Backend không trả access token');
+                setError(t('errors.auth.noAccessToken'));
                 return null;
             }
 
@@ -355,7 +358,7 @@ export const useAuth = () => {
 
             return { exchange: res, profile: profileRes };
         } catch (err) {
-            const errorMessage = err instanceof Error ? err.message : 'Lỗi khi xử lý Google callback';
+            const errorMessage = err instanceof Error ? err.message : t('errors.auth.exchangeGoogleError');
             setError(errorMessage);
             throw err;
         } finally {
