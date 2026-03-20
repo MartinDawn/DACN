@@ -40,11 +40,10 @@ const SearchPage: React.FC = () => {
   useEffect(() => {
     // Chỉ gọi API nếu có từ khóa tìm kiếm
     if (searchTerm) {
-      console.log(`Fetching API for term: "${searchTerm}", page: ${page}`);
       fetchSearchResults({
         searchTerm: searchTerm,
         page: page,
-        pageSize: 10, 
+        pageSize: 10,
       });
     }
   }, [searchTerm, page, fetchSearchResults]); // Phụ thuộc vào cả 3

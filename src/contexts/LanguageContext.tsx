@@ -78,8 +78,6 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
           console.error('Error in language change callback:', error);
         }
       });
-
-      console.log(`Language changed to: ${lang}`);
     } catch (error) {
       console.error('Error changing language:', error);
     } finally {

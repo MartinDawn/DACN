@@ -688,7 +688,6 @@ const MyInfo: React.FC = () => {
                 }`}
                 onClick={() => {
                   if (!isEditing) return;
-                  console.log("Saved links", socialLinks);
                   // API của bạn chưa có endpoint cho social links
                   // Khi có, bạn sẽ gọi một hook mutation tương tự ở đây
                 }}

@@ -131,7 +131,7 @@ const NotificationPage: React.FC = () => {
                 </h1>
                 {unreadCount > 0 && (
                   <span className="rounded-full bg-gradient-to-r from-[#f5f0ff] to-[#ede7ff] px-4 py-2 text-sm font-bold text-[#5a2dff] border border-purple-200 shadow-sm animate-pulse">
-                    {t('notifications.newCount', { count: unreadCount })}
+                    {t('notifications.new')}
                   </span>
                 )}
               </div>
@@ -271,7 +271,7 @@ const NotificationPage: React.FC = () => {
                         <button
                           type="button"
                           onClick={() => markAsRead(item.id)}
-                          className={`group/btn flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold transition-all duration-300 ${
+                          className={`group/btn flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold transition-all duration-300 whitespace-nowrap min-w-[160px] ${
                             isUnread
                               ? "bg-gradient-to-r from-[#5a2dff] to-[#8b5cf6] text-white shadow-lg shadow-[#5a2dff]/30 hover:shadow-xl hover:shadow-[#5a2dff]/40 hover:scale-105 active:scale-95"
                               : "border-2 border-gray-200 text-gray-400 cursor-default bg-gray-50"

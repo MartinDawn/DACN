@@ -208,7 +208,16 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
               <h3 className={`mb-3 ml-4 text-xs font-semibold uppercase tracking-[0.18em] text-gray-400 ${!sidebarExpanded && 'hidden'}`}>{t('admin.others')}</h3>
               <ul className="mb-6 flex flex-col gap-1.5">
                 <li><SidebarItem icon={ChartPieIcon} label={t('admin.charts')} hasSubmenu={true} isExpanded={sidebarExpanded}/></li>
-                <li><SidebarItem icon={FormIcon} label={t('admin.ui')} hasSubmenu={true} isExpanded={sidebarExpanded}/></li>
+                <li>
+                  <NavLink to="/admin/course-review">
+                    <SidebarItem
+                      icon={FormIcon}
+                      label={t('admin.courseReview') || 'Course Review'}
+                      isActive={location.pathname === '/admin/course-review'}
+                      isExpanded={sidebarExpanded}
+                    />
+                  </NavLink>
+                </li>
                 <li>
                   <NavLink to="/admin/notifications">
                     <SidebarItem icon={BellIcon} label={t('admin.notifications')} isActive={location.pathname === '/admin/notifications'} isExpanded={sidebarExpanded}/>
@@ -254,11 +263,11 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             <div className="flex items-center gap-3 2xsm:gap-4">
                <ul className="flex items-center gap-2 2xsm:gap-3">
                   {/* Dark Mode Toggle */}
-                  <li>
+                  {/* <li>
                     <button className="relative rounded-full border border-gray-200 p-2 text-gray-500 transition hover:text-[#5a2dff]">
                        <MoonIcon />
                      </button>
-                  </li>
+                  </li> */}
 
                   {/* Language Switcher */}
                   <li className="relative" ref={languageMenuRef}>
@@ -426,12 +435,12 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                   </li>
 
                   {/* Messages */}
-                  <li>
+                  {/* <li>
                     <button className="relative rounded-full border border-gray-200 p-2 text-gray-500 transition hover:text-[#5a2dff]">
                       <span className="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full bg-red-500"></span>
                       <MessageIcon />
                      </button>
-                  </li>
+                  </li> */}
                </ul>
 
                {/* User Area */}

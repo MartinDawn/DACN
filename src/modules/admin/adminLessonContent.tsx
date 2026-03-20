@@ -1,9 +1,9 @@
-// src/modules/course/lessonContent.tsx
+// src/modules/admin/adminLessonContent.tsx
 
 import React, { useMemo, useEffect, useState, useCallback } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import UserLayout from './layout/layout';
+import AdminLayout from './layout/layout';
 import {
   AcademicCapIcon,
   ArrowDownTrayIcon,
@@ -23,14 +23,14 @@ import { CheckCircleIcon as CheckCircleSolid } from '@heroicons/react/24/solid';
 import type { ApiLecture } from './models/course';
 
 import { useCourses } from './hooks/useCourses';
-import { useLecture } from './hooks/useLecture';
-import { useQuiz } from './hooks/useQuiz';
+import { useLecture } from '../course/hooks/useLecture';
+import { useQuiz } from '../course/hooks/useQuiz';
 import type {
   ApiQuizDetail,
   ApiQuizQuestion,
   ApiQuizResult,
   ApiQuizAttemptSummary,
-} from './models/course';
+} from '../course/models/course';
 
 // --- TYPES ---
 
@@ -1499,7 +1499,7 @@ const LessonContentPage: React.FC = () => {
       getCourseContent(courseId);
       getCourseDetail(courseId);
     } else {
-      navigate('/user/mycourses');
+      navigate('/admin/manage-course');
     }
   }, [courseId, getCourseContent, getCourseDetail, navigate]);
 
@@ -1594,21 +1594,21 @@ const LessonContentPage: React.FC = () => {
   // Redirect if no lessonId
   useEffect(() => {
     if (!lessonId && timeline.length && courseId) {
-      navigate(`/user/course-progress/${courseId}/lesson/${timeline[0].lesson.id}`, { replace: true });
+      navigate(`/admin/course-progress/${courseId}/lesson/${timeline[0].lesson.id}`, { replace: true });
     }
   }, [lessonId, timeline, navigate, courseId]);
 
   const navigateToLesson = useCallback(
     (lesson: LessonItem) => {
       if (courseId) {
-        navigate(`/user/course-progress/${courseId}/lesson/${lesson.id}`);
+        navigate(`/admin/course-progress/${courseId}/lesson/${lesson.id}`);
       }
     },
     [navigate, courseId]
   );
 
   const handleBackToCourse = useCallback(() => {
-    if (courseId) navigate(`/user/course-progress/${courseId}`);
+    if (courseId) navigate(`/admin/course-progress/${courseId}`);
   }, [navigate, courseId]);
 
   const handleDocumentDownload = useCallback(
@@ -1655,36 +1655,36 @@ const LessonContentPage: React.FC = () => {
 
   if (isLoading) {
     return (
-      <UserLayout>
+      <AdminLayout>
         <div className="flex h-96 items-center justify-center">
           <div className="text-center space-y-3">
             <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-indigo-600 border-t-transparent" />
             <p className="text-sm font-semibold text-slate-600">{t('lessonContent.loadingLesson')}</p>
           </div>
         </div>
-      </UserLayout>
+      </AdminLayout>
     );
   }
 
   if (apiError) {
     return (
-      <UserLayout>
+      <AdminLayout>
         <div className="flex h-96 flex-col items-center justify-center gap-4">
           <p className="text-base font-semibold text-red-600">{apiError}</p>
           <Link
-            to="/user/mycourses"
+            to="/admin/manage-course"
             className="rounded-full bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700"
           >
             {t('lessonContent.backBtn')}
           </Link>
         </div>
-      </UserLayout>
+      </AdminLayout>
     );
   }
 
   if (!currentEntry) {
     return (
-      <UserLayout>
+      <AdminLayout>
         <div className="px-4 py-8 lg:px-10">
           <button
             type="button"
@@ -1700,7 +1700,7 @@ const LessonContentPage: React.FC = () => {
               : t('lessonContent.courseHasNoLessons')}
           </div>
         </div>
-      </UserLayout>
+      </AdminLayout>
     );
   }
 
@@ -1714,10 +1714,10 @@ const LessonContentPage: React.FC = () => {
     ];
 
   return (
-    <UserLayout>
+    <AdminLayout>
       {/* Breadcrumb */}
       <div className="mb-6 flex flex-wrap items-center gap-1.5 text-sm">
-        <Link to="/user/mycourses" className="font-medium text-indigo-500 hover:text-indigo-600">
+        <Link to="/admin/manage-course" className="font-medium text-indigo-500 hover:text-indigo-600">
           {t('navigation.myCourses')}
         </Link>
         <ChevronRightIcon className="h-3.5 w-3.5 text-slate-400" />
@@ -2055,7 +2055,7 @@ const LessonContentPage: React.FC = () => {
           </div>
         </aside>
       </div>
-    </UserLayout>
+    </AdminLayout>
   );
 };
 

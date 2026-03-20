@@ -1,9 +1,9 @@
-// src/modules/course/courseProgress.tsx
+// src/modules/admin/courseProgress.tsx
 
 import React, { useMemo, useEffect, useState, useCallback } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import UserLayout from './layout/layout'; // Đảm bảo đường dẫn layout đúng
+import AdminLayout from './layout/layout'; // Import AdminLayout cho admin module
 import {
   GraduationCap,
   Download,
@@ -23,8 +23,8 @@ import {
 } from 'lucide-react';
 
 // 1. IMPORT HOOK
-import { useCourses } from './hooks/useCourses'; // Đảm bảo đường dẫn hook đúng
-import { useLecture } from './hooks/useLecture';
+import { useCourses } from './hooks/useCourses'; // Admin hook có sẵn
+import { useLecture } from '../course/hooks/useLecture'; // Hook từ course module
 import type { ApiLecture } from './models/course';
 
 // --- TYPES & CONSTANTS (ĐÃ SỬA) ---
@@ -238,7 +238,7 @@ const CourseProgressPage: React.FC = () => {
       getCourseContent(courseId);
       getCourseDetail(courseId); // <-- GỌI API THỨ 2
     } else {
-      navigate('/user/mycourses');
+      navigate('/admin/courses');
     }
   }, [courseId, getCourseContent, getCourseDetail, navigate]);
 
@@ -296,11 +296,11 @@ const CourseProgressPage: React.FC = () => {
 
       // --- DỮ LIỆU VẪN PHẢI MOCK (Tiến độ) ---
       stats: {
-        completion: 0,
-        lessonsCompleted: 0,
+        completion: 0, 
+        lessonsCompleted: 0, 
         totalLessons: totalLessons, // Thật
         timeSpent: '0h',
-        totalTime: t('courseProgress.totalHours', { hours: courseDetail.totalHours }), // Thật
+        totalTime: `${courseDetail.totalHours} giờ`, // Thật
         averageScore: 0,
       },
 
@@ -310,7 +310,7 @@ const CourseProgressPage: React.FC = () => {
          { id: 'resources', label: t('courseProgress.downloadResources'), description: t('courseProgress.resourcesDescription') },
       ],
     };
-  }, [courseContent, courseDetail, t]); // Tính toán lại khi 1 trong 2 API xong
+  }, [courseContent, courseDetail]); // Tính toán lại khi 1 trong 2 API xong
 
   // useLecture hook để fetch document URL từ API
   const {
@@ -350,7 +350,7 @@ const CourseProgressPage: React.FC = () => {
   const openLesson = useCallback(
     (lessonId: string) => {
       if (course) {
-        navigate(`/user/course-progress/${course.id}/lesson/${lessonId}`);
+        navigate(`/admin/course-progress/${course.id}/lesson/${lessonId}`);
       }
     },
     [navigate, course]
@@ -383,37 +383,37 @@ const CourseProgressPage: React.FC = () => {
 
   if (isLoading) {
     return (
-      <UserLayout>
+      <AdminLayout>
         <div className="flex h-96 items-center justify-center">
           <p className="text-lg font-semibold text-gray-700">{t('courseProgress.loadingData')}</p>
         </div>
-      </UserLayout>
+      </AdminLayout>
     );
   }
 
   if (apiError) {
     return (
-      <UserLayout>
+      <AdminLayout>
         <div className="flex h-96 flex-col items-center justify-center gap-4">
           <p className="text-lg font-semibold text-red-600">{apiError}</p>
           <Link
-            to="/user/mycourses"
+            to="/admin/courses"
             className="rounded-full bg-indigo-600 px-4 py-2 text-sm font-semibold text-white"
           >
             {t('common.back')}
           </Link>
         </div>
-      </UserLayout>
+      </AdminLayout>
     );
   }
 
   if (!course) {
     return (
-      <UserLayout>
+      <AdminLayout>
         <div className="flex h-96 items-center justify-center">
           <p className="text-lg font-semibold text-gray-700">{t('courseProgress.dataNotFound')}</p>
         </div>
-      </UserLayout>
+      </AdminLayout>
     );
   }
 
@@ -456,14 +456,14 @@ const CourseProgressPage: React.FC = () => {
   // 12. TOÀN BỘ PHẦN JSX (RETURN) GIỮ NGUYÊN
   // Dữ liệu thật (từ `courseDetail`) sẽ tự động được điền vào
   return (
-    <UserLayout>
+    <AdminLayout>
       <div className="space-y-8 px-4 py-8 lg:px-10">
         <Link
-          to="/user/mycourses"
+          to="/admin/course-review"
           className="group inline-flex items-center gap-3 text-sm font-semibold text-indigo-600 transition hover:text-indigo-700"
         >
           <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
-          {t('courseProgress.backToMyCourses')}
+          {t('courseProgress.backToCourseReview')}
         </Link>
 
         {/* Header (Dữ liệu thật) */}
@@ -782,7 +782,7 @@ const CourseProgressPage: React.FC = () => {
           </aside>
         </div>
       </div>
-    </UserLayout>
+    </AdminLayout>
   );
 };
 

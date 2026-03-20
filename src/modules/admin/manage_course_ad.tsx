@@ -310,7 +310,7 @@ export default function AdminManageCourse() {
                                             <td className="px-6 py-4 text-end">
                                                 <div className="flex items-center justify-end gap-2">
                                                     <button
-                                                        onClick={() => navigate(`/user/course-progress/${course.id}`)}
+                                                        onClick={() => navigate(`/admin/course-progress/${course.id}`)}
                                                         className="inline-flex items-center justify-center rounded-lg bg-blue-50 p-2 text-blue-600 transition-colors hover:bg-blue-100"
                                                         title={t('admin.manageCourses.actions.viewDetails')}
                                                     >

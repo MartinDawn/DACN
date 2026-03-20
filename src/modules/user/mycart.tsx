@@ -100,7 +100,6 @@ const MyCart: React.FC = () => {
   // ĐÃ BỎ: handleToggleSelect
 
   const handleAddRecommended = useCallback(async (course: RecommendedCourse) => {
-      console.log(`Yêu cầu thêm sản phẩm ${course.id}. Cần triển khai API.`);
       // await cartService.addCourseToCart(course.id);
       refreshCart();
   }, [refreshCart]);

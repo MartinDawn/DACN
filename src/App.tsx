@@ -27,6 +27,9 @@ import AdminDashboard from './modules/admin/dashboard_ad';
 import AdminManageCourse from './modules/admin/manage_course_ad';
 import AdminManageUser from './modules/admin/manage_user_ad';
 import AdminNotifications from './modules/admin/noti_ad';
+import AdminCourseProgressPage from './modules/admin/courseProgress';
+import CourseReviewPage from './modules/admin/course-review';
+import AdminLessonContentPage from './modules/admin/adminLessonContent';
 
 function App() {
   return (
@@ -70,6 +73,9 @@ function App() {
         <Route path="/admin/courses" element={<AdminRoute><AdminManageCourse /></AdminRoute>} />
         <Route path="/admin/users" element={<AdminRoute><AdminManageUser /></AdminRoute>} />
         <Route path="/admin/notifications" element={<AdminRoute><AdminNotifications /></AdminRoute>} />
+        <Route path="/admin/course-review" element={<AdminRoute><CourseReviewPage /></AdminRoute>} />
+        <Route path="/admin/course-progress/:courseId" element={<AdminRoute><AdminCourseProgressPage /></AdminRoute>} />
+        <Route path="/admin/course-progress/:courseId/lesson/:lessonId" element={<AdminRoute><AdminLessonContentPage /></AdminRoute>} />
       </Routes>
     </Router>
   );

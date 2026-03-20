@@ -9,7 +9,7 @@ import {
   UserGroupIcon,
 } from "@heroicons/react/24/outline";
 import UserLayout from "./layout/layout";
-import PostCard from "./components/post_card";
+import PostCard from "../../components/shared/PostCard";
 
 import { useCourses } from '../course/hooks/useCourses';
 // Sửa đường dẫn này cho đúng với file MyInfo.tsx
