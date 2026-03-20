@@ -3,7 +3,17 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { ArrowLeftIcon, CameraIcon } from "@heroicons/react/24/outline";
+import {
+  ArrowLeftIcon,
+  CameraIcon,
+  MapPinIcon,
+  CalendarIcon,
+  FireIcon,
+  StarIcon,
+  DocumentIcon,
+  ChartBarSquareIcon,
+  Cog6ToothIcon
+} from "@heroicons/react/24/outline";
 import { FaGithub, FaLinkedinIn, FaTwitter, FaInstagram, FaFacebookF } from "react-icons/fa";
 import AvatarLayout from "./layout/layout";
 import PostCard from "./components/post_card";
@@ -47,22 +57,6 @@ const socialLinkDefaults: SocialLink[] = [
   { label: "Facebook", placeholder: "https://facebook.com/username", value: "", Icon: FaFacebookF },
 ];
 
-const personalInfoConfig: Record<"left" | "right", Array<{ key: keyof PersonalInfo; label: string }>> = {
-  left: [
-    { key: "fullName", label: "Họ và tên" },
-    { key: "jobTitle", label: "Vị trí công việc" },
-    { key: "phone", label: "Số điện thoại" },
-    { key: "address", label: "Địa chỉ" },
-  ],
-  right: [
-    { key: "email", label: "Email" },
-    { key: "company", label: "Công ty" },
-    { key: "birthday", label: "Ngày sinh" },
-    { key: "gender", label: "Giới tính" },
-    { key: "experience", label: "Kinh nghiệm" },
-  ],
-};
-
 // Giá trị khởi tạo tạm thời khi chờ API
 const initialPersonalInfo: PersonalInfo = {
   fullName: "Đang tải...",
@@ -90,6 +84,24 @@ type ProfileSnapshot = {
 
 const MyInfo: React.FC = () => {
   const { t } = useTranslation();
+
+  // Define personalInfoConfig inside component to access t()
+  const personalInfoConfig: Record<"left" | "right", Array<{ key: keyof PersonalInfo; label: string }>> = React.useMemo(() => ({
+    left: [
+      { key: "fullName", label: t('profile.personalInfoLabels.fullName') },
+      { key: "jobTitle", label: t('profile.personalInfoLabels.jobTitle') },
+      { key: "phone", label: t('profile.personalInfoLabels.phone') },
+      { key: "address", label: t('profile.personalInfoLabels.address') },
+    ],
+    right: [
+      { key: "email", label: t('profile.personalInfoLabels.email') },
+      { key: "company", label: t('profile.personalInfoLabels.company') },
+      { key: "birthday", label: t('profile.personalInfoLabels.birthday') },
+      { key: "gender", label: t('profile.personalInfoLabels.gender') },
+      { key: "experience", label: t('profile.personalInfoLabels.experience') },
+    ],
+  }), [t]);
+
   // Effect để cập nhật initialPersonalInfo với translation
   const initialPersonalInfoTranslated = React.useMemo(() => ({
     fullName: t('common.loading') || "Đang tải...",
@@ -174,11 +186,11 @@ const MyInfo: React.FC = () => {
   const handleAddSkill = () => {
     const candidate = newSkill.trim();
     if (!candidate) {
-      setSkillError("Vui lòng nhập kỹ năng hợp lệ.");
+      setSkillError(t('profile.skills.errorInvalid'));
       return;
     }
     if (userSkills.some((skill) => skill.toLowerCase() === candidate.toLowerCase())) {
-      setSkillError("Kỹ năng đã tồn tại.");
+      setSkillError(t('profile.skills.errorExists'));
       return;
     }
     setUserSkills((prev) => [...prev, candidate]);
@@ -311,24 +323,33 @@ const MyInfo: React.FC = () => {
       {/* Thêm Toaster để nhận thông báo từ hook */}
       <Toaster position="top-right" reverseOrder={false} />
 
-      <div className="mb-6 flex items-center justify-between gap-4">
+      <div className="mb-8 flex items-center justify-between gap-4">
         <Link
           to="/user/home"
-          className="inline-flex items-center gap-2 text-sm font-semibold text-[#5a2dff] transition hover:text-[#3c1cd6]"
+          className="inline-flex items-center gap-3 text-sm font-semibold text-[#5a2dff] transition hover:text-[#3c1cd6] group"
         >
-          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#efe7ff]">
-            <ArrowLeftIcon className="h-4 w-4" />
+          <span className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-r from-[#efe7ff] to-[#f3f0ff] border border-[#5a2dff]/20 group-hover:from-[#5a2dff] group-hover:to-[#7c3aed] transition-all duration-200">
+            <ArrowLeftIcon className="h-4 w-4 group-hover:text-white transition-colors" />
           </span>
           {t('profile.backToHome')}
         </Link>
-        <div className="hidden items-center gap-2 text-sm font-medium text-gray-500 md:flex">
-          {["Thông tin", "Thành tích", "Bảo mật", "Thông báo", "Quyền riêng tư", "Thanh toán"].map(
+        <div className="hidden items-center gap-3 text-sm font-medium text-gray-500 md:flex">
+          {[
+            t('profile.tabs.info'),
+            t('profile.tabs.achievements'),
+            t('profile.tabs.security'),
+            t('profile.tabs.notifications'),
+            t('profile.tabs.privacy'),
+            t('profile.tabs.payment')
+          ].map(
             (label, index) => (
               <button
                 key={label}
                 type="button"
-                className={`rounded-full px-4 py-2 transition ${
-                  index === 0 ? "bg-white text-[#5a2dff] shadow" : "hover:bg-white hover:text-[#5a2dff]"
+                className={`rounded-full px-5 py-2.5 transition-all duration-200 ${
+                  index === 0
+                    ? "bg-gradient-to-r from-white to-gray-50 text-[#5a2dff] shadow-md border border-[#5a2dff]/20"
+                    : "hover:bg-gradient-to-r hover:from-white hover:to-gray-50 hover:text-[#5a2dff] hover:shadow-sm"
                 }`}
               >
                 {label}
@@ -338,14 +359,14 @@ const MyInfo: React.FC = () => {
         </div>
       </div>
 
-      <div className="grid gap-8 lg:grid-cols-[360px,minmax(0,1fr)]">
-        <aside className="space-y-6">
-          <section className="rounded-3xl bg-white p-6 text-center shadow-md">
-            <div className="relative mx-auto mb-4 h-24 w-24 overflow-hidden rounded-3xl bg-[#5a2dff]/10">
+      <div className="grid gap-10 lg:grid-cols-[380px,minmax(0,1fr)]">
+        <aside className="space-y-8">
+          <section className="rounded-3xl bg-white p-6 text-center shadow-lg shadow-[#5a2dff]/10 border border-[#5a2dff]/10">
+            <div className="relative mx-auto mb-4 h-24 w-24 overflow-hidden rounded-3xl bg-gradient-to-br from-[#5a2dff]/20 to-[#3c1cd6]/20">
               {avatarPreview ? (
                 <img src={avatarPreview} alt="Avatar preview" className="h-full w-full object-cover" />
               ) : (
-                <div className="flex h-full w-full items-center justify-center text-3xl font-semibold text-[#5a2dff]">
+                <div className="flex h-full w-full items-center justify-center text-3xl font-semibold bg-gradient-to-br from-[#5a2dff] to-[#3c1cd6] text-white">
                   {personalInfo.fullName.charAt(0).toUpperCase()}
                 </div>
               )}
@@ -360,8 +381,8 @@ const MyInfo: React.FC = () => {
                 type="button"
                 disabled={!isEditing}
                 onClick={() => isEditing && fileInputRef.current?.click()}
-                className={`absolute bottom-1 right-1 inline-flex h-8 w-8 items-center justify-center rounded-full text-white shadow transition ${
-                  isEditing ? "bg-[#5a2dff] hover:bg-[#4a21eb]" : "cursor-not-allowed bg-gray-300"
+                className={`absolute bottom-1 right-1 inline-flex h-8 w-8 items-center justify-center rounded-full shadow-lg transition ${
+                  isEditing ? "bg-gradient-to-r from-[#5a2dff] to-[#4a21eb] text-white hover:from-[#4a21eb] hover:to-[#3c1cd6]" : "cursor-not-allowed bg-gray-300 text-gray-500"
                 }`}
                 aria-label="Tải ảnh đại diện"
               >
@@ -375,54 +396,68 @@ const MyInfo: React.FC = () => {
             <p className="mt-2 text-xs font-semibold uppercase tracking-wide text-gray-400">
               {personalInfo.company}
             </p>
-            <div className="mt-4 space-y-2 text-sm text-gray-500">
-              <div className="flex items-center justify-center gap-2">
-                {/* Dữ liệu từ API */}
-                <span>📍</span> {location}
+            <div className="mt-4 space-y-3 text-sm text-gray-600">
+              <div className="flex items-center justify-center gap-3">
+                <div className="flex items-center justify-center w-5 h-5 rounded-full bg-[#5a2dff]/10">
+                  <MapPinIcon className="w-3 h-3 text-[#5a2dff]" />
+                </div>
+                <span>{location}</span>
               </div>
-              <div className="flex items-center justify-center gap-2">
-                {/* Dữ liệu từ API */}
-                <span>🗓</span> Thành viên từ {memberSinceYear || "..."}
+              <div className="flex items-center justify-center gap-3">
+                <div className="flex items-center justify-center w-5 h-5 rounded-full bg-emerald-100">
+                  <CalendarIcon className="w-3 h-3 text-emerald-600" />
+                </div>
+                <span>{t('profile.sidebar.memberSince')} {memberSinceYear || "..."}</span>
               </div>
             </div>
           </section>
 
-          <section className="rounded-3xl bg-white p-6 shadow-md">
-            <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-500">
-              Thống kê học tập
+          <section className="rounded-3xl bg-white p-6 shadow-lg shadow-[#5a2dff]/10 border border-[#5a2dff]/5">
+            <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-500 mb-4">
+              {t('profile.sidebar.learningStats')}
             </h3>
             {/* Dữ liệu từ API */}
             {stats ? (
               <>
                 <div className="mt-4">
                   <div className="flex items-center justify-between text-sm font-medium text-gray-700">
-                    <span>Tiến độ hoàn thành</span>
-                    <span>{stats.completionProgress}%</span>
+                    <span>{t('profile.sidebar.completionProgress')}</span>
+                    <span className="font-bold">{stats.completionProgress}%</span>
                   </div>
-                  <div className="mt-2 h-2 w-full rounded-full bg-gray-200">
+                  <div className="mt-3 h-3 w-full rounded-full bg-gray-100 overflow-hidden">
                     <div
-                      className="h-full rounded-full bg-[#5a2dff]"
+                      className="h-full rounded-full bg-gradient-to-r from-[#5a2dff] to-[#7c3aed] transition-all duration-500 ease-out"
                       style={{ width: `${stats.completionProgress}%` }}
                     />
                   </div>
                 </div>
-                <div className="mt-5 grid grid-cols-2 gap-3 text-center text-sm font-semibold text-gray-700">
-                  <div className="rounded-2xl bg-[#5a2dff]/5 p-3">
-                    <p className="text-2xl font-bold text-[#5a2dff]">{stats.totalHours}</p>
-                    <p className="text-xs uppercase text-gray-500">Giờ học</p>
+                <div className="mt-6 grid grid-cols-2 gap-4 text-center text-sm font-semibold text-gray-700">
+                  <div className="rounded-2xl bg-gradient-to-br from-[#5a2dff]/5 via-[#5a2dff]/10 to-[#7c3aed]/5 p-4 shadow-sm border border-[#5a2dff]/20">
+                    <p className="text-2xl font-bold bg-gradient-to-r from-[#5a2dff] to-[#7c3aed] bg-clip-text text-transparent">{stats.totalHours}</p>
+                    <p className="text-xs uppercase text-gray-500">{t('profile.sidebar.studyHours')}</p>
                   </div>
-                  <div className="rounded-2xl bg-[#5a2dff]/5 p-3">
-                    <p className="text-2xl font-bold text-[#5a2dff]">{stats.totalCertificates}</p>
-                    <p className="text-xs uppercase text-gray-500">Chứng chỉ</p>
+                  <div className="rounded-2xl bg-gradient-to-br from-emerald-50 via-emerald-100 to-teal-50 p-4 shadow-sm border border-emerald-200">
+                    <p className="text-2xl font-bold bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">{stats.totalCertificates}</p>
+                    <p className="text-xs uppercase text-gray-500">{t('profile.sidebar.certificates')}</p>
                   </div>
                 </div>
                 <div className="mt-5 space-y-3 text-sm text-gray-600">
-                  <div className="flex items-center justify-between rounded-2xl border border-gray-200 px-4 py-3">
-                    <span>🔥 Streak hiện tại</span>
-                    <span className="font-semibold text-gray-900">{stats.currentStreak} ngày</span>
+                  <div className="flex items-center justify-between rounded-2xl border border-gray-200 px-4 py-3 bg-gradient-to-r from-orange-50 to-red-50">
+                    <div className="flex items-center gap-3">
+                      <div className="flex items-center justify-center w-6 h-6 rounded-full bg-orange-100">
+                        <FireIcon className="w-4 h-4 text-orange-600" />
+                      </div>
+                      <span>{t('profile.sidebar.currentStreak')}</span>
+                    </div>
+                    <span className="font-semibold text-gray-900">{stats.currentStreak} {t('profile.sidebar.days')}</span>
                   </div>
-                  <div className="flex items-center justify-between rounded-2xl border border-gray-200 px-4 py-3">
-                    <span>⭐ Đánh giá TB</span>
+                  <div className="flex items-center justify-between rounded-2xl border border-gray-200 px-4 py-3 bg-gradient-to-r from-amber-50 to-yellow-50">
+                    <div className="flex items-center gap-3">
+                      <div className="flex items-center justify-center w-6 h-6 rounded-full bg-amber-100">
+                        <StarIcon className="w-4 h-4 text-amber-600" />
+                      </div>
+                      <span>{t('profile.sidebar.averageRating')}</span>
+                    </div>
                     <span className="font-semibold text-gray-900">
                       {stats.averageGivenRating.toFixed(1)}/5.0
                     </span>
@@ -430,29 +465,47 @@ const MyInfo: React.FC = () => {
                 </div>
               </>
             ) : (
-              <p className="mt-4 text-sm text-gray-500">Chưa có thống kê.</p>
+              <p className="mt-4 text-sm text-gray-500">{t('profile.sidebar.noStats')}</p>
             )}
             <Link
               to="/user/mycourses"
-              className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#5a2dff] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#4a21eb]"
+              className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-[#5a2dff] to-[#7c3aed] px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-[#5a2dff]/30 transition hover:from-[#4a21eb] hover:to-[#6d28d9] hover:shadow-xl hover:shadow-[#5a2dff]/40 hover:-translate-y-0.5"
             >
-              Xem khóa học của tôi
+              {t('profile.sidebar.viewMyCourses')}
             </Link>
           </section>
 
           <section className="space-y-3">
-            <PostCard icon="📄" title="Tải chứng chỉ" description="Xuất chứng chỉ đã hoàn thành" asButton />
-            <PostCard icon="📊" title="Báo cáo tiến độ" description="Xem tổng quan học tập" asButton />
-            <PostCard icon="⚙️" title="Cài đặt nâng cao" description="Quản lý tài khoản" asButton />
+            <PostCard
+              icon={<DocumentIcon className="w-5 h-5 text-blue-600" />}
+              title={t('profile.quickActions.downloadCertificate')}
+              description={t('profile.quickActions.downloadCertificateDesc')}
+              asButton
+              gradient="from-blue-50 to-blue-100"
+            />
+            <PostCard
+              icon={<ChartBarSquareIcon className="w-5 h-5 text-green-600" />}
+              title={t('profile.quickActions.progressReport')}
+              description={t('profile.quickActions.progressReportDesc')}
+              asButton
+              gradient="from-green-50 to-green-100"
+            />
+            <PostCard
+              icon={<Cog6ToothIcon className="w-5 h-5 text-purple-600" />}
+              title={t('profile.quickActions.advancedSettings')}
+              description={t('profile.quickActions.advancedSettingsDesc')}
+              asButton
+              gradient="from-purple-50 to-purple-100"
+            />
           </section>
         </aside>
 
-        <section className="space-y-6">
-          <header className="rounded-3xl border border-[#5a2dff]/10 bg-gradient-to-r from-[#efeaff] to-white p-6 shadow-sm">
+        <section className="space-y-8">
+          <header className="rounded-3xl border border-[#5a2dff]/20 bg-gradient-to-r from-[#efeaff] via-white to-[#f3f0ff] p-6 shadow-lg shadow-[#5a2dff]/10">
             <div className="flex flex-wrap items-center justify-between gap-4">
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">{t('profile.title')}</h1>
-                <p className="mt-1 text-sm text-gray-500">
+                <h1 className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">{t('profile.title')}</h1>
+                <p className="mt-1 text-sm text-gray-600">
                   {t('profile.subtitle')}
                 </p>
               </div>
@@ -460,10 +513,10 @@ const MyInfo: React.FC = () => {
                 type="button"
                 onClick={handleToggleEdit}
                 disabled={isSaving} // Lấy từ hook
-                className={`inline-flex items-center gap-2 rounded-full border border-[#5a2dff] px-5 py-2 text-sm font-semibold transition ${
+                className={`inline-flex items-center gap-2 rounded-full border border-[#5a2dff]/30 px-5 py-2.5 text-sm font-semibold transition shadow-md ${
                   isEditing
-                    ? "bg-[#5a2dff] text-white hover:bg-[#4a21eb]"
-                    : "bg-white text-[#5a2dff] hover:bg-[#efe7ff]"
+                    ? "bg-gradient-to-r from-[#5a2dff] to-[#7c3aed] text-white shadow-[#5a2dff]/30 hover:from-[#4a21eb] hover:to-[#6d28d9] hover:shadow-lg hover:shadow-[#5a2dff]/40"
+                    : "bg-white text-[#5a2dff] hover:bg-gradient-to-r hover:from-[#efe7ff] hover:to-[#f3f0ff]"
                 } ${isSaving ? "cursor-not-allowed opacity-70" : ""}`}
               >
                 {isSaving ? t('profile.buttons.saving') : isEditing ? t('profile.buttons.save') : t('profile.buttons.edit')}
@@ -473,17 +526,17 @@ const MyInfo: React.FC = () => {
                   type="button"
                   onClick={handleCancelEdit}
                   disabled={isSaving}
-                  className="inline-flex items-center gap-2 rounded-full border border-gray-200 px-5 py-2 text-sm font-semibold text-gray-600 transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="inline-flex items-center gap-2 rounded-full border border-gray-300 bg-white px-5 py-2.5 text-sm font-semibold text-gray-600 shadow-sm transition hover:bg-gray-50 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  Hủy
+                  {t('common.cancel')}
                 </button>
               )}
             </div>
           </header>
 
-          <div className="rounded-3xl bg-white p-6 shadow-md">
-            <h2 className="text-lg font-semibold text-gray-900">Thông tin cá nhân</h2>
-            <p className="text-sm text-gray-500">Cập nhật thông tin hồ sơ của bạn</p>
+          <div className="rounded-3xl bg-white p-6 shadow-lg shadow-gray-200/50 border border-gray-100/50">
+            <h2 className="text-lg font-semibold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">{t('profile.sections.personalInfo')}</h2>
+            <p className="text-sm text-gray-600">{t('profile.sections.personalInfoDesc')}</p>
             <div className="mt-6 grid gap-6 md:grid-cols-2">
               <div className="space-y-4">
                 {personalInfoConfig.left.map(({ key, label }) => {
@@ -537,7 +590,7 @@ const MyInfo: React.FC = () => {
             <div className="mt-6 space-y-4">
               <label className="block space-y-1">
                 <span className="text-xs font-semibold uppercase text-gray-400">
-                  Giới thiệu bản thân
+                  {t('profile.sections.selfIntro')}
                 </span>
                 <textarea
                   value={about}
@@ -552,7 +605,7 @@ const MyInfo: React.FC = () => {
                 />
               </label>
               <label className="block space-y-1">
-                <span className="text-xs font-semibold uppercase text-gray-400">Website</span>
+                <span className="text-xs font-semibold uppercase text-gray-400">{t('profile.sections.website')}</span>
                 <input
                   type="url"
                   value={website}
@@ -567,7 +620,7 @@ const MyInfo: React.FC = () => {
                 />
               </label>
               <div>
-                <span className="text-xs font-semibold uppercase text-gray-400">Kỹ năng</span>
+                <span className="text-xs font-semibold uppercase text-gray-400">{t('profile.sections.skills')}</span>
                 <div className="mt-2 flex flex-wrap gap-2">
                   {userSkills.map((skill) => (
                     <span
@@ -580,7 +633,7 @@ const MyInfo: React.FC = () => {
                           type="button"
                           onClick={() => handleRemoveSkill(skill)}
                           className="text-rose-500 transition hover:text-rose-600"
-                          aria-label={`Xóa kỹ năng ${skill}`}
+                          aria-label={t('profile.skills.removeAriaLabel', { skill })}
                         >
                           ×
                         </button>
@@ -604,7 +657,7 @@ const MyInfo: React.FC = () => {
                             handleAddSkill();
                           }
                         }}
-                        placeholder="Nhập kỹ năng mới"
+                        placeholder={t('profile.skills.newPlaceholder')}
                         className="h-11 min-w-[200px] flex-1 rounded-2xl border border-[#d6d7e4] px-4 text-sm font-semibold text-gray-700 outline-none transition focus:border-[#5a2dff] focus:shadow-[0_0_0_1px_rgba(98,70,234,0.12)]"
                       />
                       <button
@@ -613,7 +666,7 @@ const MyInfo: React.FC = () => {
                         disabled={!newSkill.trim()}
                         className="inline-flex items-center rounded-full bg-[#5a2dff] px-4 py-2 text-sm font-semibold text-white shadow-sm shadow-[#5a2dff]/30 transition hover:bg-[#4a21eb] disabled:cursor-not-allowed disabled:opacity-60"
                       >
-                        Thêm kỹ năng
+                        {t('profile.skills.add')}
                       </button>
                     </div>
                     {skillError && <p className="text-xs font-semibold text-rose-500">{skillError}</p>}
@@ -623,15 +676,15 @@ const MyInfo: React.FC = () => {
             </div>
           </div>
 
-          <div className="rounded-3xl bg-white p-6 shadow-md">
+          <div className="rounded-3xl bg-white p-6 shadow-lg shadow-gray-200/50 border border-gray-100/50">
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <h2 className="text-lg font-semibold text-gray-900">Liên kết mạng xã hội</h2>
+              <h2 className="text-lg font-semibold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">{t('profile.sections.socialLinks')}</h2>
               <button
                 type="button"
                 className={`inline-flex items-center gap-2 rounded-full px-5 py-2 text-sm font-semibold transition ${
                   isEditing
-                    ? "bg-[#5a2dff] text-white shadow-sm shadow-[#5a2dff]/30 hover:bg-[#4a21eb]"
-                    : "cursor-not-allowed border border-[#e4e6f1] bg-[#f7f7fb] text-gray-400"
+                    ? "bg-gradient-to-r from-[#5a2dff] to-[#7c3aed] text-white shadow-lg shadow-[#5a2dff]/30 hover:from-[#4a21eb] hover:to-[#6d28d9]"
+                    : "cursor-not-allowed border border-gray-200 bg-gray-50 text-gray-400"
                 }`}
                 onClick={() => {
                   if (!isEditing) return;
@@ -641,10 +694,10 @@ const MyInfo: React.FC = () => {
                 }}
                 disabled={!isEditing}
               >
-                Lưu liên kết
+                {t('profile.sections.saveLinks')}
               </button>
             </div>
-            <p className="text-sm text-gray-500">Thêm các liên kết mạng xã hội của bạn</p>
+            <p className="text-sm text-gray-600">{t('profile.sections.socialLinksDesc')}</p>
             <div className="mt-6 grid gap-4 md:grid-cols-2">
               {socialLinks.map(({ label, placeholder, value, Icon }, index) => (
                 <label key={label} className="space-y-2">

@@ -455,7 +455,63 @@
       "inProgress": "In Progress",
       "completed": "Completed",
       "notStarted": "Not Started"
-    }
+    },
+    "course": {
+      "lessons": "lessons",
+      "lastStudied": "Last studied:",
+      "duration": "Duration:",
+      "hours": "hours",
+      "actions": {
+        "review": "Review",
+        "continue": "Continue",
+        "start": "Start",
+        "comments": "Comments"
+      }
+    },
+    "empty": {
+      "noResults": "No courses found matching your search.",
+      "noEnrolled": "You have not enrolled in any courses in this category."
+    },
+    "sidebar": {
+      "overviewTitle": "Overall Progress",
+      "overviewDesc": "Average completion rate of all courses",
+      "quickActionsTitle": "Quick Actions",
+      "achievementsTitle": "Recent Achievements",
+      "trackingCourses": "Courses being tracked"
+    },
+    "loading": {
+      "courses": "Loading your courses...",
+      "comments": "Loading comments..."
+    },
+    "comments": {
+      "modalTitle": "Course Comments",
+      "you": "(You)",
+      "instructorReply": "Instructor Reply",
+      "allComments": "All Comments ({count})",
+      "noComments": "No comments for this course yet",
+      "loadError": "Unable to load comments. Please try again.",
+      "rate": "Rate",
+      "rateAgain": "Rate Again"
+    },
+    "rating": {
+      "modalTitle": "Rate Course",
+      "modalTitleUpdate": "Update Rating",
+      "yourRating": "Your Rating",
+      "yourComment": "Your Comment",
+      "commentPlaceholder": "Share your experience about this course...",
+      "cancel": "Cancel",
+      "submit": "Submit Rating",
+      "submitting": "Submitting...",
+      "error": "Error submitting rating",
+      "submitError": "An error occurred while submitting your rating",
+      "submitErrorAlert": "An error occurred while submitting your rating"
+    },
+    "time": {
+      "yesterday": "Yesterday",
+      "today": "Today",
+      "daysAgo": "{days} days ago"
+    },
+    "instructorBadge": "IN"
   },
   "home": {
     "welcomeBack": "Welcome back, {name}!",
@@ -660,6 +716,93 @@
       "notUpdated": "Not updated",
       "selfIntroduction": "Introduce yourself",
       "website": "https://"
+    },
+    "personalInfoLabels": {
+      "fullName": "Full Name",
+      "jobTitle": "Job Title",
+      "phone": "Phone Number",
+      "address": "Address",
+      "email": "Email",
+      "company": "Company",
+      "birthday": "Birthday",
+      "gender": "Gender",
+      "experience": "Experience"
+    },
+    "tabs": {
+      "info": "Information",
+      "achievements": "Achievements",
+      "security": "Security",
+      "notifications": "Notifications",
+      "privacy": "Privacy",
+      "payment": "Payment"
+    },
+    "sidebar": {
+      "memberSince": "Member since",
+      "learningStats": "Learning Statistics",
+      "completionProgress": "Completion Progress",
+      "studyHours": "Study Hours",
+      "certificates": "Certificates",
+      "currentStreak": "Current Streak",
+      "days": "days",
+      "averageRating": "Average Rating",
+      "noStats": "No statistics yet.",
+      "viewMyCourses": "View My Courses"
+    },
+    "quickActions": {
+      "downloadCertificate": "Download Certificate",
+      "downloadCertificateDesc": "Export completed certificates",
+      "progressReport": "Progress Report",
+      "progressReportDesc": "View learning overview",
+      "advancedSettings": "Advanced Settings",
+      "advancedSettingsDesc": "Manage account"
+    },
+    "sections": {
+      "personalInfo": "Personal Information",
+      "personalInfoDesc": "Update your profile information",
+      "selfIntro": "Self Introduction",
+      "website": "Website",
+      "skills": "Skills",
+      "socialLinks": "Social Links",
+      "socialLinksDesc": "Add your social media links",
+      "saveLinks": "Save Links"
+    },
+    "skills": {
+      "add": "Add Skill",
+      "newPlaceholder": "Enter new skill",
+      "removeAriaLabel": "Remove skill {skill}",
+      "errorInvalid": "Please enter a valid skill.",
+      "errorExists": "Skill already exists."
+    }
+  },
+  "changePassword": {
+    "title": "Change Password",
+    "description": "Regularly updating your password helps protect your account from unauthorized access.",
+    "instruction": "Please enter the information to change your password",
+    "tips": {
+      "strongPassword": "Use strong password",
+      "strongPasswordDesc": "Combine uppercase, lowercase, numbers and special characters.",
+      "dontShare": "Don't share password",
+      "dontShareDesc": "Avoid using the same password for multiple accounts."
+    },
+    "form": {
+      "currentPassword": "Current Password",
+      "currentPasswordPlaceholder": "Enter current password",
+      "newPassword": "New Password",
+      "newPasswordPlaceholder": "Enter new password",
+      "newPasswordHint": "Minimum 8 characters including letters, numbers and special characters.",
+      "confirmPassword": "Confirm New Password",
+      "confirmPasswordPlaceholder": "Re-enter new password"
+    },
+    "messages": {
+      "mismatch": "New password and confirmation do not match.",
+      "success": "Your password has been updated.",
+      "weakPassword": "Password is too weak. Please create a stronger password.",
+      "error": "An error occurred while updating the password. Please try again."
+    },
+    "buttons": {
+      "save": "Save Changes",
+      "saving": "Saving...",
+      "cancel": "Cancel"
     }
   },
   "errors": {

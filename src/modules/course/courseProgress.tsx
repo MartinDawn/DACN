@@ -4,21 +4,22 @@ import React, { useMemo, useEffect, useState, useCallback } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import UserLayout from './layout/layout'; // Đảm bảo đường dẫn layout đúng
 import {
-  AcademicCapIcon,
-  ArrowDownTrayIcon,
-  BookOpenIcon,
-  CheckCircleIcon,
-  ChevronDownIcon,
-  ClipboardDocumentCheckIcon, // Giữ lại icon
-  ClockIcon,
-  DocumentTextIcon,
-  LockClosedIcon,
-  MagnifyingGlassIcon,
-  PlayCircleIcon,
-  PlayIcon,
-  QuestionMarkCircleIcon,
-} from '@heroicons/react/24/outline';
-import { StarIcon as StarSolidIcon } from '@heroicons/react/20/solid';
+  GraduationCap,
+  Download,
+  Book,
+  CheckCircle,
+  ChevronDown,
+  ClipboardCheck,
+  Clock,
+  FileText,
+  Lock,
+  Search,
+  PlayCircle,
+  Play,
+  HelpCircle,
+  ArrowLeft,
+  Star,
+} from 'lucide-react';
 
 // 1. IMPORT HOOK
 import { useCourses } from './hooks/useCourses'; // Đảm bảo đường dẫn hook đúng
@@ -100,9 +101,9 @@ export const lessonTypeStyles: Record<LessonType, string> = {
   doc: 'bg-sky-100 text-sky-600',
 };
 export const lessonTypeIcons: Record<LessonType, React.ComponentType<React.SVGProps<SVGSVGElement>>> = {
-  video: PlayCircleIcon,
-  quiz: QuestionMarkCircleIcon,
-  doc: DocumentTextIcon,
+  video: PlayCircle,
+  quiz: HelpCircle,
+  doc: FileText,
 };
 export const lessonIconWrappers: Record<LessonType, string> = {
   video: 'bg-indigo-50 text-indigo-500',
@@ -423,29 +424,33 @@ const CourseProgressPage: React.FC = () => {
       label: 'Hoàn thành',
       value: `${course.stats.completion}%`,
       hint: `${course.stats.lessonsCompleted}/${course.stats.totalLessons} nội dung`,
-      icon: CheckCircleIcon,
-      accent: 'bg-indigo-50 text-indigo-500',
+      icon: CheckCircle,
+      accent: 'bg-emerald-50 text-emerald-600',
+      bgGradient: 'bg-gradient-to-br from-emerald-50 to-emerald-100',
     },
     {
       label: 'Bài học',
       value: `${course.stats.lessonsCompleted}/${course.stats.totalLessons}`,
       hint: 'Đã hoàn thành/Tổng nội dung',
-      icon: BookOpenIcon,
-      accent: 'bg-violet-50 text-violet-500',
+      icon: Book,
+      accent: 'bg-violet-50 text-violet-600',
+      bgGradient: 'bg-gradient-to-br from-violet-50 to-violet-100',
     },
     {
       label: 'Thời gian học',
-      value: course.stats.timeSpent, // Vẫn là mock (0h)
-      hint: `Trong tổng ${course.stats.totalTime}`, // Lấy từ courseDetail
-      icon: ClockIcon,
-      accent: 'bg-sky-50 text-sky-500',
+      value: course.stats.timeSpent,
+      hint: `Trong tổng ${course.stats.totalTime}`,
+      icon: Clock,
+      accent: 'bg-blue-50 text-blue-600',
+      bgGradient: 'bg-gradient-to-br from-blue-50 to-blue-100',
     },
     {
       label: 'Điểm trung bình',
-      value: `${course.stats.averageScore}%`, // Vẫn là mock (0%)
+      value: `${course.stats.averageScore}%`,
       hint: 'Quiz & bài tập',
-      icon: AcademicCapIcon,
-      accent: 'bg-amber-50 text-amber-500',
+      icon: GraduationCap,
+      accent: 'bg-amber-50 text-amber-600',
+      bgGradient: 'bg-gradient-to-br from-amber-50 to-amber-100',
     },
    ];
 
@@ -456,9 +461,9 @@ const CourseProgressPage: React.FC = () => {
       <div className="space-y-8 px-4 py-8 lg:px-10">
         <Link
           to="/user/mycourses"
-          className="inline-flex items-center gap-2 text-sm font-semibold text-indigo-500 transition hover:text-indigo-600"
+          className="group inline-flex items-center gap-3 text-sm font-semibold text-indigo-600 transition hover:text-indigo-700"
         >
-          <span className="text-base">←</span>
+          <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
           Quay lại khóa học của tôi
         </Link>
 
@@ -469,7 +474,7 @@ const CourseProgressPage: React.FC = () => {
               <h1 className="text-3xl font-semibold text-slate-900">{course.title}</h1>
               <div className="flex flex-wrap items-center gap-3 text-sm text-slate-500">
                 <span className="inline-flex items-center gap-1 font-semibold text-amber-500">
-                  <StarSolidIcon className="h-4 w-4" />
+                  <Star className="h-4 w-4 fill-current" />
                   {course.instructorInfo.rating.toFixed(1)}
                 </span>
                 <span>• {course.instructorInfo.students.toLocaleString('vi-VN')} học viên</span>
@@ -497,20 +502,20 @@ const CourseProgressPage: React.FC = () => {
         </section>
 
         {/* Metrics (Dữ liệu đã được trám) */}
-        <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          {metrics.map(({ label, value, hint, icon: Icon, accent }) => (
+        <section className="grid gap-6 sm:grid-cols-2 xl:grid-cols-4">
+          {metrics.map(({ label, value, hint, icon: Icon, accent, bgGradient }) => (
             <div
               key={label}
-              className="rounded-3xl bg-white p-6 shadow-lg shadow-slate-900/5"
+              className={`group rounded-3xl ${bgGradient} p-6 shadow-lg shadow-slate-900/5 transition-all duration-300 hover:shadow-xl hover:shadow-slate-900/10 hover:scale-105`}
             >
-              <span className={`inline-flex h-10 w-10 items-center justify-center rounded-2xl ${accent}`}>
-                <Icon className="h-5 w-5" />
+              <span className={`inline-flex h-12 w-12 items-center justify-center rounded-2xl ${accent} transition-all duration-300 group-hover:scale-110`}>
+                <Icon className="h-6 w-6" />
               </span>
-              <span className="mt-4 block text-xs font-semibold uppercase text-slate-400">
+              <span className="mt-4 block text-xs font-bold uppercase tracking-wider text-slate-500">
                 {label}
               </span>
-              <p className="mt-3 text-3xl font-semibold text-slate-900">{value}</p>
-              <p className="mt-1 text-sm text-slate-500">{hint}</p>
+              <p className="mt-3 text-3xl font-bold text-slate-900">{value}</p>
+              <p className="mt-2 text-sm text-slate-600">{hint}</p>
             </div>
           ))}
         </section>
@@ -519,13 +524,13 @@ const CourseProgressPage: React.FC = () => {
         <section className="rounded-3xl bg-white p-6 shadow-lg shadow-slate-900/5">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div className="relative w-full max-w-xl">
-              <MagnifyingGlassIcon className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
+              <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
               <input
                 type="search"
                 value={searchTerm}
                 onChange={(event) => setSearchTerm(event.target.value)}
                 placeholder="Tìm kiếm bài học, quiz, tài liệu..."
-                className="h-12 w-full rounded-full border border-slate-200 bg-slate-50 pl-12 pr-4 text-sm font-medium text-slate-600 outline-none transition focus:border-indigo-500 focus:bg-white"
+                className="h-12 w-full rounded-full border border-slate-200 bg-slate-50 pl-12 pr-4 text-sm font-medium text-slate-600 outline-none transition-all duration-200 focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-100"
               />
             </div>
             <div className="flex flex-wrap items-center gap-2">
@@ -535,10 +540,10 @@ const CourseProgressPage: React.FC = () => {
                   key={tab.value}
                   type="button"
                   onClick={() => setActiveFilter(tab.value)}
-                  className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
+                  className={`rounded-full px-6 py-2.5 text-sm font-semibold transition-all duration-200 ${
                     activeFilter === tab.value
-                      ? 'bg-slate-900 text-white'
-                      : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+                      ? 'bg-slate-900 text-white shadow-lg shadow-slate-900/25 scale-105'
+                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200 hover:scale-105'
                   }`}
                 >
                   {tab.label}
@@ -569,25 +574,25 @@ const CourseProgressPage: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => toggleSection(section.id)}
-                    className="flex w-full items-start justify-between gap-4 px-6 py-5 text-left transition hover:bg-slate-50"
+                    className="group flex w-full items-start justify-between gap-4 px-6 py-5 text-left transition-all duration-200 hover:bg-slate-50"
                   >
-                    <div className="space-y-1">
-                      <h3 className="text-base font-semibold text-slate-900">
+                    <div className="space-y-2">
+                      <h3 className="text-lg font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">
                         {index + 1}. {section.title}
                       </h3>
-                      <p className="text-sm text-slate-500">{section.summary}</p>
+                      <p className="text-sm text-slate-600">{section.summary}</p>
                     </div>
                     <div className="flex items-center gap-4 text-sm text-slate-500">
-                      <span>{totalItems} nội dung</span>
+                      <span className="font-medium">{totalItems} nội dung</span>
                       {section.totalDuration && section.totalDuration !== 'N/A' && (
-                        <span className="inline-flex items-center gap-1">
-                          <ClockIcon className="h-4 w-4" />
+                        <span className="inline-flex items-center gap-1.5 font-medium">
+                          <Clock className="h-4 w-4" />
                           {section.totalDuration}
                         </span>
                       )}
-                      <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 text-slate-600 transition">
-                        <ChevronDownIcon
-                          className={`h-5 w-5 transition ${isSectionExpanded ? 'rotate-180' : ''}`}
+                      <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 text-slate-600 transition-all duration-200 group-hover:bg-indigo-100 group-hover:text-indigo-600">
+                        <ChevronDown
+                          className={`h-5 w-5 transition-transform duration-200 ${isSectionExpanded ? 'rotate-180' : ''}`}
                         />
                       </span>
                     </div>
@@ -605,76 +610,77 @@ const CourseProgressPage: React.FC = () => {
                             return (
                               <li
                                 key={item.id}
-                                className="rounded-2xl border border-slate-100 bg-slate-50/60 p-4 text-sm text-slate-600 transition hover:border-indigo-200 hover:bg-white"
+                                className="group rounded-2xl border border-slate-100 bg-gradient-to-r from-slate-50/60 to-white p-5 text-sm text-slate-600 transition-all duration-200 hover:border-indigo-200 hover:bg-white hover:shadow-md"
                               >
-                                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                                   <div className="flex min-w-0 flex-1 items-center gap-4">
-                                    <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+                                    <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
                                       <span
-                                        className={`inline-flex shrink-0 items-center rounded-full px-3 py-1 text-xs font-semibold ${lessonTypeStyles[item.type]}`}
+                                        className={`inline-flex shrink-0 items-center gap-2 rounded-full px-4 py-2 text-xs font-bold ${lessonTypeStyles[item.type]}`}
                                       >
+                                        <LessonIcon className="h-3.5 w-3.5" />
                                         {lessonTypeLabel[item.type]}
                                       </span>
-                                      <span className="truncate font-medium text-slate-900" title={item.title}>
+                                      <span className="truncate font-semibold text-slate-900 group-hover:text-indigo-600 transition-colors" title={item.title}>
                                         {item.title}
                                       </span>
                                     </div>
                                   </div>
-                                  <div className="flex items-center gap-2">
+                                  <div className="flex items-center gap-3">
                                     <button
                                       type="button"
                                       onClick={() => openLesson(item.id)}
-                                      className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 text-slate-400 transition hover:border-indigo-200 hover:text-indigo-600"
+                                      className="group/btn inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-400 transition-all duration-200 hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-600 hover:scale-110 hover:shadow-md"
                                     >
-                                      <PlayIcon className="h-4 w-4" />
+                                      <Play className="h-4 w-4 group-hover/btn:scale-110 transition-transform" />
                                     </button>
                                     {item.type === 'doc' && (
                                       <button
                                         type="button"
                                         onClick={() => handleDownloadDocument(item)}
                                         disabled={isDocumentLoading && downloadingItem?.id === item.id}
-                                        className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 text-slate-400 transition hover:border-indigo-200 hover:text-indigo-600 disabled:cursor-not-allowed disabled:opacity-60"
+                                        className="group/btn inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-400 transition-all duration-200 hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-600 hover:scale-110 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-60"
                                       >
                                         {isDocumentLoading && downloadingItem?.id === item.id ? (
-                                          <div className="h-4 w-4 animate-spin rounded-full border-2 border-sky-500 border-t-transparent" />
+                                          <div className="h-4 w-4 animate-spin rounded-full border-2 border-emerald-500 border-t-transparent" />
                                         ) : (
-                                          <ArrowDownTrayIcon className="h-4 w-4" />
+                                          <Download className="h-4 w-4 group-hover/btn:scale-110 transition-transform" />
                                         )}
                                       </button>
                                     )}
                                     <button
                                       type="button"
                                       onClick={() => toggleItem(item.id)}
-                                      className="inline-flex items-center gap-2 rounded-full border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:border-indigo-200 hover:text-indigo-600"
+                                      className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-600 transition-all duration-200 hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-600"
                                     >
                                       Thêm thông tin
-                                      <ChevronDownIcon
-                                        className={`h-4 w-4 transition ${isItemExpanded ? 'rotate-180' : ''}`}
+                                      <ChevronDown
+                                        className={`h-4 w-4 transition-transform duration-200 ${isItemExpanded ? 'rotate-180' : ''}`}
                                       />
                                     </button>
                                   </div>
                                 </div>
                                 {isItemExpanded && (
-                                  <div className="mt-4 rounded-2xl bg-indigo-50/70 p-4 text-xs text-indigo-700">
-                                    <p className="flex items-center gap-2 font-semibold">
+                                  <div className="mt-4 rounded-2xl bg-gradient-to-r from-indigo-50 to-purple-50 p-5 text-xs border border-indigo-100">
+                                    <p className="flex items-center gap-3 font-bold text-indigo-700">
                                       <span
-                                        className={`inline-flex h-8 w-8 items-center justify-center rounded-2xl ${lessonIconWrappers[item.type]}`}
+                                        className={`inline-flex h-9 w-9 items-center justify-center rounded-2xl ${lessonIconWrappers[item.type]} border border-indigo-200`}
                                       >
                                         <LessonIcon className="h-4 w-4" />
                                       </span>
                                       Nội dung {lessonTypeLabel[item.type]}
                                     </p>
-                                    <p className="mt-2 leading-relaxed text-indigo-600">
+                                    <p className="mt-3 leading-relaxed text-indigo-600">
                                       {lessonTypeDescriptions[item.type]}
                                     </p>
-                                    <div className="mt-3 flex flex-wrap items-center gap-2 text-xs font-semibold">
+                                    <div className="mt-4 flex flex-wrap items-center gap-3 text-xs font-bold">
                                       {item.duration && (
-                                        <span className="inline-flex items-center gap-1 rounded-full bg-white px-3 py-1 text-indigo-600 shadow-sm">
-                                          <ClockIcon className="h-4 w-4" />
+                                        <span className="inline-flex items-center gap-2 rounded-full bg-white/80 px-4 py-2 text-indigo-600 shadow-sm border border-indigo-200">
+                                          <Clock className="h-4 w-4" />
                                           {item.duration}
                                         </span>
                                       )}
-                                      <span className="inline-flex items-center gap-1 rounded-full bg-white px-3 py-1 text-indigo-600 shadow-sm">
+                                      <span className="inline-flex items-center gap-2 rounded-full bg-white/80 px-4 py-2 text-indigo-600 shadow-sm border border-indigo-200">
                                         <LessonIcon className="h-4 w-4" />
                                         {lessonTypeLabel[item.type]}
                                       </span>
@@ -699,47 +705,74 @@ const CourseProgressPage: React.FC = () => {
 
           {/* Sidebar (Dữ liệu thật) */}
           <aside className="space-y-6">
-            <div className="rounded-3xl bg-white p-6 shadow-lg shadow-slate-900/5">
-              <h2 className="text-lg font-semibold text-slate-900">Giảng viên</h2>
-              <div className="mt-4 flex items-center gap-4">
-                <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-indigo-500 text-lg font-semibold text-white">
+            <div className="rounded-3xl bg-gradient-to-br from-white to-slate-50 p-6 shadow-lg shadow-slate-900/5 border border-slate-100">
+              <h2 className="text-lg font-bold text-slate-900 mb-1">Giảng viên</h2>
+              <div className="mt-5 flex items-center gap-4">
+                <span className="flex h-16 w-16 items-center justify-center rounded-3xl bg-gradient-to-br from-indigo-500 to-purple-600 text-xl font-bold text-white shadow-lg">
                   {course.instructorInfo.initials}
                 </span>
                 <div className="space-y-1">
-                  <p className="text-sm font-semibold text-slate-900">{course.instructorInfo.name}</p>
-                  <p className="text-sm text-slate-500">{course.instructorInfo.title}</p>
+                  <p className="text-base font-bold text-slate-900">{course.instructorInfo.name}</p>
+                  <p className="text-sm text-slate-600">{course.instructorInfo.title}</p>
+                  <div className="flex items-center gap-1 text-amber-500">
+                    <Star className="h-4 w-4 fill-current" />
+                    <span className="text-sm font-semibold">{course.instructorInfo.rating.toFixed(1)}</span>
+                  </div>
                 </div>
               </div>
-              <ul className="mt-4 space-y-2 text-sm text-slate-500">
-                <li>Học viên: {course.instructorInfo.students.toLocaleString('vi-VN')}</li>
-                <li>Khóa học: {course.instructorInfo.courses}</li>
-                <li>Đánh giá: {course.instructorInfo.rating.toFixed(1)}</li>
+              <ul className="mt-5 space-y-3 text-sm">
+                <li className="flex justify-between rounded-xl bg-slate-50 px-4 py-3 border border-slate-100">
+                  <span className="text-slate-600">Học viên</span>
+                  <span className="font-semibold text-slate-900">{course.instructorInfo.students.toLocaleString('vi-VN')}</span>
+                </li>
+                <li className="flex justify-between rounded-xl bg-slate-50 px-4 py-3 border border-slate-100">
+                  <span className="text-slate-600">Khóa học</span>
+                  <span className="font-semibold text-slate-900">{course.instructorInfo.courses}</span>
+                </li>
               </ul>
             </div>
 
-            <div className="rounded-3xl bg-white p-6 shadow-lg shadow-slate-900/5">
-              <h2 className="text-lg font-semibold text-slate-900">Thông tin khóa học</h2>
-              <ul className="mt-4 space-y-2 text-sm text-slate-600">
-                <li>Phần: {course.sections.length}</li>
-                <li>Bài học: {course.stats.totalLessons}</li>
-                <li>Thời lượng: {course.overview.duration}</li>
-                <li>Cấp độ: {course.overview.level}</li>
-                <li>Ngôn ngữ: {course.overview.language}</li>
-                <li>Truy cập: {course.overview.access}</li>
+            <div className="rounded-3xl bg-gradient-to-br from-white to-slate-50 p-6 shadow-lg shadow-slate-900/5 border border-slate-100">
+              <h2 className="text-lg font-bold text-slate-900 mb-1">Thông tin khóa học</h2>
+              <ul className="mt-5 space-y-3 text-sm">
+                <li className="flex justify-between rounded-xl bg-slate-50 px-4 py-3 border border-slate-100">
+                  <span className="text-slate-600">Phần</span>
+                  <span className="font-semibold text-slate-900">{course.sections.length}</span>
+                </li>
+                <li className="flex justify-between rounded-xl bg-slate-50 px-4 py-3 border border-slate-100">
+                  <span className="text-slate-600">Bài học</span>
+                  <span className="font-semibold text-slate-900">{course.stats.totalLessons}</span>
+                </li>
+                <li className="flex justify-between rounded-xl bg-slate-50 px-4 py-3 border border-slate-100">
+                  <span className="text-slate-600">Thời lượng</span>
+                  <span className="font-semibold text-slate-900">{course.overview.duration}</span>
+                </li>
+                <li className="flex justify-between rounded-xl bg-slate-50 px-4 py-3 border border-slate-100">
+                  <span className="text-slate-600">Cấp độ</span>
+                  <span className="font-semibold text-slate-900">{course.overview.level}</span>
+                </li>
+                <li className="flex justify-between rounded-xl bg-slate-50 px-4 py-3 border border-slate-100">
+                  <span className="text-slate-600">Ngôn ngữ</span>
+                  <span className="font-semibold text-slate-900">{course.overview.language}</span>
+                </li>
+                <li className="flex justify-between rounded-xl bg-slate-50 px-4 py-3 border border-slate-100">
+                  <span className="text-slate-600">Truy cập</span>
+                  <span className="font-semibold text-slate-900">{course.overview.access}</span>
+                </li>
               </ul>
             </div>
 
-            <div className="rounded-3xl bg-white p-6 shadow-lg shadow-slate-900/5">
-              <h2 className="text-lg font-semibold text-slate-900">Trợ giúp</h2>
-              <ul className="mt-4 space-y-3">
+            <div className="rounded-3xl bg-gradient-to-br from-white to-slate-50 p-6 shadow-lg shadow-slate-900/5 border border-slate-100">
+              <h2 className="text-lg font-bold text-slate-900 mb-1">Trợ giúp</h2>
+              <ul className="mt-5 space-y-3">
                 {course.helpLinks.map((link) => (
                   <li key={link.id}>
                     <button
                       type="button"
-                      className="w-full rounded-2xl border border-slate-100 px-4 py-3 text-left text-sm font-semibold text-slate-600 transition hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-600"
+                      className="group w-full rounded-2xl border border-slate-100 bg-slate-50/50 px-5 py-4 text-left text-sm font-semibold text-slate-600 transition-all duration-200 hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-600 hover:scale-105 hover:shadow-md"
                     >
                       <span className="block">{link.label}</span>
-                      <small className="block text-xs font-normal text-slate-400">
+                      <small className="block text-xs font-normal text-slate-400 group-hover:text-indigo-400">
                         {link.description}
                       </small>
                     </button>

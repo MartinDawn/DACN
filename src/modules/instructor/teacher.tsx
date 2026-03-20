@@ -388,28 +388,39 @@ const InstructorDashboard: React.FC = () => {
     return (
       <InstructorLayout>
         <div className="mx-auto max-w-4xl">
-          <button onClick={() => setShowCreateCourseForm(false)} className="mb-6 flex items-center gap-2 text-sm font-semibold text-[#5a2dff] hover:text-[#4a21eb]">
-            <ArrowLeft size={16} />
+          <button
+            onClick={() => setShowCreateCourseForm(false)}
+            className="group mb-8 flex items-center gap-3 text-sm font-semibold text-[#5a2dff] hover:text-[#4a21eb] transition-colors"
+          >
+            <ArrowLeft size={16} className="transition-transform group-hover:-translate-x-1" />
             {t("instructor.teacher.backButton")}
           </button>
-          <div className="mb-6">
-            <h1 className="text-3xl font-bold text-gray-900">{t("instructor.teacher.form.title")}</h1>
-            <p className="mt-2 text-sm text-gray-500">{t("instructor.teacher.form.subtitle")}</p>
+          <div className="mb-8 rounded-3xl bg-gradient-to-r from-white to-slate-50 p-8 shadow-xl shadow-slate-900/5 border border-slate-100">
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent mb-3">
+              {t("instructor.teacher.form.title")}
+            </h1>
+            <p className="text-lg text-gray-600 font-medium">{t("instructor.teacher.form.subtitle")}</p>
           </div>
 
           <form onSubmit={handleCreateCourse} className="space-y-8">
-            <div className="rounded-2xl border border-gray-200 bg-white p-6">
-              <div className="flex items-center gap-3">
-                <FileText className="text-gray-500" />
-                <h3 className="text-lg font-semibold text-gray-800">{t("instructor.teacher.form.courseInfoTitle")}</h3>
-              </div>
-              <p className="mt-1 ml-9 text-sm text-gray-500">{t("instructor.teacher.form.courseInfoSubtitle")}</p>
-
-              <div className="mt-6 space-y-6">
-                {/* Tên Khóa Học */}
+            <div className="rounded-3xl border border-slate-200 bg-gradient-to-r from-white to-slate-50 p-8 shadow-lg shadow-slate-900/5">
+              <div className="flex items-center gap-4 mb-6">
+                <div className="rounded-2xl bg-gradient-to-br from-indigo-100 to-purple-100 p-3 border border-indigo-200">
+                  <FileText className="text-indigo-600" size={20} />
+                </div>
                 <div>
-                  <label htmlFor="name" className="flex items-center gap-2 text-sm font-medium text-gray-700">
-                    <Book size={16} /> {t("instructor.teacher.form.courseName")} <span className="text-red-500">*</span>
+                  <h3 className="text-xl font-bold text-gray-800">{t("instructor.teacher.form.courseInfoTitle")}</h3>
+                  <p className="text-sm text-gray-600">{t("instructor.teacher.form.courseInfoSubtitle")}</p>
+                </div>
+              </div>
+
+              <div className="space-y-8">{/* Tên Khóa Học */}
+                <div>
+                  <label htmlFor="name" className="flex items-center gap-3 text-sm font-bold text-gray-700 mb-3">
+                    <div className="rounded-full bg-emerald-100 p-1.5 border border-emerald-200">
+                      <Book size={14} className="text-emerald-600" />
+                    </div>
+                    {t("instructor.teacher.form.courseName")} <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
@@ -417,28 +428,31 @@ const InstructorDashboard: React.FC = () => {
                     value={courseName}
                     onChange={(e) => setCourseName(e.target.value)}
                     placeholder={t("instructor.teacher.form.courseNamePlaceholder")}
-                    className="mt-2 block w-full rounded-lg border-gray-200 bg-gray-50 p-3 text-sm focus:border-blue-500 focus:ring-blue-500"
+                    className="block w-full rounded-xl border-2 border-slate-200 bg-white px-4 py-3 text-sm font-medium transition-all duration-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 hover:border-slate-300"
                   />
                 </div>
 
                 {/* Danh mục Khóa Học */}
                 <div>
-                  <label htmlFor="category" className="flex items-center gap-2 text-sm font-medium text-gray-700">
-                    <List size={16} /> {t("instructor.teacher.form.courseCategory")} <span className="text-red-500">*</span>
+                  <label htmlFor="category" className="flex items-center gap-3 text-sm font-bold text-gray-700 mb-3">
+                    <div className="rounded-full bg-purple-100 p-1.5 border border-purple-200">
+                      <List size={14} className="text-purple-600" />
+                    </div>
+                    {t("instructor.teacher.form.courseCategory")} <span className="text-red-500">*</span>
                   </label>
-                  <div className="mt-2 mb-3 flex flex-wrap gap-2">
+                  <div className="mb-4 flex flex-wrap gap-3">
                     {selectedTagIds.map((id) => {
                       const t = tags.find((x) => x.id === id);
                       return (
-                        <span key={id} className="inline-flex items-center gap-2 rounded-full bg-[#eef2ff] px-3 py-1 text-sm font-semibold text-[#2a1aef]">
+                        <span key={id} className="group inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-[#eef2ff] to-indigo-50 px-4 py-2 text-sm font-bold text-[#2a1aef] border border-indigo-200 shadow-sm">
                           <span>{t?.name ?? id}</span>
                           <button
                             type="button"
                             onClick={() => setSelectedTagIds((prev) => prev.filter((x) => x !== id))}
-                            className="text-xs font-bold text-[#5a2dff] opacity-80 hover:opacity-100"
+                            className="rounded-full bg-white p-1 text-xs font-bold text-[#5a2dff] opacity-70 hover:opacity-100 hover:bg-red-50 hover:text-red-600 transition-all"
                             aria-label={t("instructor.teacher.form.removeCategoryAriaLabel", { name: t?.name ?? id })}
                           >
-                            ×
+                            <X size={12} />
                           </button>
                         </span>
                       );
@@ -599,8 +613,8 @@ const InstructorDashboard: React.FC = () => {
         <div className="pt-2">
           <button
             onClick={() => setShowCreateCourseForm(true)}
-            className="flex items-center gap-2 rounded-full bg-[#5a2dff] px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-[#5a2dff]/20 transition hover:-translate-y-0.5 hover:bg-[#4a21eb]">
-            <PlusCircle size={18} />
+            className="group flex items-center gap-3 rounded-2xl bg-gradient-to-r from-[#5a2dff] to-[#8b5cf6] px-6 py-3 text-sm font-bold text-white shadow-lg shadow-[#5a2dff]/30 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-[#5a2dff]/40 hover:scale-105 active:scale-95">
+            <PlusCircle size={20} className="transition-transform duration-300 group-hover:rotate-90" />
             {t("instructor.teacher.createCourseButton")}
           </button>
         </div>
@@ -608,42 +622,50 @@ const InstructorDashboard: React.FC = () => {
 
       {/* Tabs */}
       <div className="mb-8">
-        {/* đổi inline-flex -> flex và thêm mx-auto để căn giữa */}
-        <div className="flex w-full max-w-2xl rounded-full bg-gray-100 p-1 mx-auto">
+        <div className="flex w-full max-w-3xl rounded-2xl bg-gradient-to-r from-gray-50 to-gray-100 border border-gray-200 p-2 mx-auto shadow-inner">
           <button
             onClick={() => setActiveTab("overview")}
-            className={`flex-1 rounded-full px-4 py-2 text-sm font-semibold transition flex items-center justify-center gap-2 ${
-              activeTab === "overview" ? "bg-white text-[#5a2dff] shadow" : "text-gray-500 hover:text-[#5a2dff]"
+            className={`group flex-1 rounded-xl px-4 py-3 text-sm font-bold transition-all duration-300 flex items-center justify-center gap-2 ${
+              activeTab === "overview"
+                ? "bg-white text-[#5a2dff] shadow-lg transform scale-105"
+                : "text-gray-600 hover:text-[#5a2dff] hover:bg-white/50 hover:scale-105"
             }`}
           >
-            <LayoutDashboard size={16} />
+            <LayoutDashboard size={16} className={`transition-all duration-300 ${activeTab === "overview" ? "text-[#5a2dff]" : "group-hover:scale-110"}`} />
             {t("instructor.teacher.tabs.overview")}
+            {activeTab === "overview" && <div className="absolute inset-0 bg-gradient-to-r from-[#5a2dff]/5 to-[#8b5cf6]/5 rounded-xl" />}
           </button>
           <button
             onClick={() => setActiveTab("courses")}
-            className={`flex-1 rounded-full px-4 py-2 text-sm font-semibold transition flex items-center justify-center gap-2 ${
-              activeTab === "courses" ? "bg-white text-[#5a2dff] shadow" : "text-gray-500 hover:text-[#5a2dff]"
+            className={`group flex-1 rounded-xl px-4 py-3 text-sm font-bold transition-all duration-300 flex items-center justify-center gap-2 ${
+              activeTab === "courses"
+                ? "bg-white text-[#5a2dff] shadow-lg transform scale-105"
+                : "text-gray-600 hover:text-[#5a2dff] hover:bg-white/50 hover:scale-105"
             }`}
           >
-            <Book size={16} />
+            <Book size={16} className={`transition-all duration-300 ${activeTab === "courses" ? "text-[#5a2dff]" : "group-hover:scale-110"}`} />
             {t("instructor.teacher.tabs.courses")}
           </button>
           <button
             onClick={() => setActiveTab("analytics")}
-            className={`flex-1 rounded-full px-4 py-2 text-sm font-semibold transition flex items-center justify-center gap-2 ${
-              activeTab === "analytics" ? "bg-white text-[#5a2dff] shadow" : "text-gray-500 hover:text-[#5a2dff]"
+            className={`group flex-1 rounded-xl px-4 py-3 text-sm font-bold transition-all duration-300 flex items-center justify-center gap-2 ${
+              activeTab === "analytics"
+                ? "bg-white text-[#5a2dff] shadow-lg transform scale-105"
+                : "text-gray-600 hover:text-[#5a2dff] hover:bg-white/50 hover:scale-105"
             }`}
           >
-            <BarChart2 size={16} />
+            <BarChart2 size={16} className={`transition-all duration-300 ${activeTab === "analytics" ? "text-[#5a2dff]" : "group-hover:scale-110"}`} />
             {t("instructor.teacher.tabs.analytics")}
           </button>
           <button
             onClick={() => setActiveTab("activity")}
-            className={`flex-1 rounded-full px-4 py-2 text-sm font-semibold transition flex items-center justify-center gap-2 ${
-              activeTab === "activity" ? "bg-white text-[#5a2dff] shadow" : "text-gray-500 hover:text-[#5a2dff]"
+            className={`group flex-1 rounded-xl px-4 py-3 text-sm font-bold transition-all duration-300 flex items-center justify-center gap-2 ${
+              activeTab === "activity"
+                ? "bg-white text-[#5a2dff] shadow-lg transform scale-105"
+                : "text-gray-600 hover:text-[#5a2dff] hover:bg-white/50 hover:scale-105"
             }`}
           >
-            <Activity size={16} />
+            <Activity size={16} className={`transition-all duration-300 ${activeTab === "activity" ? "text-[#5a2dff]" : "group-hover:scale-110"}`} />
             {t("instructor.teacher.tabs.activity")}
           </button>
         </div>
@@ -654,37 +676,69 @@ const InstructorDashboard: React.FC = () => {
         <>
           {/* Overview cards */}
           <section className="mb-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            <div className="rounded-3xl bg-white p-6 shadow-lg shadow-slate-900/5">
-              <div className="flex items-center justify-between mb-2">
-                <p className="text-sm font-semibold text-gray-500">{t("instructor.teacher.overview.totalStudents")}</p>
-                <div className="p-2 bg-blue-50 rounded-lg text-blue-600"><Users size={20} /></div>
+            <div className="group relative overflow-hidden rounded-3xl bg-gradient-to-br from-white to-blue-50/30 p-6 shadow-lg border border-blue-100/50 transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl hover:shadow-blue-100/50">
+              <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-transparent to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+              <div className="relative z-10">
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-sm font-bold text-gray-600">{t("instructor.teacher.overview.totalStudents")}</p>
+                  <div className="p-3 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl shadow-lg shadow-blue-500/25 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6">
+                    <Users size={20} className="text-white" />
+                  </div>
+                </div>
+                <p className="text-3xl font-bold text-gray-900 group-hover:text-blue-600 transition-colors duration-300">{courses.reduce((sum, c) => sum + (c.totalStudents || 0), 0)}</p>
+                <div className="mt-2 flex items-center gap-1">
+                  <div className="h-1 w-8 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full transition-all duration-300 group-hover:w-12" />
+                  <p className="text-xs font-semibold text-green-600">{t("instructor.teacher.overview.studentGrowth")}</p>
+                </div>
               </div>
-              <p className="mt-2 text-3xl font-bold text-gray-900">{courses.reduce((sum, c) => sum + (c.totalStudents || 0), 0)}</p>
-              <p className="mt-1 text-xs text-green-500">{t("instructor.teacher.overview.studentGrowth")}</p>
             </div>
-            <div className="rounded-3xl bg-white p-6 shadow-lg shadow-slate-900/5">
-              <div className="flex items-center justify-between mb-2">
-                <p className="text-sm font-semibold text-gray-500">{t("instructor.teacher.overview.totalRevenue")}</p>
-                <div className="p-2 bg-purple-50 rounded-lg text-purple-600"><DollarSign size={20} /></div>
+            <div className="group relative overflow-hidden rounded-3xl bg-gradient-to-br from-white to-emerald-50/30 p-6 shadow-lg border border-emerald-100/50 transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl hover:shadow-emerald-100/50">
+              <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 via-transparent to-green-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+              <div className="relative z-10">
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-sm font-bold text-gray-600">{t("instructor.teacher.overview.totalRevenue")}</p>
+                  <div className="p-3 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-2xl shadow-lg shadow-emerald-500/25 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6">
+                    <DollarSign size={20} className="text-white" />
+                  </div>
+                </div>
+                <p className="text-3xl font-bold text-gray-900 group-hover:text-emerald-600 transition-colors duration-300">{courses.reduce((sum, c) => sum + ((c.price || 0) * (c.totalStudents || 0)), 0).toLocaleString()}đ</p>
+                <div className="mt-2 flex items-center gap-1">
+                  <div className="h-1 w-8 bg-gradient-to-r from-emerald-500 to-emerald-600 rounded-full transition-all duration-300 group-hover:w-12" />
+                  <p className="text-xs font-semibold text-green-600">{t("instructor.teacher.overview.revenueGrowth")}</p>
+                </div>
               </div>
-              <p className="mt-2 text-3xl font-bold text-gray-900">{courses.reduce((sum, c) => sum + ((c.price || 0) * (c.totalStudents || 0)), 0).toLocaleString()}đ</p>
-              <p className="mt-1 text-xs text-green-500">{t("instructor.teacher.overview.revenueGrowth")}</p>
             </div>
-            <div className="rounded-3xl bg-white p-6 shadow-lg shadow-slate-900/5">
-              <div className="flex items-center justify-between mb-2">
-                <p className="text-sm font-semibold text-gray-500">{t("instructor.teacher.overview.averageRating")}</p>
-                <div className="p-2 bg-amber-50 rounded-lg text-amber-500"><Star size={20} /></div>
+            <div className="group relative overflow-hidden rounded-3xl bg-gradient-to-br from-white to-amber-50/30 p-6 shadow-lg border border-amber-100/50 transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl hover:shadow-amber-100/50">
+              <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 via-transparent to-orange-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+              <div className="relative z-10">
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-sm font-bold text-gray-600">{t("instructor.teacher.overview.averageRating")}</p>
+                  <div className="p-3 bg-gradient-to-br from-amber-500 to-amber-600 rounded-2xl shadow-lg shadow-amber-500/25 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6">
+                    <Star size={20} className="text-white" />
+                  </div>
+                </div>
+                <p className="text-3xl font-bold text-gray-900 group-hover:text-amber-600 transition-colors duration-300">{(() => { const ratedCourses = courses.filter(c => (c.rating || 0) > 0); return ratedCourses.length > 0 ? (ratedCourses.reduce((sum, c) => sum + c.rating, 0) / ratedCourses.length).toFixed(1) : "0.0"; })()}</p>
+                <div className="mt-2 flex items-center gap-1">
+                  <div className="h-1 w-8 bg-gradient-to-r from-amber-500 to-amber-600 rounded-full transition-all duration-300 group-hover:w-12" />
+                  <p className="text-xs font-semibold text-green-600">{t("instructor.teacher.overview.ratingGrowth")}</p>
+                </div>
               </div>
-              <p className="mt-2 text-3xl font-bold text-gray-900">{(() => { const ratedCourses = courses.filter(c => (c.rating || 0) > 0); return ratedCourses.length > 0 ? (ratedCourses.reduce((sum, c) => sum + c.rating, 0) / ratedCourses.length).toFixed(1) : "0.0"; })()}</p>
-              <p className="mt-1 text-xs text-green-500">{t("instructor.teacher.overview.ratingGrowth")}</p>
             </div>
-            <div className="rounded-3xl bg-white p-6 shadow-lg shadow-slate-900/5">
-               <div className="flex items-center justify-between mb-2">
-                <p className="text-sm font-semibold text-gray-500">{t("instructor.teacher.overview.totalCourses")}</p>
-                <div className="p-2 bg-indigo-50 rounded-lg text-indigo-500"><Book size={20} /></div>
+            <div className="group relative overflow-hidden rounded-3xl bg-gradient-to-br from-white to-purple-50/30 p-6 shadow-lg border border-purple-100/50 transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl hover:shadow-purple-100/50">
+              <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 via-transparent to-indigo-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+              <div className="relative z-10">
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-sm font-bold text-gray-600">{t("instructor.teacher.overview.totalCourses")}</p>
+                  <div className="p-3 bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl shadow-lg shadow-purple-500/25 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6">
+                    <Book size={20} className="text-white" />
+                  </div>
+                </div>
+                <p className="text-3xl font-bold text-gray-900 group-hover:text-purple-600 transition-colors duration-300">{courses.length}</p>
+                <div className="mt-2 flex items-center gap-1">
+                  <div className="h-1 w-8 bg-gradient-to-r from-purple-500 to-purple-600 rounded-full transition-all duration-300 group-hover:w-12" />
+                  <p className="text-xs font-semibold text-gray-600">{t("instructor.teacher.overview.courseGrowth")}</p>
+                </div>
               </div>
-              <p className="mt-2 text-3xl font-bold text-gray-900">{courses.length}</p>
-              <p className="mt-1 text-xs text-gray-500">{t("instructor.teacher.overview.courseGrowth")}</p>
             </div>
           </section>
 

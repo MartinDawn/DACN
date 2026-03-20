@@ -634,27 +634,37 @@ const ManageCoursePage: React.FC = () => {
   return (
     <InstructorLayout>
       <div className="mx-auto max-w-5xl space-y-6">
-        <div className="flex items-center justify-between">
-          <div className="min-w-0 flex-1 pr-4">
-            <button onClick={handleManageCourse} className="mb-2 flex items-center gap-2 text-sm font-medium text-[#5a2dff] hover:text-[#4a21eb]">
-              <ArrowLeft size={16} /> Quay lại khóa học
-            </button>
-            <h1 className="truncate text-2xl font-bold text-gray-900" title={course?.name}>{course?.name}</h1>
-            <p className="text-sm text-gray-500">Quản lý nội dung chương trình học</p>
-          </div>
-          <div className="flex gap-2">
-            <button
-              onClick={openReorderModal}
-              className="flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50"
-            >
-              <List size={18} /> Sắp xếp lại
-            </button>
-            <button
-              onClick={() => setShowLectureModal(true)}
-              className="flex items-center gap-2 rounded-lg bg-[#5a2dff] px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-[#4b24cc]"
-            >
-              <PlusCircle size={18} /> Thêm Chương Học
-            </button>
+        <div className="rounded-3xl bg-gradient-to-r from-white to-slate-50 p-8 shadow-xl shadow-slate-900/5 border border-slate-100">
+          <div className="flex items-center justify-between">
+            <div className="min-w-0 flex-1 pr-4">
+              <button
+                onClick={handleManageCourse}
+                className="group mb-4 flex items-center gap-3 text-sm font-semibold text-[#5a2dff] hover:text-[#4a21eb] transition-colors"
+              >
+                <ArrowLeft size={16} className="transition-transform group-hover:-translate-x-1" />
+                Quay lại khóa học
+              </button>
+              <h1 className="truncate text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent mb-2" title={course?.name}>
+                {course?.name}
+              </h1>
+              <p className="text-base text-gray-600 font-medium">Quản lý nội dung chương trình học</p>
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={openReorderModal}
+                className="group flex items-center gap-2 rounded-xl border-2 border-gray-200 bg-white px-5 py-3 text-sm font-bold text-gray-700 shadow-sm transition-all duration-200 hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-600 hover:scale-105"
+              >
+                <List size={18} className="group-hover:scale-110 transition-transform" />
+                Sắp xếp lại
+              </button>
+              <button
+                onClick={() => setShowLectureModal(true)}
+                className="group flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#5a2dff] to-[#3c1cd6] px-5 py-3 text-sm font-bold text-white shadow-lg transition-all duration-200 hover:shadow-xl hover:shadow-[#5a2dff]/25 hover:scale-105"
+              >
+                <PlusCircle size={18} className="group-hover:scale-110 transition-transform" />
+                Thêm Chương Học
+              </button>
+            </div>
           </div>
         </div>
 
@@ -664,9 +674,12 @@ const ManageCoursePage: React.FC = () => {
                 <Loader2 className="animate-spin text-[#5a2dff]" />
               </div>
             ) : lectures.length === 0 ? (
-                <div className="flex flex-col items-center justify-center rounded-xl border border-gray-200 bg-white py-12 text-center">
-                    <LayoutList className="mb-4 h-12 w-12 text-gray-300" />
-                    <p className="text-gray-500">Chưa có nội dung. Hãy thêm chương học đầu tiên (Lecture).</p>
+                <div className="flex flex-col items-center justify-center rounded-3xl border-2 border-dashed border-gray-200 bg-gradient-to-r from-white to-slate-50 py-16 text-center">
+                    <div className="mb-6 rounded-3xl bg-gradient-to-br from-gray-100 to-gray-200 p-4">
+                      <LayoutList className="h-12 w-12 text-gray-400" />
+                    </div>
+                    <p className="text-lg font-semibold text-gray-500 mb-2">Chưa có nội dung</p>
+                    <p className="text-sm text-gray-400">Hãy thêm chương học đầu tiên</p>
                 </div>
             ) : (
              <div className="space-y-4">
@@ -675,19 +688,39 @@ const ManageCoursePage: React.FC = () => {
                  const isUploading = uploadingLectureIds[lecture.id];
                  
                  return (
-                   <div key={lecture.id} className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm transition hover:shadow-md">
+                   <div key={lecture.id} className="group overflow-hidden rounded-3xl border border-slate-200 bg-gradient-to-r from-white to-slate-50 shadow-lg shadow-slate-900/5 transition-all duration-200 hover:shadow-xl hover:shadow-slate-900/10">
                      {/* Lecture Header (Chapter) */}
-                     <div className="flex items-center justify-between bg-gray-50 px-6 py-4">
-                        <div className="flex items-center gap-3 cursor-pointer" onClick={() => toggleExpand(lecture.id)}>
-                           <div className="font-bold text-gray-400">CHƯƠNG {index + 1}</div>
-                           <h3 className="font-bold text-gray-900 truncate min-w-0 max-w-xs">{lecture.name}</h3>
-                           {isExpanded ? <ChevronUp size={16} className="text-gray-400"/> : <ChevronDown size={16} className="text-gray-400"/>}
+                     <div className="flex items-center justify-between bg-gradient-to-r from-gray-50 to-gray-100 px-8 py-6 border-b border-gray-200">
+                        <div className="flex items-center gap-4 cursor-pointer" onClick={() => toggleExpand(lecture.id)}>
+                           <div className="font-bold text-gray-500 text-sm uppercase tracking-wider">CHƯƠNG {index + 1}</div>
+                           <h3 className="font-bold text-xl text-gray-900 truncate min-w-0 max-w-xs">{lecture.name}</h3>
+                           <div className="rounded-full bg-white p-2 shadow-sm">
+                             {isExpanded ? <ChevronUp size={16} className="text-gray-600"/> : <ChevronDown size={16} className="text-gray-600"/>}
+                           </div>
                         </div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-3">
                            {/* Reorder Videos Button */}
-                           <button onClick={() => openVideoReorderModal(lecture)} className="p-2 text-gray-400 hover:text-[#5a2dff]" title="Sắp xếp video trong chương"><List size={16}/></button>
-                           <button onClick={() => openEditModal(lecture)} className="p-2 text-gray-400 hover:text-[#5a2dff]" title="Chỉnh sửa"><Edit2 size={16}/></button>
-                           <button onClick={() => handleDeleteLecture(lecture.id)} className="p-2 text-gray-400 hover:text-red-500" title="Xóa"><Trash size={16}/></button>
+                           <button
+                             onClick={() => openVideoReorderModal(lecture)}
+                             className="group/btn rounded-full bg-white p-3 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 shadow-sm transition-all duration-200"
+                             title="Sắp xếp video trong chương"
+                           >
+                             <List size={16} className="group-hover/btn:scale-110 transition-transform"/>
+                           </button>
+                           <button
+                             onClick={() => openEditModal(lecture)}
+                             className="group/btn rounded-full bg-white p-3 text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 shadow-sm transition-all duration-200"
+                             title="Chỉnh sửa"
+                           >
+                             <Edit2 size={16} className="group-hover/btn:scale-110 transition-transform"/>
+                           </button>
+                           <button
+                             onClick={() => handleDeleteLecture(lecture.id)}
+                             className="group/btn rounded-full bg-white p-3 text-gray-400 hover:text-red-600 hover:bg-red-50 shadow-sm transition-all duration-200"
+                             title="Xóa"
+                           >
+                             <Trash size={16} className="group-hover/btn:scale-110 transition-transform"/>
+                           </button>
                         </div>
                      </div>
                      

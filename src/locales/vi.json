@@ -455,7 +455,63 @@
       "inProgress": "Đang học",
       "completed": "Đã hoàn thành",
       "notStarted": "Chưa bắt đầu"
-    }
+    },
+    "course": {
+      "lessons": "bài học",
+      "lastStudied": "Lần học cuối:",
+      "duration": "Thời lượng:",
+      "hours": "giờ",
+      "actions": {
+        "review": "Xem lại",
+        "continue": "Tiếp tục",
+        "start": "Bắt đầu",
+        "comments": "Nhận xét"
+      }
+    },
+    "empty": {
+      "noResults": "Không tìm thấy khóa học nào khớp với tìm kiếm.",
+      "noEnrolled": "Bạn chưa đăng ký khóa học nào trong mục này."
+    },
+    "sidebar": {
+      "overviewTitle": "Tiến độ tổng quan",
+      "overviewDesc": "Mức độ hoàn thành trung bình của tất cả khóa học",
+      "quickActionsTitle": "Thao tác nhanh",
+      "achievementsTitle": "Thành tích gần đây",
+      "trackingCourses": "Khóa học đang theo dõi"
+    },
+    "loading": {
+      "courses": "Đang tải các khóa học của bạn...",
+      "comments": "Đang tải nhận xét..."
+    },
+    "comments": {
+      "modalTitle": "Nhận xét khóa học",
+      "you": "(Bạn)",
+      "instructorReply": "Phản hồi từ giảng viên",
+      "allComments": "Tất cả nhận xét ({count})",
+      "noComments": "Chưa có nhận xét nào cho khóa học này",
+      "loadError": "Không thể tải nhận xét. Vui lòng thử lại.",
+      "rate": "Đánh giá",
+      "rateAgain": "Đánh giá lại"
+    },
+    "rating": {
+      "modalTitle": "Đánh giá khóa học",
+      "modalTitleUpdate": "Đánh giá lại khóa học",
+      "yourRating": "Đánh giá của bạn",
+      "yourComment": "Nhận xét của bạn",
+      "commentPlaceholder": "Chia sẻ trải nghiệm của bạn về khóa học này...",
+      "cancel": "Hủy",
+      "submit": "Gửi đánh giá",
+      "submitting": "Đang gửi...",
+      "error": "Đã xảy ra lỗi khi gửi đánh giá",
+      "submitError": "Đã xảy ra lỗi khi gửi đánh giá",
+      "submitErrorAlert": "Đã xảy ra lỗi khi gửi đánh giá"
+    },
+    "time": {
+      "yesterday": "Hôm qua",
+      "today": "Hôm nay",
+      "daysAgo": "{days} ngày trước"
+    },
+    "instructorBadge": "GV"
   },
   "home": {
     "welcomeBack": "Chào mừng trở lại, {name}!",
@@ -660,6 +716,93 @@
       "notUpdated": "Chưa cập nhật",
       "selfIntroduction": "Giới thiệu về bản thân",
       "website": "https://"
+    },
+    "personalInfoLabels": {
+      "fullName": "Họ và tên",
+      "jobTitle": "Vị trí công việc",
+      "phone": "Số điện thoại",
+      "address": "Địa chỉ",
+      "email": "Email",
+      "company": "Công ty",
+      "birthday": "Ngày sinh",
+      "gender": "Giới tính",
+      "experience": "Kinh nghiệm"
+    },
+    "tabs": {
+      "info": "Thông tin",
+      "achievements": "Thành tích",
+      "security": "Bảo mật",
+      "notifications": "Thông báo",
+      "privacy": "Quyền riêng tư",
+      "payment": "Thanh toán"
+    },
+    "sidebar": {
+      "memberSince": "Thành viên từ",
+      "learningStats": "Thống kê học tập",
+      "completionProgress": "Tiến độ hoàn thành",
+      "studyHours": "Giờ học",
+      "certificates": "Chứng chỉ",
+      "currentStreak": "Streak hiện tại",
+      "days": "ngày",
+      "averageRating": "Đánh giá TB",
+      "noStats": "Chưa có thống kê.",
+      "viewMyCourses": "Xem khóa học của tôi"
+    },
+    "quickActions": {
+      "downloadCertificate": "Tải chứng chỉ",
+      "downloadCertificateDesc": "Xuất chứng chỉ đã hoàn thành",
+      "progressReport": "Báo cáo tiến độ",
+      "progressReportDesc": "Xem tổng quan học tập",
+      "advancedSettings": "Cài đặt nâng cao",
+      "advancedSettingsDesc": "Quản lý tài khoản"
+    },
+    "sections": {
+      "personalInfo": "Thông tin cá nhân",
+      "personalInfoDesc": "Cập nhật thông tin hồ sơ của bạn",
+      "selfIntro": "Giới thiệu bản thân",
+      "website": "Website",
+      "skills": "Kỹ năng",
+      "socialLinks": "Liên kết mạng xã hội",
+      "socialLinksDesc": "Thêm các liên kết mạng xã hội của bạn",
+      "saveLinks": "Lưu liên kết"
+    },
+    "skills": {
+      "add": "Thêm kỹ năng",
+      "newPlaceholder": "Nhập kỹ năng mới",
+      "removeAriaLabel": "Xóa kỹ năng {skill}",
+      "errorInvalid": "Vui lòng nhập kỹ năng hợp lệ.",
+      "errorExists": "Kỹ năng đã tồn tại."
+    }
+  },
+  "changePassword": {
+    "title": "Đổi mật khẩu",
+    "description": "Cập nhật mật khẩu thường xuyên giúp bảo vệ tài khoản của bạn khỏi việc truy cập trái phép.",
+    "instruction": "Vui lòng nhập thông tin để thay đổi mật khẩu của bạn",
+    "tips": {
+      "strongPassword": "Sử dụng mật khẩu mạnh",
+      "strongPasswordDesc": "Kết hợp chữ hoa, chữ thường, số và ký tự đặc biệt.",
+      "dontShare": "Không chia sẻ mật khẩu",
+      "dontShareDesc": "Tránh dùng chung mật khẩu cho nhiều tài khoản."
+    },
+    "form": {
+      "currentPassword": "Mật khẩu hiện tại",
+      "currentPasswordPlaceholder": "Nhập mật khẩu hiện tại",
+      "newPassword": "Mật khẩu mới",
+      "newPasswordPlaceholder": "Nhập mật khẩu mới",
+      "newPasswordHint": "Tối thiểu 8 ký tự bao gồm chữ, số và ký tự đặc biệt.",
+      "confirmPassword": "Xác nhận mật khẩu mới",
+      "confirmPasswordPlaceholder": "Nhập lại mật khẩu mới"
+    },
+    "messages": {
+      "mismatch": "Mật khẩu mới và xác nhận chưa khớp.",
+      "success": "Mật khẩu của bạn đã được cập nhật.",
+      "weakPassword": "Mật khẩu quá yếu. Vui lòng tạo mật khẩu mạnh hơn.",
+      "error": "Đã xảy ra lỗi khi cập nhật mật khẩu. Vui lòng thử lại."
+    },
+    "buttons": {
+      "save": "Lưu thay đổi",
+      "saving": "Đang lưu...",
+      "cancel": "Hủy"
     }
   },
   "errors": {
