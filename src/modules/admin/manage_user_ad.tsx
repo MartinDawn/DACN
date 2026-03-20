@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import AdminLayout from './layout/layout';
+import { useTranslation } from 'react-i18next';
 import {
   MagnifyingGlassIcon,
   UserGroupIcon,
@@ -23,6 +24,7 @@ import type { UserResponse, InstructorRequest } from './models/user.model';
 const ITEMS_PER_PAGE = 10;
 
 export default function AdminManageUser() {
+    const { t } = useTranslation();
     const [activeTab, setActiveTab] = useState<'all' | 'student' | 'instructor' | 'pending'>('all');
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedUser, setSelectedUser] = useState<UserResponse | null>(null);
@@ -124,12 +126,12 @@ export default function AdminManageUser() {
             <div className="mx-auto max-w-screen-2xl p-4 md:p-6 2xl:p-10">
                 {/* Header */}
                 <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                    <h2 className="text-xl font-bold text-gray-900">Quản lý người dùng</h2>
+                    <h2 className="text-xl font-bold text-gray-900">{t('admin.manageUsers.title')}</h2>
                     <div className="relative">
                         <MagnifyingGlassIcon className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
                         <input
                             type="text"
-                            placeholder="Tìm kiếm..."
+                            placeholder={t('admin.manageUsers.searchUsers')}
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                             className="w-full rounded-full border border-gray-200 bg-white py-2.5 pl-10 pr-4 text-sm font-medium outline-none focus:border-[#5a2dff] sm:w-72"
@@ -140,9 +142,9 @@ export default function AdminManageUser() {
                 {/* Tabs */}
                 <div className="mb-6 flex space-x-2 rounded-xl bg-gray-100 p-1 w-fit">
                     {([
-                        { key: 'all', label: 'Tất cả', icon: <UserGroupIcon className="h-4 w-4" />, count: stats.all, countClass: 'bg-gray-200 text-gray-600' },
-                        { key: 'instructor', label: 'Giảng viên', icon: <AcademicCapIcon className="h-4 w-4" />, count: stats.instructor, countClass: 'bg-purple-100 text-purple-600' },
-                        { key: 'pending', label: 'Duyệt giảng viên', icon: <ClockIcon className="h-4 w-4" />, count: stats.pending, countClass: 'bg-orange-100 text-orange-600' },
+                        { key: 'all', label: t('admin.manageUsers.tabs.all'), icon: <UserGroupIcon className="h-4 w-4" />, count: stats.all, countClass: 'bg-gray-200 text-gray-600' },
+                        { key: 'instructor', label: t('admin.manageUsers.tabs.instructor'), icon: <AcademicCapIcon className="h-4 w-4" />, count: stats.instructor, countClass: 'bg-purple-100 text-purple-600' },
+                        { key: 'pending', label: t('admin.manageUsers.tabs.pending'), icon: <ClockIcon className="h-4 w-4" />, count: stats.pending, countClass: 'bg-orange-100 text-orange-600' },
                     ] as const).map(tab => (
                         <button
                             key={tab.key}
@@ -169,12 +171,12 @@ export default function AdminManageUser() {
                             <table className="w-full text-left">
                                 <thead className="bg-[#f7f9fc] border-b border-gray-100">
                                     <tr>
-                                        <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-gray-500">Người dùng</th>
-                                        <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-gray-500">Vai trò</th>
-                                        <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-gray-500">Tên đăng nhập</th>
-                                        <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-gray-500">Ngày gia nhập</th>
-                                        <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-gray-500">Trạng thái</th>
-                                        <th className="px-6 py-4 text-end text-xs font-semibold uppercase tracking-wider text-gray-500">Hành động</th>
+                                        <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-gray-500">{t('admin.manageUsers.tableHeaders.user')}</th>
+                                        <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-gray-500">{t('admin.manageUsers.tableHeaders.role')}</th>
+                                        <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-gray-500">{t('admin.manageUsers.tableHeaders.username')}</th>
+                                        <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-gray-500">{t('admin.manageUsers.tableHeaders.joinDate')}</th>
+                                        <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-gray-500">{t('admin.manageUsers.tableHeaders.status')}</th>
+                                        <th className="px-6 py-4 text-end text-xs font-semibold uppercase tracking-wider text-gray-500">{t('admin.manageUsers.tableHeaders.actions')}</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-100 text-sm">
@@ -219,7 +221,7 @@ export default function AdminManageUser() {
                                                     <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
                                                         user.role.toLowerCase() === 'instructor' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'
                                                     }`}>
-                                                        {user.role.toLowerCase() === 'instructor' ? 'Giảng viên' : 'Học viên'}
+                                                        {user.role.toLowerCase() === 'instructor' ? t('admin.manageUsers.roles.instructor') : t('admin.manageUsers.roles.student')}
                                                     </span>
                                                 </td>
                                                 <td className="px-6 py-4 text-gray-600">{user.userName}</td>
@@ -228,7 +230,7 @@ export default function AdminManageUser() {
                                                     <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
                                                         !user.isBanned ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
                                                     }`}>
-                                                        {!user.isBanned ? 'Hoạt động' : 'Đã chặn'}
+                                                        {!user.isBanned ? t('admin.manageUsers.status.active') : t('admin.manageUsers.status.banned')}
                                                     </span>
                                                 </td>
                                                 <td className="px-6 py-4 text-end">
@@ -236,7 +238,7 @@ export default function AdminManageUser() {
                                                         <button
                                                             onClick={() => setSelectedUser(user)}
                                                             className="inline-flex items-center justify-center rounded-lg bg-blue-50 p-2 text-blue-600 transition-colors hover:bg-blue-100"
-                                                            title="Xem chi tiết"
+                                                            title={t('admin.manageUsers.actions.viewDetails')}
                                                         >
                                                             <EyeIcon className="h-5 w-5" />
                                                         </button>
@@ -245,7 +247,7 @@ export default function AdminManageUser() {
                                                             className={`inline-flex items-center justify-center rounded-lg p-2 transition-colors ${
                                                                 !user.isBanned ? 'bg-yellow-50 text-yellow-600 hover:bg-yellow-100' : 'bg-green-50 text-green-600 hover:bg-green-100'
                                                             }`}
-                                                            title={!user.isBanned ? 'Chặn người dùng' : 'Bỏ chặn'}
+                                                            title={!user.isBanned ? t('admin.manageUsers.actions.banUser') : t('admin.manageUsers.actions.unbanUser')}
                                                         >
                                                             {!user.isBanned ? <NoSymbolIcon className="h-5 w-5" /> : <CheckCircleIcon className="h-5 w-5" />}
                                                         </button>
@@ -260,8 +262,8 @@ export default function AdminManageUser() {
                                                     <div className="rounded-full bg-gray-50 p-4 mb-3">
                                                         <MagnifyingGlassIcon className="h-8 w-8 text-gray-300" />
                                                     </div>
-                                                    <p className="text-base font-medium text-gray-500">Không tìm thấy người dùng nào</p>
-                                                    <p className="text-sm text-gray-400 mt-1">Thử thay đổi từ khóa tìm kiếm</p>
+                                                    <p className="text-base font-medium text-gray-500">{t('admin.manageUsers.empty.noUsers')}</p>
+                                                    <p className="text-sm text-gray-400 mt-1">{t('admin.manageUsers.empty.changeSearch')}</p>
                                                 </div>
                                             </td>
                                         </tr>
@@ -269,7 +271,7 @@ export default function AdminManageUser() {
                                 </tbody>
                             </table>
                         </div>
-                        <Pagination current={currentPage} total={totalUserPages} totalItems={filteredUsers.length} itemLabel="người dùng" onChange={setCurrentPage} />
+                        <Pagination current={currentPage} total={totalUserPages} totalItems={filteredUsers.length} itemLabel={t('admin.manageUsers.pagination.users')} onChange={setCurrentPage} />
                     </div>
                 )}
 
@@ -280,12 +282,12 @@ export default function AdminManageUser() {
                             <table className="w-full text-left">
                                 <thead className="bg-[#f7f9fc] border-b border-gray-100">
                                     <tr>
-                                        <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-gray-500">Người yêu cầu</th>
-                                        <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-gray-500">Chuyên môn</th>
-                                        <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-gray-500">Kinh nghiệm</th>
-                                        <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-gray-500">Ngày gửi</th>
-                                        <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-gray-500">Trạng thái</th>
-                                        <th className="px-6 py-4 text-end text-xs font-semibold uppercase tracking-wider text-gray-500">Hành động</th>
+                                        <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-gray-500">{t('admin.manageUsers.requestLabels.applicant')}</th>
+                                        <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-gray-500">{t('admin.manageUsers.requestLabels.expertise')}</th>
+                                        <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-gray-500">{t('admin.manageUsers.requestLabels.experience')}</th>
+                                        <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-gray-500">{t('admin.manageUsers.requestLabels.submitDate')}</th>
+                                        <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-gray-500">{t('admin.manageUsers.requestLabels.status')}</th>
+                                        <th className="px-6 py-4 text-end text-xs font-semibold uppercase tracking-wider text-gray-500">{t('admin.manageUsers.tableHeaders.actions')}</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-100 text-sm">
@@ -338,7 +340,7 @@ export default function AdminManageUser() {
                                                 <td className="px-6 py-4">
                                                     <span className="inline-flex items-center gap-1 rounded-full bg-orange-100 px-2.5 py-0.5 text-xs font-medium text-orange-700">
                                                         <span className="h-1.5 w-1.5 rounded-full bg-orange-400" />
-                                                        Chờ duyệt
+                                                        {t('admin.manageUsers.status.pending')}
                                                     </span>
                                                 </td>
                                                 <td className="px-6 py-4 text-end">
@@ -346,21 +348,21 @@ export default function AdminManageUser() {
                                                         <button
                                                             onClick={() => setSelectedRequest(req)}
                                                             className="inline-flex items-center justify-center rounded-lg bg-blue-50 p-2 text-blue-600 transition-colors hover:bg-blue-100"
-                                                            title="Xem chi tiết"
+                                                            title={t('admin.manageUsers.actions.viewDetails')}
                                                         >
                                                             <EyeIcon className="h-5 w-5" />
                                                         </button>
                                                         <button
                                                             onClick={() => handleApproveRequest(req, true)}
                                                             className="inline-flex items-center justify-center rounded-lg bg-green-50 p-2 text-green-600 transition-colors hover:bg-green-100"
-                                                            title="Duyệt"
+                                                            title={t('admin.manageUsers.actions.approve')}
                                                         >
                                                             <CheckCircleIcon className="h-5 w-5" />
                                                         </button>
                                                         <button
                                                             onClick={() => handleApproveRequest(req, false)}
                                                             className="inline-flex items-center justify-center rounded-lg bg-red-50 p-2 text-red-600 transition-colors hover:bg-red-100"
-                                                            title="Từ chối"
+                                                            title={t('admin.manageUsers.actions.reject')}
                                                         >
                                                             <XCircleIcon className="h-5 w-5" />
                                                         </button>
@@ -375,8 +377,8 @@ export default function AdminManageUser() {
                                                     <div className="rounded-full bg-gray-50 p-4 mb-3">
                                                         <ClockIcon className="h-8 w-8 text-gray-300" />
                                                     </div>
-                                                    <p className="text-base font-medium text-gray-500">Không có yêu cầu nào đang chờ duyệt</p>
-                                                    <p className="text-sm text-gray-400 mt-1">Tất cả yêu cầu đã được xử lý</p>
+                                                    <p className="text-base font-medium text-gray-500">{t('admin.manageUsers.empty.noPendingRequests')}</p>
+                                                    <p className="text-sm text-gray-400 mt-1">{t('admin.manageUsers.empty.allProcessed')}</p>
                                                 </div>
                                             </td>
                                         </tr>
@@ -384,7 +386,7 @@ export default function AdminManageUser() {
                                 </tbody>
                             </table>
                         </div>
-                        <Pagination current={currentPage} total={totalRequestPages} totalItems={filteredRequests.length} itemLabel="yêu cầu" onChange={setCurrentPage} />
+                        <Pagination current={currentPage} total={totalRequestPages} totalItems={filteredRequests.length} itemLabel={t('admin.manageUsers.pagination.requests')} onChange={setCurrentPage} />
                     </div>
                 )}
             </div>
@@ -401,23 +403,23 @@ export default function AdminManageUser() {
                                 }
                             </div>
                             <h3 className="text-xl font-bold text-gray-900 mb-2">
-                                {confirmAction.isBanning ? 'Chặn người dùng?' : 'Bỏ chặn người dùng?'}
+                                {confirmAction.isBanning ? t('admin.manageUsers.modals.banUser') : t('admin.manageUsers.modals.unbanUser')}
                             </h3>
                             <p className="text-sm text-gray-500 mb-5 leading-relaxed">
                                 {confirmAction.isBanning
-                                    ? <>Bạn có chắc chắn muốn chặn <span className="font-semibold text-gray-700">"{confirmAction.user.fullName}"</span>? Người dùng sẽ không thể đăng nhập.</>
-                                    : <>Bạn có chắc chắn muốn bỏ chặn <span className="font-semibold text-gray-700">"{confirmAction.user.fullName}"</span>?</>
+                                    ? t('admin.manageUsers.modals.banConfirm', { name: confirmAction.user.fullName })
+                                    : t('admin.manageUsers.modals.unbanConfirm', { name: confirmAction.user.fullName })
                                 }
                             </p>
                             <div className="w-full border-t border-gray-100 mb-5" />
                             <div className="flex gap-3 w-full">
                                 <button onClick={() => setConfirmAction(null)} disabled={isBanLoading}
                                     className="flex-1 rounded-xl border-2 border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 disabled:opacity-50">
-                                    Hủy bỏ
+                                    {t('admin.manageUsers.modals.cancel')}
                                 </button>
                                 <button onClick={handleConfirmBan} disabled={isBanLoading}
                                     className="flex-1 rounded-xl bg-[#5a2dff] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#4a20ef] disabled:opacity-50 shadow-md shadow-[#5a2dff]/30">
-                                    {isBanLoading ? 'Đang xử lý...' : confirmAction.isBanning ? 'Chặn ngay' : 'Bỏ chặn ngay'}
+                                    {isBanLoading ? t('admin.manageUsers.modals.processing') : confirmAction.isBanning ? t('admin.manageUsers.modals.banNow') : t('admin.manageUsers.modals.unbanNow')}
                                 </button>
                             </div>
                         </div>
@@ -437,23 +439,23 @@ export default function AdminManageUser() {
                                 }
                             </div>
                             <h3 className="text-xl font-bold text-gray-900 mb-2">
-                                {approveConfirm.isApproved ? 'Duyệt yêu cầu?' : 'Từ chối yêu cầu?'}
+                                {approveConfirm.isApproved ? t('admin.manageUsers.modals.approveRequest') : t('admin.manageUsers.modals.rejectRequest')}
                             </h3>
                             <p className="text-sm text-gray-500 mb-5 leading-relaxed">
                                 {approveConfirm.isApproved
-                                    ? <>Duyệt yêu cầu của <span className="font-semibold text-gray-700">"{approveConfirm.request.fullName}"</span>? Họ sẽ được cấp quyền giảng viên.</>
-                                    : <>Từ chối yêu cầu của <span className="font-semibold text-gray-700">"{approveConfirm.request.fullName}"</span>?</>
+                                    ? t('admin.manageUsers.modals.approveConfirm', { name: approveConfirm.request.fullName })
+                                    : t('admin.manageUsers.modals.rejectConfirm', { name: approveConfirm.request.fullName })
                                 }
                             </p>
                             <div className="w-full border-t border-gray-100 mb-5" />
                             <div className="flex gap-3 w-full">
                                 <button onClick={() => setApproveConfirm(null)} disabled={isApproveLoading}
                                     className="flex-1 rounded-xl border-2 border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 disabled:opacity-50">
-                                    Hủy bỏ
+                                    {t('admin.manageUsers.modals.cancel')}
                                 </button>
                                 <button onClick={handleConfirmApprove} disabled={isApproveLoading}
                                     className="flex-1 rounded-xl bg-[#5a2dff] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#4a20ef] disabled:opacity-50 shadow-md shadow-[#5a2dff]/30">
-                                    {isApproveLoading ? 'Đang xử lý...' : approveConfirm.isApproved ? 'Xác nhận duyệt' : 'Xác nhận từ chối'}
+                                    {isApproveLoading ? t('admin.manageUsers.modals.processing') : approveConfirm.isApproved ? t('admin.manageUsers.modals.confirmApprove') : t('admin.manageUsers.modals.confirmReject')}
                                 </button>
                             </div>
                         </div>
@@ -485,14 +487,14 @@ export default function AdminManageUser() {
                         {/* Body */}
                         <div className="px-6 py-5 space-y-4 max-h-[60vh] overflow-y-auto">
                             <div className="grid grid-cols-2 gap-3">
-                                <InfoBlock icon={<BriefcaseIcon className="h-4 w-4" />} label="Kinh nghiệm" value={selectedRequest.experience} />
-                                <InfoBlock icon={<StarIcon className="h-4 w-4" />} label="Chuyên môn" value={selectedRequest.expertise} />
-                                <InfoBlock icon={<DocumentTextIcon className="h-4 w-4" />} label="Chứng chỉ" value={selectedRequest.certificate} />
-                                <InfoBlock icon={<ClockIcon className="h-4 w-4" />} label="Ngày gửi" value={formatDate(selectedRequest.createdAt)} />
+                                <InfoBlock icon={<BriefcaseIcon className="h-4 w-4" />} label={t('admin.manageUsers.requestDetails.experience')} value={selectedRequest.experience} />
+                                <InfoBlock icon={<StarIcon className="h-4 w-4" />} label={t('admin.manageUsers.requestDetails.expertise')} value={selectedRequest.expertise} />
+                                <InfoBlock icon={<DocumentTextIcon className="h-4 w-4" />} label={t('admin.manageUsers.requestDetails.certificate')} value={selectedRequest.certificate} />
+                                <InfoBlock icon={<ClockIcon className="h-4 w-4" />} label={t('admin.manageUsers.requestDetails.submitDate')} value={formatDate(selectedRequest.createdAt)} />
                             </div>
-                            <InfoBlock icon={<UserCircleIcon className="h-4 w-4" />} label="Giới thiệu" value={selectedRequest.introduction} multiline />
+                            <InfoBlock icon={<UserCircleIcon className="h-4 w-4" />} label={t('admin.manageUsers.requestDetails.introduction')} value={selectedRequest.introduction} multiline />
                             {selectedRequest.socialLinks && (
-                                <InfoBlock icon={<LinkIcon className="h-4 w-4" />} label="Liên kết mạng xã hội" value={selectedRequest.socialLinks} />
+                                <InfoBlock icon={<LinkIcon className="h-4 w-4" />} label={t('admin.manageUsers.requestDetails.socialLinks')} value={selectedRequest.socialLinks} />
                             )}
                         </div>
 
@@ -500,17 +502,17 @@ export default function AdminManageUser() {
                         <div className="border-t border-gray-100 px-6 py-4 flex gap-3 bg-gray-50">
                             <button onClick={() => setSelectedRequest(null)}
                                 className="flex-1 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 transition hover:bg-gray-50">
-                                Đóng
+                                {t('admin.manageUsers.actions.close')}
                             </button>
                             <button
                                 onClick={() => { setSelectedRequest(null); handleApproveRequest(selectedRequest, false); }}
                                 className="flex-1 rounded-xl bg-red-50 px-4 py-2.5 text-sm font-semibold text-red-600 transition hover:bg-red-100">
-                                Từ chối
+                                {t('admin.manageUsers.actions.reject')}
                             </button>
                             <button
                                 onClick={() => { setSelectedRequest(null); handleApproveRequest(selectedRequest, true); }}
                                 className="flex-1 rounded-xl bg-[#5a2dff] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#4a20ef] shadow-md shadow-[#5a2dff]/30">
-                                Duyệt
+                                {t('admin.manageUsers.actions.approve')}
                             </button>
                         </div>
                     </div>
@@ -537,34 +539,34 @@ export default function AdminManageUser() {
                             </div>
                             <div className="grid grid-cols-2 gap-3">
                                 <div className="rounded-xl bg-gray-50 p-3">
-                                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Tên đăng nhập</p>
+                                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">{t('admin.manageUsers.userDetails.username')}</p>
                                     <p className="font-medium text-gray-900 truncate">{selectedUser.userName}</p>
                                 </div>
                                 <div className="rounded-xl bg-gray-50 p-3">
-                                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Vai trò</p>
+                                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">{t('admin.manageUsers.userDetails.role')}</p>
                                     <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
                                         selectedUser.role.toLowerCase() === 'instructor' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'
                                     }`}>
-                                        {selectedUser.role.toLowerCase() === 'instructor' ? 'Giảng viên' : 'Học viên'}
+                                        {selectedUser.role.toLowerCase() === 'instructor' ? t('admin.manageUsers.roles.instructor') : t('admin.manageUsers.roles.student')}
                                     </span>
                                 </div>
                                 <div className="rounded-xl bg-gray-50 p-3 col-span-2">
-                                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">ID</p>
+                                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">{t('admin.manageUsers.userDetails.userId')}</p>
                                     <p className="font-medium text-gray-900 text-xs truncate">{selectedUser.id}</p>
                                 </div>
                                 <div className="rounded-xl bg-gray-50 p-3">
-                                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Ngày tham gia</p>
+                                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">{t('admin.manageUsers.userDetails.joinDate')}</p>
                                     <p className="font-medium text-gray-900">{formatDate(selectedUser.createdAt)}</p>
                                 </div>
                                 <div className="rounded-xl bg-gray-50 p-3">
-                                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Trạng thái</p>
+                                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">{t('admin.manageUsers.userDetails.status')}</p>
                                     <div className="flex items-center gap-2">
                                         <span className="relative flex h-2.5 w-2.5">
                                             <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${!selectedUser.isBanned ? 'bg-green-400' : 'bg-red-400'}`} />
                                             <span className={`relative inline-flex rounded-full h-2.5 w-2.5 ${!selectedUser.isBanned ? 'bg-green-500' : 'bg-red-500'}`} />
                                         </span>
                                         <span className="text-sm font-medium text-gray-900">
-                                            {!selectedUser.isBanned ? 'Hoạt động' : 'Đã chặn'}
+                                            {!selectedUser.isBanned ? t('admin.manageUsers.status.active') : t('admin.manageUsers.status.banned')}
                                         </span>
                                     </div>
                                 </div>
@@ -572,7 +574,7 @@ export default function AdminManageUser() {
                             <div className="mt-6">
                                 <button onClick={() => setSelectedUser(null)}
                                     className="w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 transition hover:bg-gray-50">
-                                    Đóng
+                                    {t('admin.manageUsers.actions.close')}
                                 </button>
                             </div>
                         </div>

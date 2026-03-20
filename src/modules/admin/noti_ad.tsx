@@ -2,6 +2,7 @@
 import { useNavigate } from 'react-router-dom';
 import AdminLayout from './layout/layout';
 import { useNotifications } from './hooks/useNotifications';
+import { useTranslation } from 'react-i18next';
 import {
   BellIcon,
   BellAlertIcon,
@@ -26,24 +27,17 @@ function formatDate(iso: string) {
   });
 }
 
-function formatTimeAgo(iso: string) {
+function formatTimeAgo(iso: string, t: any) {
   const diffMs = Date.now() - new Date(iso).getTime();
   const mins = Math.floor(diffMs / 60000);
   const hours = Math.floor(mins / 60);
   const days = Math.floor(hours / 24);
-  if (mins < 1) return 'Vừa xong';
-  if (mins < 60) return `${mins} phút trước`;
-  if (hours < 24) return `${hours} giờ trước`;
-  if (days === 1) return '1 ngày trước';
-  return `${days} ngày trước`;
+  if (mins < 1) return t('admin.notificationsPage.timeAgo.justNow');
+  if (mins < 60) return t('admin.notificationsPage.timeAgo.minutesAgo', { minutes: mins });
+  if (hours < 24) return t('admin.notificationsPage.timeAgo.hoursAgo', { hours });
+  if (days === 1) return t('admin.notificationsPage.timeAgo.oneDayAgo');
+  return t('admin.notificationsPage.timeAgo.daysAgo', { days });
 }
-
-const TYPE_LABEL: Record<string, string> = {
-  CourseRequest: 'Yêu cầu duyệt khóa học',
-  InstructorRequest: 'Yêu cầu giảng viên',
-  System: 'Hệ thống',
-  system: 'Hệ thống',
-};
 
 const TYPE_COLOR: Record<string, { bg: string; text: string; dot: string }> = {
   CourseRequest: { bg: 'bg-purple-50', text: 'text-[#5a2dff]', dot: 'bg-[#5a2dff]' },
@@ -67,6 +61,7 @@ const TYPE_ROUTE: Record<string, string> = {
 };
 
 export default function AdminNotifications() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const {
     notifications,
@@ -82,6 +77,13 @@ export default function AdminNotifications() {
 
   const [activeFilter, setActiveFilter] = useState<NotifFilter>('all');
 
+  const TYPE_LABEL = {
+    CourseRequest: t('admin.notificationsPage.types.courseRequest'),
+    InstructorRequest: t('admin.notificationsPage.types.instructorRequest'),
+    System: t('admin.notificationsPage.types.system'),
+    system: t('admin.notificationsPage.types.system'),
+  };
+
   const filteredItems = useMemo(() => {
     if (activeFilter === 'unread') return notifications.filter((n) => !n.isRead);
     if (activeFilter === 'read') return notifications.filter((n) => n.isRead);
@@ -89,9 +91,9 @@ export default function AdminNotifications() {
   }, [notifications, activeFilter]);
 
   const tabs: { label: string; value: NotifFilter; count?: number }[] = [
-    { label: 'Tất cả', value: 'all', count: notifications.length },
-    { label: 'Chưa đọc', value: 'unread', count: unreadCount },
-    { label: 'Đã đọc', value: 'read', count: notifications.length - unreadCount },
+    { label: t('admin.notificationsPage.tabs.all'), value: 'all', count: notifications.length },
+    { label: t('admin.notificationsPage.tabs.unread'), value: 'unread', count: unreadCount },
+    { label: t('admin.notificationsPage.tabs.read'), value: 'read', count: notifications.length - unreadCount },
   ];
 
   return (
@@ -105,15 +107,15 @@ export default function AdminNotifications() {
             </span>
             <div>
               <div className="flex items-center gap-3">
-                <h1 className="text-xl font-bold text-gray-900">Thông báo</h1>
+                <h1 className="text-xl font-bold text-gray-900">{t('admin.notificationsPage.title')}</h1>
                 {unreadCount > 0 && (
                   <span className="rounded-full bg-red-50 px-2.5 py-0.5 text-xs font-semibold text-red-500">
-                    {unreadCount} chưa đọc
+                    {unreadCount} {t('admin.notificationsPage.unread')}
                   </span>
                 )}
               </div>
               <p className="mt-0.5 text-sm text-gray-500">
-                Quản lý và theo dõi tất cả thông báo hệ thống.
+                {t('admin.notificationsPage.subtitle')}
               </p>
             </div>
           </div>
@@ -124,7 +126,7 @@ export default function AdminNotifications() {
               className="inline-flex items-center gap-2 rounded-xl border border-[#5a2dff]/40 px-5 py-2.5 text-sm font-semibold text-[#5a2dff] transition hover:bg-[#efe7ff] whitespace-nowrap"
             >
               <EnvelopeOpenIcon className="h-4 w-4" />
-              Đánh dấu tất cả đã đọc
+              {t('admin.notificationsPage.markAllRead')}
             </button>
           )}
         </div>
@@ -174,7 +176,7 @@ export default function AdminNotifications() {
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                 </svg>
-                <p className="mt-3 text-sm text-gray-400">Đang tải thông báo...</p>
+                <p className="mt-3 text-sm text-gray-400">{t('admin.notificationsPage.loading')}</p>
               </div>
             ) : error ? (
               <div className="rounded-2xl border border-red-200 bg-red-50 p-8 text-center">
@@ -183,13 +185,13 @@ export default function AdminNotifications() {
                   onClick={refetch}
                   className="mt-3 text-sm font-semibold text-[#5a2dff] hover:underline"
                 >
-                  Thử lại
+                  {t('admin.notificationsPage.tryAgain')}
                 </button>
               </div>
             ) : filteredItems.length === 0 ? (
               <div className="rounded-2xl border border-dashed border-gray-200 bg-white p-12 text-center">
                 <BellIcon className="h-10 w-10 mx-auto text-gray-300 mb-3" />
-                <p className="text-sm font-medium text-gray-500">Không có thông báo nào.</p>
+                <p className="text-sm font-medium text-gray-500">{t('admin.notificationsPage.empty')}</p>
               </div>
             ) : (
               <div className="space-y-3">
@@ -226,10 +228,10 @@ export default function AdminNotifications() {
                           </span>
                           {isUnread && (
                             <span className="rounded-full bg-red-50 px-2 py-0.5 text-xs font-semibold text-red-500">
-                              Mới
+                              {t('admin.notificationsPage.status.new')}
                             </span>
                           )}
-                          <span className="text-xs text-gray-400">{formatTimeAgo(notif.createdAt)}</span>
+                          <span className="text-xs text-gray-400">{formatTimeAgo(notif.createdAt, t)}</span>
                         </div>
 
                         <p className="text-sm font-semibold text-gray-900">
@@ -247,7 +249,7 @@ export default function AdminNotifications() {
 
                         {isUnread && (
                           <p className="mt-1 text-xs font-medium text-[#5a2dff]/60">
-                            Nhấn vào thông báo để đánh dấu đã đọc
+                            {t('admin.notificationsPage.clickToMarkRead')}
                           </p>
                         )}
                       </div>
@@ -262,9 +264,9 @@ export default function AdminNotifications() {
                             type="button"
                             onClick={() => { markAsRead(notif.id); navigate(route); }}
                             className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold transition ${color.bg} ${color.text} hover:opacity-80`}
-                            title="Xem và xét duyệt"
+                            title={t('admin.notificationsPage.actions.review')}
                           >
-                            Xét duyệt
+                            {t('admin.notificationsPage.actions.review')}
                             <ArrowTopRightOnSquareIcon className="h-3.5 w-3.5" />
                           </button>
                         )}
@@ -273,7 +275,7 @@ export default function AdminNotifications() {
                             <button
                               type="button"
                               onClick={() => markAsRead(notif.id)}
-                              title="Đánh dấu đã đọc"
+                              title={t('admin.notificationsPage.actions.markRead')}
                               className="flex h-7 w-7 items-center justify-center rounded-lg text-gray-400 transition hover:bg-[#efe7ff] hover:text-[#5a2dff]"
                             >
                               <CheckCircleIcon className="h-4 w-4" />
@@ -282,7 +284,7 @@ export default function AdminNotifications() {
                           <button
                             type="button"
                             onClick={() => deleteNotification(notif.id)}
-                            title="Xóa thông báo"
+                            title={t('admin.notificationsPage.actions.delete')}
                             className="flex h-7 w-7 items-center justify-center rounded-lg text-gray-400 transition hover:bg-red-50 hover:text-red-500"
                           >
                             <TrashIcon className="h-4 w-4" />
@@ -299,25 +301,25 @@ export default function AdminNotifications() {
           {/* Right: Stats */}
           <aside className="space-y-4 self-start sticky top-6">
             <div className="rounded-2xl bg-white p-5 shadow-sm border border-gray-100">
-              <h3 className="text-sm font-semibold text-gray-900 mb-4">Thống kê</h3>
+              <h3 className="text-sm font-semibold text-gray-900 mb-4">{t('admin.notificationsPage.stats.title')}</h3>
               <div className="space-y-3 text-sm">
                 <div className="flex items-center justify-between">
-                  <span className="text-gray-500">Tổng thông báo</span>
+                  <span className="text-gray-500">{t('admin.notificationsPage.stats.total')}</span>
                   <span className="font-semibold text-gray-900">{notifications.length}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-gray-500">Chưa đọc</span>
+                  <span className="text-gray-500">{t('admin.notificationsPage.stats.unread')}</span>
                   <span className="font-semibold text-red-500">{unreadCount}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-gray-500">Đã đọc</span>
+                  <span className="text-gray-500">{t('admin.notificationsPage.stats.read')}</span>
                   <span className="font-semibold text-green-600">{notifications.length - unreadCount}</span>
                 </div>
               </div>
             </div>
 
             <div className="rounded-2xl bg-white p-5 shadow-sm border border-gray-100">
-              <h3 className="text-sm font-semibold text-gray-900 mb-4">Hành động nhanh</h3>
+              <h3 className="text-sm font-semibold text-gray-900 mb-4">{t('admin.notificationsPage.quickActions.title')}</h3>
               <div className="space-y-2">
                 {unreadCount > 0 && (
                   <button
@@ -325,7 +327,7 @@ export default function AdminNotifications() {
                     onClick={markAllAsRead}
                     className="flex w-full items-center justify-between rounded-xl border border-gray-100 px-4 py-2.5 text-sm font-medium text-gray-600 transition hover:border-[#5a2dff] hover:text-[#5a2dff]"
                   >
-                    <span>Đánh dấu tất cả đã đọc</span>
+                    <span>{t('admin.notificationsPage.quickActions.markAllRead')}</span>
                     <span className="text-gray-300">›</span>
                   </button>
                 )}
@@ -334,7 +336,7 @@ export default function AdminNotifications() {
                   onClick={refetch}
                   className="flex w-full items-center justify-between rounded-xl border border-gray-100 px-4 py-2.5 text-sm font-medium text-gray-600 transition hover:border-[#5a2dff] hover:text-[#5a2dff]"
                 >
-                  <span>Tải lại thông báo</span>
+                  <span>{t('admin.notificationsPage.quickActions.refresh')}</span>
                   <span className="text-gray-300">›</span>
                 </button>
               </div>

@@ -4,6 +4,7 @@ import AdminLayout from './layout/layout';
 import type { Course } from './models/course.model';
 import { useCourseRequests } from './hooks/useCourseRequests';
 import { CourseService } from './services/course.service';
+import { useTranslation } from 'react-i18next';
 import {
   CheckCircleIcon,
   XCircleIcon,
@@ -49,6 +50,7 @@ function LazyImage({ src, alt }: { src: string; alt: string }) {
 }
 
 export default function AdminManageCourse() {
+    const { t } = useTranslation();
     const navigate = useNavigate();
     const [activeTab, setActiveTab] = useState<'published' | 'pending'>('published');
     const [searchTerm, setSearchTerm] = useState('');
@@ -112,7 +114,7 @@ export default function AdminManageCourse() {
         if (!selectedCourse || isProcessing) return;
 
         if (!selectedCourse.requestId) {
-            alert('Không tìm thấy ID yêu cầu. Vui lòng thử lại.');
+            alert(t('admin.errors.noId'));
             return;
         }
 
@@ -123,7 +125,7 @@ export default function AdminManageCourse() {
             refresh();
             closeModals();
         } catch (error) {
-            alert('Lỗi khi duyệt yêu cầu. Vui lòng thử lại.');
+            alert(t('admin.errors.approve'));
         } finally {
             setIsProcessing(false);
         }
@@ -132,12 +134,12 @@ export default function AdminManageCourse() {
     const handleConfirmReject = async () => {
         if (!selectedCourse || isProcessing) return;
         if (!rejectReason.trim()) {
-            alert("Vui lòng nhập lý do từ chối");
+            alert(t('admin.errors.reasonRequired'));
             return;
         }
 
         if (!selectedCourse.requestId) {
-            alert('Không tìm thấy ID yêu cầu. Vui lòng thử lại.');
+            alert(t('admin.errors.noId'));
             return;
         }
 
@@ -148,7 +150,7 @@ export default function AdminManageCourse() {
             refresh();
             closeModals();
         } catch (error) {
-            alert('Lỗi khi từ chối yêu cầu. Vui lòng thử lại.');
+            alert(t('admin.errors.reject'));
         } finally {
             setIsProcessing(false);
         }
@@ -198,12 +200,12 @@ export default function AdminManageCourse() {
         <AdminLayout>
             <div className="mx-auto max-w-screen-2xl p-4 md:p-6 2xl:p-10">
                 <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                    <h2 className="text-xl font-bold text-gray-900">Quản lý khóa học</h2>
+                    <h2 className="text-xl font-bold text-gray-900">{t('admin.manageCourses.title')}</h2>
                     <div className="relative">
                          <MagnifyingGlassIcon className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
                          <input
                             type="text"
-                            placeholder="Tìm kiếm khóa học/giảng viên..."
+                            placeholder={t('admin.manageCourses.searchCourses')}
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                             className="w-full rounded-full border border-gray-200 bg-white py-2.5 pl-10 pr-4 text-sm font-medium outline-none focus:border-[#5a2dff] sm:w-80"
@@ -222,7 +224,7 @@ export default function AdminManageCourse() {
                         }`}
                     >
                         <BookOpenIcon className="h-4 w-4" />
-                        Tất cả khóa học
+                        {t('admin.manageCourses.tabs.allCourses')}
                         <span className="ml-2 rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600">
                             {loading && activeTab === 'published' ? '...' : publishedCount}
                         </span>
@@ -236,7 +238,7 @@ export default function AdminManageCourse() {
                         }`}
                     >
                         <ClockIcon className="h-4 w-4" />
-                        Duyệt khóa học
+                        {t('admin.manageCourses.tabs.pending')}
                         <span className="ml-2 rounded-full bg-red-100 px-2 py-0.5 text-xs text-red-600">
                             {loading && activeTab === 'pending' ? '...' : pendingCount}
                         </span>
@@ -249,21 +251,21 @@ export default function AdminManageCourse() {
                         <table className="w-full text-left">
                             <thead className="bg-[#f7f9fc] border-b border-gray-100">
                                 <tr>
-                                    <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-gray-500 w-[33%]">Khóa học</th>
-                                    <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-gray-500 w-[18%]">Giảng viên</th>
-                                    <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-gray-500 w-[12%]">Giá</th>
+                                    <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-gray-500 w-[33%]">{t('admin.manageCourses.tableHeaders.course')}</th>
+                                    <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-gray-500 w-[18%]">{t('admin.manageCourses.tableHeaders.instructor')}</th>
+                                    <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-gray-500 w-[12%]">{t('admin.manageCourses.tableHeaders.price')}</th>
                                     {activeTab === 'published' && (
-                                        <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-gray-500 w-[12%]">Đánh giá</th>
+                                        <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-gray-500 w-[12%]">{t('admin.manageCourses.tableHeaders.rating')}</th>
                                     )}
-                                    <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-gray-500 w-[12%]">Ngày tạo</th>
-                                    <th className="px-6 py-4 text-end text-xs font-semibold uppercase tracking-wider text-gray-500 w-[13%]">Hành động</th>
+                                    <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-gray-500 w-[12%]">{t('admin.manageCourses.tableHeaders.submitDate')}</th>
+                                    <th className="px-6 py-4 text-end text-xs font-semibold uppercase tracking-wider text-gray-500 w-[13%]">{t('admin.manageCourses.tableHeaders.actions')}</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-100 text-sm">
                                 {loading ? (
                                     <tr>
                                         <td colSpan={activeTab === 'published' ? 6 : 5} className="px-6 py-12 text-center text-gray-500">
-                                            Đang tải dữ liệu...
+                                            {t('admin.manageCourses.loading')}
                                         </td>
                                     </tr>
                                 ) : filteredCourses.length > 0 ? (
@@ -277,10 +279,10 @@ export default function AdminManageCourse() {
                                                     <div>
                                                         <p className="font-semibold text-gray-900 line-clamp-1 max-w-[200px]" title={course.title}>{course.title}</p>
                                                         {activeTab === 'published' && course.totalStudents !== undefined && (
-                                                            <p className="text-xs text-gray-500">{course.totalStudents} học viên</p>
+                                                            <p className="text-xs text-gray-500">{course.totalStudents} {t('admin.manageCourses.status.students')}</p>
                                                         )}
                                                         {activeTab === 'pending' && (
-                                                            <p className="text-xs text-gray-500">{course.lessons} bài học</p>
+                                                            <p className="text-xs text-gray-500">{course.lessons} {t('admin.manageCourses.status.lessons')}</p>
                                                         )}
                                                     </div>
                                                 </div>
@@ -289,7 +291,7 @@ export default function AdminManageCourse() {
                                             <td className="px-6 py-4 font-semibold text-gray-900">
                                                 {course.price > 0
                                                     ? `${course.price.toLocaleString('vi-VN')}đ`
-                                                    : <span className="text-green-600 font-medium">Miễn phí</span>
+                                                    : <span className="text-green-600 font-medium">{t('admin.manageCourses.status.free')}</span>
                                                 }
                                             </td>
                                             {activeTab === 'published' && (
@@ -300,7 +302,7 @@ export default function AdminManageCourse() {
                                                             <span className="font-semibold text-gray-900">{course.averageRating.toFixed(1)}</span>
                                                         </div>
                                                     ) : (
-                                                        <span className="text-xs text-gray-400">Chưa có</span>
+                                                        <span className="text-xs text-gray-400">{t('admin.manageCourses.status.noRating')}</span>
                                                     )}
                                                 </td>
                                             )}
@@ -310,7 +312,7 @@ export default function AdminManageCourse() {
                                                     <button
                                                         onClick={() => navigate(`/user/course-progress/${course.id}`)}
                                                         className="inline-flex items-center justify-center rounded-lg bg-blue-50 p-2 text-blue-600 transition-colors hover:bg-blue-100"
-                                                        title="Xem chi tiết"
+                                                        title={t('admin.manageCourses.actions.viewDetails')}
                                                     >
                                                         <EyeIcon className="h-5 w-5" />
                                                     </button>
@@ -319,14 +321,14 @@ export default function AdminManageCourse() {
                                                             <button
                                                                 onClick={() => openApproveModal(course)}
                                                                 className="group relative inline-flex items-center justify-center rounded-lg bg-green-50 p-2 text-green-600 transition-colors hover:bg-green-100"
-                                                                title="Duyệt khóa học"
+                                                                title={t('admin.manageCourses.actions.approve')}
                                                             >
                                                                 <CheckCircleIcon className="h-5 w-5" />
                                                             </button>
                                                             <button
                                                                 onClick={() => openRejectModal(course)}
                                                                 className="group relative inline-flex items-center justify-center rounded-lg bg-red-50 p-2 text-red-600 transition-colors hover:bg-red-100"
-                                                                title="Từ chối"
+                                                                title={t('admin.manageCourses.actions.reject')}
                                                             >
                                                                 <XCircleIcon className="h-5 w-5" />
                                                             </button>
@@ -335,7 +337,7 @@ export default function AdminManageCourse() {
                                                         <button
                                                             onClick={() => openDeleteModal(course)}
                                                             className="group relative inline-flex items-center justify-center rounded-lg bg-red-50 p-2 text-red-600 transition-colors hover:bg-red-100"
-                                                            title="Xóa khóa học"
+                                                            title={t('admin.manageCourses.actions.delete')}
                                                         >
                                                             <TrashIcon className="h-5 w-5" />
                                                         </button>
@@ -351,8 +353,8 @@ export default function AdminManageCourse() {
                                                 <div className="rounded-full bg-gray-50 p-4 mb-3">
                                                     <MagnifyingGlassIcon className="h-8 w-8 text-gray-300"/>
                                                 </div>
-                                                <p className="text-base font-medium">Không có yêu cầu nào đang chờ duyệt</p>
-                                                <p className="text-sm text-gray-400 mt-1">Tất cả đã được xử lý</p>
+                                                <p className="text-base font-medium">{t('admin.manageCourses.empty.noPending')}</p>
+                                                <p className="text-sm text-gray-400 mt-1">{t('admin.manageCourses.empty.allProcessed')}</p>
                                             </div>
                                         </td>
                                     </tr>
@@ -378,9 +380,9 @@ export default function AdminManageCourse() {
                         <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[#ede8ff] mx-auto">
                             <CheckCircleIcon className="h-8 w-8 text-[#5a2dff]" />
                         </div>
-                        <h3 className="text-xl font-bold text-center text-gray-900">Xác nhận duyệt</h3>
+                        <h3 className="text-xl font-bold text-center text-gray-900">{t('admin.manageCourses.modals.confirmApproval')}</h3>
                         <p className="mt-2 text-center text-gray-500 leading-relaxed">
-                            Bạn có chắc chắn muốn duyệt khóa học <br/> <span className="font-bold text-gray-900">{selectedCourse?.title}</span>?
+                            {t('admin.manageCourses.modals.approveConfirm', { title: selectedCourse?.title })}
                         </p>
                         <div className="mt-8 flex justify-center gap-3">
                             <button
@@ -388,14 +390,14 @@ export default function AdminManageCourse() {
                                 disabled={isProcessing}
                                 className="min-w-[100px] rounded-lg border border-gray-200 bg-white px-5 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 focus:outline-none transition-all disabled:opacity-50"
                             >
-                                Hủy bỏ
+                                {t('admin.manageCourses.modals.cancel')}
                             </button>
                             <button
                                 onClick={handleConfirmApprove}
                                 disabled={isProcessing}
                                 className="min-w-[100px] rounded-lg bg-[#5a2dff] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#4a22e8] focus:outline-none shadow-md shadow-[#c4b5fd] transition-all disabled:opacity-70"
                             >
-                                {isProcessing ? 'Đang xử lý...' : 'Duyệt ngay'}
+                                {isProcessing ? t('admin.manageCourses.modals.processing') : t('admin.manageCourses.modals.approveNow')}
                             </button>
                         </div>
                     </div>
@@ -408,16 +410,16 @@ export default function AdminManageCourse() {
                         <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[#ede8ff] mx-auto">
                             <XMarkIcon className="h-8 w-8 text-[#5a2dff]" />
                         </div>
-                        <h3 className="text-xl font-bold text-center text-gray-900">Từ chối khóa học</h3>
+                        <h3 className="text-xl font-bold text-center text-gray-900">{t('admin.manageCourses.modals.rejectCourse')}</h3>
                         <p className="mt-2 text-center text-sm text-gray-500 leading-relaxed">
-                            Vui lòng nhập lý do từ chối cho khóa học <br/> <span className="font-bold text-gray-900">{selectedCourse?.title}</span>
+                            {t('admin.manageCourses.modals.rejectReason', { title: selectedCourse?.title })}
                         </p>
                         <div className="mt-5">
-                            <label className="mb-2 block text-sm font-semibold text-gray-700">Lý do từ chối <span className="text-[#5a2dff]">*</span></label>
+                            <label className="mb-2 block text-sm font-semibold text-gray-700">{t('admin.manageCourses.modals.reasonRequired')} <span className="text-[#5a2dff]">*</span></label>
                             <textarea
                                 className="w-full rounded-xl border border-gray-200 p-3 text-sm focus:border-[#5a2dff] focus:ring-1 focus:ring-[#5a2dff] outline-none transition-all shadow-sm placeholder:text-gray-400"
                                 rows={4}
-                                placeholder="Nhập lý do chi tiết..."
+                                placeholder={t('admin.manageCourses.modals.reasonPlaceholder')}
                                 value={rejectReason}
                                 onChange={(e) => setRejectReason(e.target.value)}
                             />
@@ -428,14 +430,14 @@ export default function AdminManageCourse() {
                                 disabled={isProcessing}
                                 className="rounded-lg border border-gray-200 bg-white px-5 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 focus:outline-none transition-all disabled:opacity-50"
                             >
-                                Hủy bỏ
+                                {t('admin.manageCourses.modals.cancel')}
                             </button>
                             <button
                                 onClick={handleConfirmReject}
                                 disabled={isProcessing}
                                 className="rounded-lg bg-[#5a2dff] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#4a22e8] focus:outline-none shadow-md shadow-[#c4b5fd] transition-all disabled:opacity-70"
                             >
-                                {isProcessing ? 'Đang xử lý...' : 'Xác nhận từ chối'}
+                                {isProcessing ? t('admin.manageCourses.modals.processing') : t('admin.manageCourses.modals.confirmReject')}
                             </button>
                         </div>
                     </div>
@@ -448,22 +450,22 @@ export default function AdminManageCourse() {
                         <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[#ede8ff] mx-auto">
                             <TrashIcon className="h-8 w-8 text-[#5a2dff]" />
                         </div>
-                        <h3 className="text-xl font-bold text-center text-gray-900">Xóa khóa học?</h3>
+                        <h3 className="text-xl font-bold text-center text-gray-900">{t('admin.manageCourses.modals.deleteCourse')}</h3>
                         <p className="mt-2 text-center text-gray-500 leading-relaxed">
-                            Hành động này không thể hoàn tác. Bạn có chắc chắn muốn xóa khóa học <br/> <span className="font-bold text-gray-900">{selectedCourse?.title}</span>?
+                            {t('admin.manageCourses.modals.deleteConfirm', { title: selectedCourse?.title })}
                         </p>
                         <div className="mt-8 flex justify-center gap-3">
                             <button
                                 onClick={closeModals}
                                 className="rounded-lg border border-gray-200 bg-white px-5 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 focus:outline-none transition-all"
                             >
-                                Hủy bỏ
+                                {t('admin.manageCourses.modals.cancel')}
                             </button>
                             <button
                                 onClick={handleConfirmDelete}
                                 className="rounded-lg bg-[#5a2dff] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#4a22e8] focus:outline-none shadow-md shadow-[#c4b5fd] transition-all"
                             >
-                                Xóa vĩnh viễn
+                                {t('admin.manageCourses.modals.deleteForever')}
                             </button>
                         </div>
                     </div>
@@ -479,6 +481,7 @@ function Pagination({ current, total, totalItems, onChange }: {
     totalItems?: number;
     onChange: (page: number) => void;
 }) {
+    const { t } = useTranslation();
     const pages: (number | '...')[] = [];
     if (total <= 7) {
         for (let i = 1; i <= total; i++) pages.push(i);
@@ -493,9 +496,9 @@ function Pagination({ current, total, totalItems, onChange }: {
     return (
         <div className="flex items-center justify-between border-t border-gray-100 px-6 py-3 bg-white">
             <p className="text-sm text-gray-500">
-                Trang <span className="font-semibold text-gray-700">{current}</span> / {total}
+                {t('admin.manageCourses.pagination.page')} <span className="font-semibold text-gray-700">{current}</span> / {total}
                 {totalItems !== undefined && (
-                    <>&nbsp;·&nbsp; Tổng <span className="font-semibold text-gray-700">{totalItems}</span> khóa học</>
+                    <>&nbsp;·&nbsp; {t('admin.manageCourses.pagination.total')} <span className="font-semibold text-gray-700">{totalItems}</span> {t('admin.manageCourses.pagination.courses')}</>
                 )}
             </p>
             <div className="flex items-center gap-1">

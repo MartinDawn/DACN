@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import AdminLayout from './layout/layout';
 import { useDashboardStats } from './hooks/useDashboardStats';
+import { useTranslation } from 'react-i18next';
 
 // Icons - Dashboard Specific
 const UserIcon = () => (<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>);
@@ -40,6 +41,7 @@ const CardDataStats = ({ title, total, rate, levelUp, children }: any) => {
 };
 
 export default function AdminDashboard() {
+  const { t } = useTranslation();
   const { stats, loading } = useDashboardStats();
   
   // Helper tính chiều cao biểu đồ cột cho userGrowth
@@ -55,34 +57,34 @@ export default function AdminDashboard() {
           
           {/* Stats Cards */}
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-6 xl:grid-cols-4 2xl:gap-7.5">
-             <CardDataStats 
-                title="Tổng học viên" 
-                total={loading ? "..." : stats?.stats?.totalStudents?.toLocaleString() || "0"} 
-                rate="--" 
+             <CardDataStats
+                title={t('admin.dashboard.totalStudents')}
+                total={loading ? "..." : stats?.stats?.totalStudents?.toLocaleString() || "0"}
+                rate="--"
                 levelUp={true}
              >
                  <UserIcon />
              </CardDataStats>
-             <CardDataStats 
-                title="Giảng viên" 
-                total={loading ? "..." : stats?.stats?.totalInstructors?.toLocaleString() || "0"} 
-                rate="--" 
+             <CardDataStats
+                title={t('admin.dashboard.instructors')}
+                total={loading ? "..." : stats?.stats?.totalInstructors?.toLocaleString() || "0"}
+                rate="--"
                 levelUp={true}
              >
                  <AcademicCapIcon />
              </CardDataStats>
-             <CardDataStats 
-                title="Khóa học đã duyệt" 
-                total={loading ? "..." : stats?.stats?.approvedCourses?.toLocaleString() || "0"} 
-                rate="--" 
+             <CardDataStats
+                title={t('admin.dashboard.approvedCourses')}
+                total={loading ? "..." : stats?.stats?.approvedCourses?.toLocaleString() || "0"}
+                rate="--"
                 levelUp={true}
              >
                  <CheckCircleIcon />
              </CardDataStats>
-             <CardDataStats 
-                title="Chờ xét duyệt" 
-                total={loading ? "..." : stats?.stats?.pendingCourses?.toLocaleString() || "0"} 
-                rate="--" 
+             <CardDataStats
+                title={t('admin.dashboard.pendingApproval')}
+                total={loading ? "..." : stats?.stats?.pendingCourses?.toLocaleString() || "0"}
+                rate="--"
                 levelUp={false}
              >
                  <ClockIcon />
@@ -95,15 +97,15 @@ export default function AdminDashboard() {
               <div className="col-span-12 xl:col-span-8 rounded-3xl border border-gray-200 bg-white p-6 shadow-[0_25px_60px_rgba(15,23,42,0.08)]">
                   <div className="flex justify-between mb-4">
                        <div>
-                           <h4 className="text-xl font-bold text-black">Thống kê Học viên & Giảng viên</h4>
-                           <p className="text-xs text-gray-500">Số lượng Học viên vs Giảng viên mới theo tháng {new Date().getFullYear()}</p>
+                           <h4 className="text-xl font-bold text-black">{t('admin.dashboard.userInstructorStats')}</h4>
+                           <p className="text-xs text-gray-500">{t('admin.dashboard.userInstructorStatsDesc', { year: new Date().getFullYear() })}</p>
                        </div>
                        <div className="flex items-center gap-4">
                            <div className="flex items-center gap-2 text-xs">
-                               <span className="block w-3 h-3 rounded-full bg-[#5a2dff]"></span> Học viên
+                               <span className="block w-3 h-3 rounded-full bg-[#5a2dff]"></span> {t('admin.dashboard.students')}
                            </div>
                            <div className="flex items-center gap-2 text-xs">
-                               <span className="block w-3 h-3 rounded-full bg-green-500"></span> Giảng viên
+                               <span className="block w-3 h-3 rounded-full bg-green-500"></span> {t('admin.dashboard.instructorsLabel')}
                            </div>
                        </div>
                   </div>
@@ -120,24 +122,24 @@ export default function AdminDashboard() {
                                     {/* TOOLTIP: Visible on group hover */}
                                     <div className="absolute bottom-full mb-3 left-1/2 -translate-x-1/2 hidden group-hover:block z-20 pointer-events-none">
                                         <div className="relative w-40 rounded-xl bg-gray-900 p-3 text-xs text-white shadow-[0_10px_20px_rgba(0,0,0,0.2)]">
-                                            <p className="mb-2 border-b border-gray-700 pb-1 font-bold text-gray-300">Tháng {d.month}</p>
-                                            
+                                            <p className="mb-2 border-b border-gray-700 pb-1 font-bold text-gray-300">{t('admin.dashboard.month')} {d.month}</p>
+
                                             <div className="flex justify-between items-center mb-1">
                                                 <div className="flex items-center gap-1.5">
                                                     <span className="h-2 w-2 rounded-full bg-[#5a2dff] shadow-[0_0_5px_#5a2dff]"></span>
-                                                    <span className="text-gray-400">Học viên:</span>
+                                                    <span className="text-gray-400">{t('admin.dashboard.students')}:</span>
                                                 </div>
                                                 <span className="font-semibold">{d.newStudents}</span>
                                             </div>
-                                            
+
                                             <div className="flex justify-between items-center">
                                                 <div className="flex items-center gap-1.5">
                                                     <span className="h-2 w-2 rounded-full bg-green-500 shadow-[0_0_5px_#22c55e]"></span>
-                                                    <span className="text-gray-400">Giảng viên:</span>
+                                                    <span className="text-gray-400">{t('admin.dashboard.instructorsLabel')}:</span>
                                                 </div>
                                                 <span className="font-semibold text-green-400">{d.newInstructors}</span>
                                             </div>
-                                            
+
                                             <div className="absolute top-full left-1/2 -ml-1.5 -mt-1 h-3 w-3 -translate-y-1/2 rotate-45 bg-gray-900"></div>
                                         </div>
                                     </div>
@@ -155,15 +157,15 @@ export default function AdminDashboard() {
                                     </span>
                                 </div>
                             );
-                        }) : <p className="w-full text-center py-20 text-gray-400">Đang tải dữ liệu...</p>}
+                        }) : <p className="w-full text-center py-20 text-gray-400">{t('admin.dashboard.loading')}</p>}
                   </div>
               </div>
 
                {/* Chart 2: Revenue */}
                <div className="col-span-12 xl:col-span-4 rounded-3xl border border-gray-200 bg-white p-6 shadow-[0_25px_60px_rgba(15,23,42,0.08)] flex flex-col justify-between group/chart2">
                   <div className="mb-4 flex flex-col justify-between">
-                       <h4 className="text-xl font-bold text-black">Tổng Doanh thu</h4>
-                       <p className="text-sm font-medium text-gray-500">Doanh thu năm nay</p>
+                       <h4 className="text-xl font-bold text-black">{t('admin.dashboard.totalRevenue')}</h4>
+                       <p className="text-sm font-medium text-gray-500">{t('admin.dashboard.revenueThisYear')}</p>
                   </div>
                   
                   <div className="relative h-64 w-full mt-4">
@@ -208,7 +210,7 @@ export default function AdminDashboard() {
                   
                   <div className="mt-6 grid grid-cols-1 gap-4 text-center">
                        <div className="rounded-2xl bg-purple-50 p-4 transition-transform hover:scale-105">
-                           <span className="block text-xs font-semibold text-gray-500 uppercase tracking-wider">Tổng doanh thu năm</span>
+                           <span className="block text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('admin.dashboard.totalRevenueYear')}</span>
                            <span className="text-xl font-bold text-[#5a2dff]">{totalRevenue.toLocaleString()} đ</span>
                        </div>
                   </div>
@@ -223,7 +225,7 @@ export default function AdminDashboard() {
                    <div className="mb-6 flex items-center justify-between">
                        <div className="flex items-center gap-3">
                            <div className="p-2 bg-yellow-50 text-yellow-600 rounded-lg"><TrendingUpIcon /></div>
-                           <h4 className="text-xl font-bold text-black">Khóa học thịnh hành</h4>
+                           <h4 className="text-xl font-bold text-black">{t('admin.dashboard.trendingCourses')}</h4>
                        </div>
                    </div>
                    
@@ -243,11 +245,11 @@ export default function AdminDashboard() {
                                </div>
                                <div className="text-right min-w-[100px]">
                                    <span className="block font-bold text-gray-900">{course.revenue.toLocaleString()}đ</span>
-                                   <span className="text-xs text-gray-500">{course.salesCount} lượt bán</span>
+                                   <span className="text-xs text-gray-500">{course.salesCount} {t('admin.dashboard.sales')}</span>
                                </div>
                            </div>
                        ))}
-                       {!stats?.trendingCourses?.length && !loading && <span className="text-gray-500 text-sm">Chưa có dữ liệu khóa học.</span>}
+                       {!stats?.trendingCourses?.length && !loading && <span className="text-gray-500 text-sm">{t('admin.dashboard.noCourseData')}</span>}
                    </div>
               </div>
 
@@ -255,7 +257,7 @@ export default function AdminDashboard() {
               <div className="col-span-12 xl:col-span-4 rounded-3xl border border-gray-200 bg-white p-6 shadow-[0_25px_60px_rgba(15,23,42,0.08)]">
                    <div className="mb-6 flex items-center gap-3">
                        <div className="p-2 bg-indigo-50 text-indigo-600 rounded-lg"><TagIcon /></div>
-                       <h4 className="text-xl font-bold text-black">Thẻ thịnh hành</h4>
+                       <h4 className="text-xl font-bold text-black">{t('admin.dashboard.trendingTags')}</h4>
                    </div>
 
                    <div className="flex flex-wrap gap-2">
@@ -269,9 +271,9 @@ export default function AdminDashboard() {
 
                    {/* Mini Insight */}
                    <div className="mt-8 rounded-2xl bg-gradient-to-br from-indigo-500 to-[#5a2dff] p-5 text-white"> {/* Đổi sang tím 5a2dff */}
-                       <h5 className="font-bold text-lg mb-1">Thông tin tuần</h5>
-                       <p className="text-white/80 text-sm mb-4">Các thẻ lập trình đã tăng 25% trong tuần này.</p>
-                       <button className="w-full rounded-xl bg-white/20 py-2 text-sm font-semibold hover:bg-white/30 backdrop-blur-sm">Xem báo cáo</button>
+                       <h5 className="font-bold text-lg mb-1">{t('admin.dashboard.weeklyInfo')}</h5>
+                       <p className="text-white/80 text-sm mb-4">{t('admin.dashboard.weeklyInfoDesc')}</p>
+                       <button className="w-full rounded-xl bg-white/20 py-2 text-sm font-semibold hover:bg-white/30 backdrop-blur-sm">{t('admin.dashboard.viewReport')}</button>
                    </div>
               </div>
           </div>

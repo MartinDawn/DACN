@@ -19,7 +19,8 @@
     "selectLanguage": "Chọn ngôn ngữ",
     "overview": "Tổng quan",
     "downloadCertificate": "Tải chứng chỉ",
-    "certification": "Chứng chỉ"
+    "certification": "Chứng chỉ",
+    "confirmLogout": "Bạn có chắc chắn muốn đăng xuất khỏi hệ thống quản trị không?"
   },
   "navigation": {
     "home": "Trang chủ",
@@ -95,12 +96,232 @@
     "paymentError": "Lỗi thanh toán!"
   },
   "admin": {
-    "dashboard": "Bảng điều khiển",
+    "dashboardTitle": "Bảng điều khiển",
     "users": "Người dùng",
     "courses": "Quản lý khóa học",
     "statistics": "Thống kê",
     "reports": "Báo cáo",
-    "settings": "Cài đặt hệ thống"
+    "settings": "Cài đặt hệ thống",
+    "categories": "Danh mục",
+    "others": "Khác",
+    "userManagement": "Quản lý người dùng",
+    "courseManagement": "Quản lý khóa học",
+    "forms": "Biểu mẫu",
+    "tables": "Bảng",
+    "charts": "Biểu đồ",
+    "ui": "Giao diện UI",
+    "notifications": "Thông báo",
+    "searchPlaceholder": "Tìm kiếm hoặc nhập lệnh...",
+    "administrator": "Quản trị viên",
+    "dashboard": {
+      "totalStudents": "Tổng học viên",
+      "instructors": "Giảng viên",
+      "approvedCourses": "Khóa học đã duyệt",
+      "pendingApproval": "Chờ xét duyệt",
+      "userInstructorStats": "Thống kê Học viên & Giảng viên",
+      "userInstructorStatsDesc": "Số lượng Học viên vs Giảng viên mới theo tháng {year}",
+      "students": "Học viên",
+      "instructorsLabel": "Giảng viên",
+      "month": "Tháng",
+      "totalRevenue": "Tổng Doanh thu",
+      "revenueThisYear": "Doanh thu năm nay",
+      "totalRevenueYear": "Tổng doanh thu năm",
+      "trendingCourses": "Khóa học thịnh hành",
+      "trendingTags": "Thẻ thịnh hành",
+      "sales": "lượt bán",
+      "weeklyInfo": "Thông tin tuần",
+      "weeklyInfoDesc": "Các thẻ lập trình đã tăng 25% trong tuần này.",
+      "viewReport": "Xem báo cáo",
+      "loading": "Đang tải dữ liệu...",
+      "noCourseData": "Chưa có dữ liệu khóa học."
+    },
+    "manageUsers": {
+      "title": "Quản lý người dùng",
+      "searchUsers": "Tìm kiếm...",
+      "tabs": {
+        "all": "Tất cả",
+        "instructor": "Giảng viên",
+        "pending": "Duyệt giảng viên"
+      },
+      "tableHeaders": {
+        "user": "Người dùng",
+        "role": "Vai trò",
+        "username": "Tên đăng nhập",
+        "joinDate": "Ngày gia nhập",
+        "status": "Trạng thái",
+        "actions": "Hành động"
+      },
+      "roles": {
+        "instructor": "Giảng viên",
+        "student": "Học viên"
+      },
+      "status": {
+        "active": "Hoạt động",
+        "banned": "Đã chặn",
+        "pending": "Chờ duyệt"
+      },
+      "actions": {
+        "viewDetails": "Xem chi tiết",
+        "banUser": "Chặn người dùng",
+        "unbanUser": "Bỏ chặn",
+        "approve": "Duyệt",
+        "reject": "Từ chối",
+        "close": "Đóng"
+      },
+      "modals": {
+        "banUser": "Chặn người dùng?",
+        "unbanUser": "Bỏ chặn người dùng?",
+        "banConfirm": "Bạn có chắc chắn muốn chặn \"{name}\"? Người dùng sẽ không thể đăng nhập.",
+        "unbanConfirm": "Bạn có chắc chắn muốn bỏ chặn \"{name}\"?",
+        "approveRequest": "Duyệt yêu cầu?",
+        "rejectRequest": "Từ chối yêu cầu?",
+        "approveConfirm": "Duyệt yêu cầu của \"{name}\"? Họ sẽ được cấp quyền giảng viên.",
+        "rejectConfirm": "Từ chối yêu cầu của \"{name}\"?",
+        "banNow": "Chặn ngay",
+        "unbanNow": "Bỏ chặn ngay",
+        "confirmApprove": "Xác nhận duyệt",
+        "confirmReject": "Xác nhận từ chối",
+        "processing": "Đang xử lý...",
+        "cancel": "Hủy bỏ"
+      },
+      "requestDetails": {
+        "experience": "Kinh nghiệm",
+        "expertise": "Chuyên môn",
+        "certificate": "Chứng chỉ",
+        "submitDate": "Ngày gửi",
+        "introduction": "Giới thiệu",
+        "socialLinks": "Liên kết mạng xã hội"
+      },
+      "userDetails": {
+        "username": "Tên đăng nhập",
+        "role": "Vai trò",
+        "userId": "ID",
+        "joinDate": "Ngày tham gia",
+        "status": "Trạng thái"
+      },
+      "empty": {
+        "noUsers": "Không tìm thấy người dùng nào",
+        "changeSearch": "Thử thay đổi từ khóa tìm kiếm",
+        "noPendingRequests": "Không có yêu cầu nào đang chờ duyệt",
+        "allProcessed": "Tất cả yêu cầu đã được xử lý"
+      },
+      "pagination": {
+        "users": "người dùng",
+        "requests": "yêu cầu"
+      },
+      "requestLabels": {
+        "applicant": "Người yêu cầu",
+        "expertise": "Chuyên môn",
+        "experience": "Kinh nghiệm",
+        "submitDate": "Ngày gửi",
+        "status": "Trạng thái"
+      }
+    },
+    "manageCourses": {
+      "title": "Quản lý khóa học",
+      "searchCourses": "Tìm kiếm khóa học/giảng viên...",
+      "tabs": {
+        "allCourses": "Tất cả khóa học",
+        "pending": "Duyệt khóa học"
+      },
+      "tableHeaders": {
+        "course": "Khóa học",
+        "instructor": "Giảng viên",
+        "price": "Giá",
+        "rating": "Đánh giá",
+        "submitDate": "Ngày tạo",
+        "actions": "Hành động"
+      },
+      "status": {
+        "free": "Miễn phí",
+        "students": "học viên",
+        "lessons": "bài học",
+        "noRating": "Chưa có"
+      },
+      "actions": {
+        "viewDetails": "Xem chi tiết",
+        "approve": "Duyệt khóa học",
+        "reject": "Từ chối",
+        "delete": "Xóa khóa học"
+      },
+      "modals": {
+        "confirmApproval": "Xác nhận duyệt",
+        "rejectCourse": "Từ chối khóa học",
+        "deleteCourse": "Xóa khóa học?",
+        "approveConfirm": "Bạn có chắc chắn muốn duyệt khóa học \"{title}\"?",
+        "rejectReason": "Vui lòng nhập lý do từ chối cho khóa học \"{title}\"",
+        "deleteConfirm": "Hành động này không thể hoàn tác. Bạn có chắc chắn muốn xóa khóa học \"{title}\"?",
+        "reasonRequired": "Lý do từ chối",
+        "reasonPlaceholder": "Nhập lý do chi tiết...",
+        "approveNow": "Duyệt ngay",
+        "confirmReject": "Xác nhận từ chối",
+        "deleteForever": "Xóa vĩnh viễn",
+        "processing": "Đang xử lý...",
+        "cancel": "Hủy bỏ"
+      },
+      "empty": {
+        "noPending": "Không có yêu cầu nào đang chờ duyệt",
+        "allProcessed": "Tất cả đã được xử lý"
+      },
+      "pagination": {
+        "courses": "khóa học",
+        "page": "Trang",
+        "total": "Tổng"
+      },
+      "loading": "Đang tải dữ liệu..."
+    },
+    "notificationsPage": {
+      "title": "Thông báo",
+      "subtitle": "Quản lý và theo dõi tất cả thông báo hệ thống.",
+      "unread": "chưa đọc",
+      "markAllRead": "Đánh dấu tất cả đã đọc",
+      "tabs": {
+        "all": "Tất cả",
+        "unread": "Chưa đọc",
+        "read": "Đã đọc"
+      },
+      "types": {
+        "courseRequest": "Yêu cầu duyệt khóa học",
+        "instructorRequest": "Yêu cầu giảng viên",
+        "system": "Hệ thống"
+      },
+      "status": {
+        "new": "Mới"
+      },
+      "actions": {
+        "review": "Xét duyệt",
+        "markRead": "Đánh dấu đã đọc",
+        "delete": "Xóa thông báo"
+      },
+      "timeAgo": {
+        "justNow": "Vừa xong",
+        "minutesAgo": "{minutes} phút trước",
+        "hoursAgo": "{hours} giờ trước",
+        "oneDayAgo": "1 ngày trước",
+        "daysAgo": "{days} ngày trước"
+      },
+      "stats": {
+        "title": "Thống kê",
+        "total": "Tổng thông báo",
+        "unread": "Chưa đọc",
+        "read": "Đã đọc"
+      },
+      "quickActions": {
+        "title": "Hành động nhanh",
+        "markAllRead": "Đánh dấu tất cả đã đọc",
+        "refresh": "Tải lại thông báo"
+      },
+      "empty": "Không có thông báo nào.",
+      "loading": "Đang tải thông báo...",
+      "tryAgain": "Thử lại",
+      "clickToMarkRead": "Nhấn vào thông báo để đánh dấu đã đọc"
+    },
+    "errors": {
+      "noId": "Không tìm thấy ID yêu cầu. Vui lòng thử lại.",
+      "approve": "Lỗi khi duyệt yêu cầu. Vui lòng thử lại.",
+      "reject": "Lỗi khi từ chối yêu cầu. Vui lòng thử lại.",
+      "reasonRequired": "Vui lòng nhập lý do từ chối"
+    }
   },
   "instructor": {
     "dashboard": "Giảng dạy",
@@ -1009,6 +1230,11 @@
     "alreadyRead": "Đã đọc",
     "delete": "Xóa",
     "unreadBadge": "Chưa đọc",
+    "unread": "chưa đọc",
+    "courseRequest": "Yêu cầu duyệt khóa học",
+    "instructorRequest": "Yêu cầu trở thành giảng viên",
+    "review": "Xét duyệt",
+    "markAsRead": "Đánh dấu đã đọc",
     "stats": {
       "title": "Thống kê nhanh",
       "total": "Tổng thông báo",

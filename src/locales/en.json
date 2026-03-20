@@ -19,7 +19,8 @@
     "selectLanguage": "Select Language",
     "overview": "Overview",
     "downloadCertificate": "Download Certificate",
-    "certification": "Certificate"
+    "certification": "Certificate",
+    "confirmLogout": "Are you sure you want to logout from the admin system?"
   },
   "navigation": {
     "home": "Home",
@@ -95,12 +96,232 @@
     "paymentError": "Payment Error!"
   },
   "admin": {
-    "dashboard": "Dashboard",
+    "dashboardTitle": "Dashboard",
     "users": "Users",
     "courses": "Manage Courses",
     "statistics": "Statistics",
     "reports": "Reports",
-    "settings": "System Settings"
+    "settings": "System Settings",
+    "categories": "Categories",
+    "others": "Others",
+    "userManagement": "User Management",
+    "courseManagement": "Course Management",
+    "forms": "Forms",
+    "tables": "Tables",
+    "charts": "Charts",
+    "ui": "UI Interface",
+    "notifications": "Notifications",
+    "searchPlaceholder": "Search or enter command...",
+    "administrator": "Administrator",
+    "dashboard": {
+      "totalStudents": "Total Students",
+      "instructors": "Instructors",
+      "approvedCourses": "Approved Courses",
+      "pendingApproval": "Pending Approval",
+      "userInstructorStats": "Student & Instructor Statistics",
+      "userInstructorStatsDesc": "Number of New Students vs Instructors by month {year}",
+      "students": "Students",
+      "instructorsLabel": "Instructors",
+      "month": "Month",
+      "totalRevenue": "Total Revenue",
+      "revenueThisYear": "Revenue this year",
+      "totalRevenueYear": "Total revenue this year",
+      "trendingCourses": "Trending Courses",
+      "trendingTags": "Trending Tags",
+      "sales": "sales",
+      "weeklyInfo": "Weekly Info",
+      "weeklyInfoDesc": "Programming tags increased by 25% this week.",
+      "viewReport": "View Report",
+      "loading": "Loading data...",
+      "noCourseData": "No course data available."
+    },
+    "manageUsers": {
+      "title": "User Management",
+      "searchUsers": "Search...",
+      "tabs": {
+        "all": "All",
+        "instructor": "Instructors",
+        "pending": "Instructor Approval"
+      },
+      "tableHeaders": {
+        "user": "User",
+        "role": "Role",
+        "username": "Username",
+        "joinDate": "Join Date",
+        "status": "Status",
+        "actions": "Actions"
+      },
+      "roles": {
+        "instructor": "Instructor",
+        "student": "Student"
+      },
+      "status": {
+        "active": "Active",
+        "banned": "Banned",
+        "pending": "Pending"
+      },
+      "actions": {
+        "viewDetails": "View Details",
+        "banUser": "Ban User",
+        "unbanUser": "Unban",
+        "approve": "Approve",
+        "reject": "Reject",
+        "close": "Close"
+      },
+      "modals": {
+        "banUser": "Ban User?",
+        "unbanUser": "Unban User?",
+        "banConfirm": "Are you sure you want to ban \"{name}\"? The user will not be able to log in.",
+        "unbanConfirm": "Are you sure you want to unban \"{name}\"?",
+        "approveRequest": "Approve Request?",
+        "rejectRequest": "Reject Request?",
+        "approveConfirm": "Approve request from \"{name}\"? They will be granted instructor privileges.",
+        "rejectConfirm": "Reject request from \"{name}\"?",
+        "banNow": "Ban Now",
+        "unbanNow": "Unban Now",
+        "confirmApprove": "Confirm Approval",
+        "confirmReject": "Confirm Rejection",
+        "processing": "Processing...",
+        "cancel": "Cancel"
+      },
+      "requestDetails": {
+        "experience": "Experience",
+        "expertise": "Expertise",
+        "certificate": "Certificate",
+        "submitDate": "Submit Date",
+        "introduction": "Introduction",
+        "socialLinks": "Social Links"
+      },
+      "userDetails": {
+        "username": "Username",
+        "role": "Role",
+        "userId": "ID",
+        "joinDate": "Join Date",
+        "status": "Status"
+      },
+      "empty": {
+        "noUsers": "No users found",
+        "changeSearch": "Try changing search keywords",
+        "noPendingRequests": "No pending requests",
+        "allProcessed": "All requests have been processed"
+      },
+      "pagination": {
+        "users": "users",
+        "requests": "requests"
+      },
+      "requestLabels": {
+        "applicant": "Applicant",
+        "expertise": "Expertise",
+        "experience": "Experience",
+        "submitDate": "Submit Date",
+        "status": "Status"
+      }
+    },
+    "manageCourses": {
+      "title": "Course Management",
+      "searchCourses": "Search courses/instructors...",
+      "tabs": {
+        "allCourses": "All Courses",
+        "pending": "Course Approval"
+      },
+      "tableHeaders": {
+        "course": "Course",
+        "instructor": "Instructor",
+        "price": "Price",
+        "rating": "Rating",
+        "submitDate": "Submit Date",
+        "actions": "Actions"
+      },
+      "status": {
+        "free": "Free",
+        "students": "students",
+        "lessons": "lessons",
+        "noRating": "Not available"
+      },
+      "actions": {
+        "viewDetails": "View Details",
+        "approve": "Approve Course",
+        "reject": "Reject",
+        "delete": "Delete Course"
+      },
+      "modals": {
+        "confirmApproval": "Confirm Approval",
+        "rejectCourse": "Reject Course",
+        "deleteCourse": "Delete Course?",
+        "approveConfirm": "Are you sure you want to approve the course \"{title}\"?",
+        "rejectReason": "Please enter the reason for rejecting the course \"{title}\"",
+        "deleteConfirm": "This action cannot be undone. Are you sure you want to delete the course \"{title}\"?",
+        "reasonRequired": "Rejection Reason",
+        "reasonPlaceholder": "Enter detailed reason...",
+        "approveNow": "Approve Now",
+        "confirmReject": "Confirm Rejection",
+        "deleteForever": "Delete Forever",
+        "processing": "Processing...",
+        "cancel": "Cancel"
+      },
+      "empty": {
+        "noPending": "No pending requests",
+        "allProcessed": "All have been processed"
+      },
+      "pagination": {
+        "courses": "courses",
+        "page": "Page",
+        "total": "Total"
+      },
+      "loading": "Loading data..."
+    },
+    "notificationsPage": {
+      "title": "Notifications",
+      "subtitle": "Manage and track all system notifications.",
+      "unread": "unread",
+      "markAllRead": "Mark all as read",
+      "tabs": {
+        "all": "All",
+        "unread": "Unread",
+        "read": "Read"
+      },
+      "types": {
+        "courseRequest": "Course Approval Request",
+        "instructorRequest": "Instructor Request",
+        "system": "System"
+      },
+      "status": {
+        "new": "New"
+      },
+      "actions": {
+        "review": "Review",
+        "markRead": "Mark as read",
+        "delete": "Delete notification"
+      },
+      "timeAgo": {
+        "justNow": "Just now",
+        "minutesAgo": "{minutes} minutes ago",
+        "hoursAgo": "{hours} hours ago",
+        "oneDayAgo": "1 day ago",
+        "daysAgo": "{days} days ago"
+      },
+      "stats": {
+        "title": "Statistics",
+        "total": "Total notifications",
+        "unread": "Unread",
+        "read": "Read"
+      },
+      "quickActions": {
+        "title": "Quick Actions",
+        "markAllRead": "Mark all as read",
+        "refresh": "Refresh notifications"
+      },
+      "empty": "No notifications.",
+      "loading": "Loading notifications...",
+      "tryAgain": "Try again",
+      "clickToMarkRead": "Click notification to mark as read"
+    },
+    "errors": {
+      "noId": "Request ID not found. Please try again.",
+      "approve": "Error approving request. Please try again.",
+      "reject": "Error rejecting request. Please try again.",
+      "reasonRequired": "Please enter rejection reason"
+    }
   },
   "instructor": {
     "dashboard": "Teach",
@@ -1009,6 +1230,11 @@
     "alreadyRead": "Read",
     "delete": "Delete",
     "unreadBadge": "Unread",
+    "unread": "unread",
+    "courseRequest": "Course Approval Request",
+    "instructorRequest": "Instructor Request",
+    "review": "Review",
+    "markAsRead": "Mark as read",
     "stats": {
       "title": "Quick Stats",
       "total": "Total notifications",
