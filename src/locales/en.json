@@ -312,7 +312,7 @@
       "approvedCourses": "Approved Courses",
       "pendingApproval": "Pending Approval",
       "userInstructorStats": "Student & Instructor Statistics",
-      "userInstructorStatsDesc": "Number of New Students vs Instructors by month {year}",
+      "userInstructorStatsDesc": "Number of New Students vs Instructors by month {{year}}",
       "students": "Students",
       "instructorsLabel": "Instructors",
       "month": "Month",
@@ -364,12 +364,12 @@
       "modals": {
         "banUser": "Ban User?",
         "unbanUser": "Unban User?",
-        "banConfirm": "Are you sure you want to ban \"{name}\"? The user will not be able to log in.",
-        "unbanConfirm": "Are you sure you want to unban \"{name}\"?",
+        "banConfirm": "Are you sure you want to ban \"{{name}}\"? The user will not be able to log in.",
+        "unbanConfirm": "Are you sure you want to unban \"{{name}}\"?",
         "approveRequest": "Approve Request?",
         "rejectRequest": "Reject Request?",
-        "approveConfirm": "Approve request from \"{name}\"? They will be granted instructor privileges.",
-        "rejectConfirm": "Reject request from \"{name}\"?",
+        "approveConfirm": "Approve request from \"{{name}}\"? They will be granted instructor privileges.",
+        "rejectConfirm": "Reject request from \"{{name}}\"?",
         "banNow": "Ban Now",
         "unbanNow": "Unban Now",
         "confirmApprove": "Confirm Approval",
@@ -441,9 +441,9 @@
         "confirmApproval": "Confirm Approval",
         "rejectCourse": "Reject Course",
         "deleteCourse": "Delete Course?",
-        "approveConfirm": "Are you sure you want to approve the course \"{title}\"?",
-        "rejectReason": "Please enter the reason for rejecting the course \"{title}\"",
-        "deleteConfirm": "This action cannot be undone. Are you sure you want to delete the course \"{title}\"?",
+        "approveConfirm": "Are you sure you want to approve the course \"{{title}}\"?",
+        "rejectReason": "Please enter the reason for rejecting the course \"{{title}}\"",
+        "deleteConfirm": "This action cannot be undone. Are you sure you want to delete the course \"{{title}}\"?",
         "reasonRequired": "Rejection Reason",
         "reasonPlaceholder": "Enter detailed reason...",
         "approveNow": "Approve Now",
@@ -468,6 +468,8 @@
       "subtitle": "Manage and track all system notifications.",
       "unread": "unread",
       "markAllRead": "Mark all as read",
+      "backToDashboard": "Back to Dashboard",
+      "from": "From",
       "tabs": {
         "all": "All",
         "unread": "Unread",
@@ -484,14 +486,15 @@
       "actions": {
         "review": "Review",
         "markRead": "Mark as read",
-        "delete": "Delete notification"
+        "alreadyRead": "Read",
+        "delete": "Delete"
       },
       "timeAgo": {
         "justNow": "Just now",
-        "minutesAgo": "{minutes} minutes ago",
-        "hoursAgo": "{hours} hours ago",
+        "minutesAgo": "{{minutes}} minutes ago",
+        "hoursAgo": "{{hours}} hours ago",
         "oneDayAgo": "1 day ago",
-        "daysAgo": "{days} days ago"
+        "daysAgo": "{{days}} days ago"
       },
       "stats": {
         "title": "Statistics",
@@ -499,10 +502,21 @@
         "unread": "Unread",
         "read": "Read"
       },
+      "settings": {
+        "title": "Notification Settings",
+        "email": "Email Notifications",
+        "push": "Push Notifications",
+        "courseUpdates": "Course Updates",
+        "newMessages": "New Messages",
+        "achievements": "Achievements",
+        "promotions": "Promotions",
+        "learningReminders": "Learning Reminders"
+      },
       "quickActions": {
         "title": "Quick Actions",
         "markAllRead": "Mark all as read",
-        "refresh": "Refresh notifications"
+        "refresh": "Refresh notifications",
+        "testNotification": "Test Notification"
       },
       "empty": "No notifications.",
       "loading": "Loading notifications...",
@@ -554,7 +568,7 @@
         "selectImage": "Select Image",
         "categoryLoading": "Loading categories...",
         "categoryPlaceholder": "-- Add category --",
-        "removeCategoryAriaLabel": "Remove category {name}",
+        "removeCategoryAriaLabel": "Remove category {{name}}",
         "noteTitle": "Note",
         "noteItems": {
           "afterCreation": "After creating the course, you will be redirected to the course management page",
@@ -901,7 +915,7 @@
       "modalTitle": "Course Comments",
       "you": "(You)",
       "instructorReply": "Instructor Reply",
-      "allComments": "All Comments ({count})",
+      "allComments": "All Comments ({{count}})",
       "noComments": "No comments for this course yet",
       "loadError": "Unable to load comments. Please try again.",
       "rate": "Rate",
@@ -923,12 +937,12 @@
     "time": {
       "yesterday": "Yesterday",
       "today": "Today",
-      "daysAgo": "{days} days ago"
+      "daysAgo": "{{days}} days ago"
     },
     "instructorBadge": "IN"
   },
   "home": {
-    "welcomeBack": "Welcome back, {name}!",
+    "welcomeBack": "Welcome back, {{name}}!",
     "continueJourney": "Continue your learning journey",
     "continueStudying": "Continue Learning",
     "loading": {
@@ -1053,7 +1067,7 @@
   "cart": {
     "title": "Your Cart",
     "continueShopping": "Continue Shopping",
-    "itemCount": "{count} courses in cart",
+    "itemCount": "{{count}} courses in cart",
     "loading": "Loading your cart...",
     "empty": {
       "title": "Your cart is empty",
@@ -1072,7 +1086,7 @@
     },
     "orderSummary": {
       "title": "Order Summary",
-      "subtotal": "Subtotal ({count} courses)",
+      "subtotal": "Subtotal ({{count}} courses)",
       "total": "Total",
       "checkout": "Checkout"
     },
@@ -1183,7 +1197,7 @@
     "skills": {
       "add": "Add Skill",
       "newPlaceholder": "Enter new skill",
-      "removeAriaLabel": "Remove skill {skill}",
+      "removeAriaLabel": "Remove skill {{skill}}",
       "errorInvalid": "Please enter a valid skill.",
       "errorExists": "Skill already exists."
     }
@@ -1417,7 +1431,7 @@
       "offers": "Offers"
     },
     "loading": "Loading notifications...",
-    "error": "{error}",
+    "error": "{{error}}",
     "empty": "No notifications in this list.",
     "clickToMarkRead": "Click on notification to mark as read",
     "markRead": "Mark as read",

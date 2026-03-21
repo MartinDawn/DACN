@@ -313,7 +313,7 @@
       "approvedCourses": "Khóa học đã duyệt",
       "pendingApproval": "Chờ xét duyệt",
       "userInstructorStats": "Thống kê Học viên & Giảng viên",
-      "userInstructorStatsDesc": "Số lượng Học viên vs Giảng viên mới theo tháng {year}",
+      "userInstructorStatsDesc": "Số lượng Học viên vs Giảng viên mới theo tháng {{year}}",
       "students": "Học viên",
       "instructorsLabel": "Giảng viên",
       "month": "Tháng",
@@ -365,12 +365,12 @@
       "modals": {
         "banUser": "Chặn người dùng?",
         "unbanUser": "Bỏ chặn người dùng?",
-        "banConfirm": "Bạn có chắc chắn muốn chặn \"{name}\"? Người dùng sẽ không thể đăng nhập.",
-        "unbanConfirm": "Bạn có chắc chắn muốn bỏ chặn \"{name}\"?",
+        "banConfirm": "Bạn có chắc chắn muốn chặn \"{{name}}\"? Người dùng sẽ không thể đăng nhập.",
+        "unbanConfirm": "Bạn có chắc chắn muốn bỏ chặn \"{{name}}\"?",
         "approveRequest": "Duyệt yêu cầu?",
         "rejectRequest": "Từ chối yêu cầu?",
-        "approveConfirm": "Duyệt yêu cầu của \"{name}\"? Họ sẽ được cấp quyền giảng viên.",
-        "rejectConfirm": "Từ chối yêu cầu của \"{name}\"?",
+        "approveConfirm": "Duyệt yêu cầu của \"{{name}}\"? Họ sẽ được cấp quyền giảng viên.",
+        "rejectConfirm": "Từ chối yêu cầu của \"{{name}}\"?",
         "banNow": "Chặn ngay",
         "unbanNow": "Bỏ chặn ngay",
         "confirmApprove": "Xác nhận duyệt",
@@ -442,9 +442,9 @@
         "confirmApproval": "Xác nhận duyệt",
         "rejectCourse": "Từ chối khóa học",
         "deleteCourse": "Xóa khóa học?",
-        "approveConfirm": "Bạn có chắc chắn muốn duyệt khóa học \"{title}\"?",
-        "rejectReason": "Vui lòng nhập lý do từ chối cho khóa học \"{title}\"",
-        "deleteConfirm": "Hành động này không thể hoàn tác. Bạn có chắc chắn muốn xóa khóa học \"{title}\"?",
+        "approveConfirm": "Bạn có chắc chắn muốn duyệt khóa học \"{{title}}\"?",
+        "rejectReason": "Vui lòng nhập lý do từ chối cho khóa học \"{{title}}\"",
+        "deleteConfirm": "Hành động này không thể hoàn tác. Bạn có chắc chắn muốn xóa khóa học \"{{title}}\"?",
         "reasonRequired": "Lý do từ chối",
         "reasonPlaceholder": "Nhập lý do chi tiết...",
         "approveNow": "Duyệt ngay",
@@ -469,6 +469,8 @@
       "subtitle": "Quản lý và theo dõi tất cả thông báo hệ thống.",
       "unread": "chưa đọc",
       "markAllRead": "Đánh dấu tất cả đã đọc",
+      "backToDashboard": "Quay lại Bảng điều khiển",
+      "from": "Từ",
       "tabs": {
         "all": "Tất cả",
         "unread": "Chưa đọc",
@@ -485,14 +487,15 @@
       "actions": {
         "review": "Xét duyệt",
         "markRead": "Đánh dấu đã đọc",
-        "delete": "Xóa thông báo"
+        "alreadyRead": "Đã đọc",
+        "delete": "Xóa"
       },
       "timeAgo": {
         "justNow": "Vừa xong",
-        "minutesAgo": "{minutes} phút trước",
-        "hoursAgo": "{hours} giờ trước",
+        "minutesAgo": "{{minutes}} phút trước",
+        "hoursAgo": "{{hours}} giờ trước",
         "oneDayAgo": "1 ngày trước",
-        "daysAgo": "{days} ngày trước"
+        "daysAgo": "{{days}} ngày trước"
       },
       "stats": {
         "title": "Thống kê",
@@ -500,10 +503,21 @@
         "unread": "Chưa đọc",
         "read": "Đã đọc"
       },
+      "settings": {
+        "title": "Cài đặt thông báo",
+        "email": "Thông báo qua Email",
+        "push": "Thông báo đẩy",
+        "courseUpdates": "Cập nhật khóa học",
+        "newMessages": "Tin nhắn mới",
+        "achievements": "Thành tích",
+        "promotions": "Khuyến mãi",
+        "learningReminders": "Nhắc nhở học tập"
+      },
       "quickActions": {
         "title": "Hành động nhanh",
         "markAllRead": "Đánh dấu tất cả đã đọc",
-        "refresh": "Tải lại thông báo"
+        "refresh": "Tải lại thông báo",
+        "testNotification": "Thử nghiệm thông báo"
       },
       "empty": "Không có thông báo nào.",
       "loading": "Đang tải thông báo...",
@@ -555,7 +569,7 @@
         "selectImage": "Chọn ảnh",
         "categoryLoading": "Đang tải danh mục...",
         "categoryPlaceholder": "-- Thêm danh mục --",
-        "removeCategoryAriaLabel": "Xóa danh mục {name}",
+        "removeCategoryAriaLabel": "Xóa danh mục {{name}}",
         "noteTitle": "Lưu ý",
         "noteItems": {
           "afterCreation": "Sau khi tạo khóa học, bạn sẽ được chuyển đến trang quản lý khóa học",
@@ -902,7 +916,7 @@
       "modalTitle": "Nhận xét khóa học",
       "you": "(Bạn)",
       "instructorReply": "Phản hồi từ giảng viên",
-      "allComments": "Tất cả nhận xét ({count})",
+      "allComments": "Tất cả nhận xét ({{count}})",
       "noComments": "Chưa có nhận xét nào cho khóa học này",
       "loadError": "Không thể tải nhận xét. Vui lòng thử lại.",
       "rate": "Đánh giá",
@@ -924,12 +938,12 @@
     "time": {
       "yesterday": "Hôm qua",
       "today": "Hôm nay",
-      "daysAgo": "{days} ngày trước"
+      "daysAgo": "{{days}} ngày trước"
     },
     "instructorBadge": "GV"
   },
   "home": {
-    "welcomeBack": "Chào mừng trở lại, {name}!",
+    "welcomeBack": "Chào mừng trở lại, {{name}}!",
     "continueJourney": "Tiếp tục hành trình học tập của bạn",
     "continueStudying": "Tiếp tục học",
     "loading": {
@@ -1054,7 +1068,7 @@
   "cart": {
     "title": "Giỏ hàng của bạn",
     "continueShopping": "Tiếp tục mua sắm",
-    "itemCount": "{count} khóa học trong giỏ hàng",
+    "itemCount": "{{count}} khóa học trong giỏ hàng",
     "loading": "Đang tải giỏ hàng...",
     "empty": {
       "title": "Giỏ hàng trống",
@@ -1073,7 +1087,7 @@
     },
     "orderSummary": {
       "title": "Tóm tắt đơn hàng",
-      "subtotal": "Tạm tính ({count} khóa học)",
+      "subtotal": "Tạm tính ({{count}} khóa học)",
       "total": "Tổng cộng",
       "checkout": "Thanh toán"
     },
@@ -1184,7 +1198,7 @@
     "skills": {
       "add": "Thêm kỹ năng",
       "newPlaceholder": "Nhập kỹ năng mới",
-      "removeAriaLabel": "Xóa kỹ năng {skill}",
+      "removeAriaLabel": "Xóa kỹ năng {{skill}}",
       "errorInvalid": "Vui lòng nhập kỹ năng hợp lệ.",
       "errorExists": "Kỹ năng đã tồn tại."
     }
@@ -1418,7 +1432,7 @@
       "offers": "Ưu đãi"
     },
     "loading": "Đang tải thông báo...",
-    "error": "{error}",
+    "error": "{{error}}",
     "empty": "Không có thông báo nào trong danh sách này.",
     "clickToMarkRead": "Nhấn vào thông báo để đánh dấu đã đọc",
     "markRead": "Đánh dấu đã đọc",

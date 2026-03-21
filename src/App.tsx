@@ -21,7 +21,7 @@ import RegisterTeacherPage from './modules/instructor/register_teacher';
 import RegisterTeacherFormPage from './modules/instructor/register_teacher_form';
 import TeacherDashboard from './modules/instructor/teacher';
 import LoginSuccess from './modules/auth/login-success';
-import { ProtectedRoute, GuestRoute, InstructorRoute, AdminRoute } from './modules/auth/components/AuthGuard';
+import { ProtectedRoute, GuestRoute, InstructorRoute, AdminRoute, UserRoute } from './modules/auth/components/AuthGuard';
 import ManageCoursePage from './modules/instructor/manage-course';
 import AdminDashboard from './modules/admin/dashboard_ad';
 import AdminManageCourse from './modules/admin/manage_course_ad';
@@ -45,21 +45,21 @@ function App() {
         <Route path="/login-success" element={<LoginSuccess />} />
 
         {/* protected routes */}
-        <Route path="/user/home" element={<ProtectedRoute><UserHome /></ProtectedRoute>} />
-        <Route path="/user/mycourses" element={<ProtectedRoute><MyCourse /></ProtectedRoute>} />
-        <Route path="/user/cart" element={<ProtectedRoute><MyCart /></ProtectedRoute>} />
-        <Route path="/user/checkout" element={<ProtectedRoute><CheckoutPage /></ProtectedRoute>} />
+        <Route path="/user/home" element={<UserRoute><UserHome /></UserRoute>} />
+        <Route path="/user/mycourses" element={<UserRoute><MyCourse /></UserRoute>} />
+        <Route path="/user/cart" element={<UserRoute><MyCart /></UserRoute>} />
+        <Route path="/user/checkout" element={<UserRoute><CheckoutPage /></UserRoute>} />
         <Route path="/payment-success" element={<Navigate to="/user/mycourses" />} />
-        <Route path="/user/notifications" element={<ProtectedRoute><NotificationPage /></ProtectedRoute>} />
-        <Route path="/courses" element={<ProtectedRoute><ViewAllCourse /></ProtectedRoute>} />
-        <Route path="/courses/complete-react-developer-2024" element={<ProtectedRoute><CourseDetail /></ProtectedRoute>} />
-        <Route path="/courses/:courseId" element={<ProtectedRoute><CourseDetail /></ProtectedRoute>} />
-        <Route path="/user/profile" element={<ProtectedRoute><MyInfo /></ProtectedRoute>} />
-        <Route path="/user/security" element={<ProtectedRoute><ChangePasswordPage /></ProtectedRoute>} />
-        <Route path="/user/course-progress" element={<ProtectedRoute><CourseProgressPage /></ProtectedRoute>} />
-        <Route path="/user/course-progress/:courseId" element={<ProtectedRoute><CourseProgressPage /></ProtectedRoute>} />
-        <Route path="/user/course-progress/:courseId/lesson/:lessonId" element={<ProtectedRoute><LessonContentPage /></ProtectedRoute>} />
-        <Route path="/search" element={<ProtectedRoute><SearchPage /></ProtectedRoute>} />
+        <Route path="/user/notifications" element={<UserRoute><NotificationPage /></UserRoute>} />
+        <Route path="/courses" element={<UserRoute><ViewAllCourse /></UserRoute>} />
+        <Route path="/courses/complete-react-developer-2024" element={<UserRoute><CourseDetail /></UserRoute>} />
+        <Route path="/courses/:courseId" element={<UserRoute><CourseDetail /></UserRoute>} />
+        <Route path="/user/profile" element={<UserRoute><MyInfo /></UserRoute>} />
+        <Route path="/user/security" element={<UserRoute><ChangePasswordPage /></UserRoute>} />
+        <Route path="/user/course-progress" element={<UserRoute><CourseProgressPage /></UserRoute>} />
+        <Route path="/user/course-progress/:courseId" element={<UserRoute><CourseProgressPage /></UserRoute>} />
+        <Route path="/user/course-progress/:courseId/lesson/:lessonId" element={<UserRoute><LessonContentPage /></UserRoute>} />
+        <Route path="/search" element={<UserRoute><SearchPage /></UserRoute>} />
         <Route path="/register-teacher" element={<ProtectedRoute><RegisterTeacherPage /></ProtectedRoute>} />
         <Route path="/register-teacher/form" element={<ProtectedRoute><RegisterTeacherFormPage /></ProtectedRoute>} />
         <Route path="/instructor/register-teacher" element={<ProtectedRoute><RegisterTeacherPage /></ProtectedRoute>} />

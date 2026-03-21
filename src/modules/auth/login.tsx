@@ -18,7 +18,7 @@ import { mapAuthErrorToTranslation } from './utils/auth.utils';
 const LoginPage: React.FC = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { login, loading, error, getGoogleAuthUrl, getProfile } = useAuth();
+  const { login, loading, error, getGoogleAuthUrl, getProfile, getDefaultRoute } = useAuth();
   const [formData, setFormData] = useState<LoginRequest>({
     username: "",
     password: "",
@@ -52,11 +52,10 @@ const LoginPage: React.FC = () => {
           localStorage.setItem("accessToken", accessToken);
           const profileRes = await getProfile(accessToken);
           if (profileRes?.success && profileRes.data) {
-            if (profileRes.data.role === 'Admin') {
-              navigate("/admin/dashboard");
-            } else {
-              navigate("/user/home");
-            }
+            setTimeout(() => {
+              const defaultRoute = getDefaultRoute();
+              window.location.href = defaultRoute;
+            }, 500);
           } else {
             setNotification({
               show: true,
@@ -91,20 +90,12 @@ const LoginPage: React.FC = () => {
           type: 'success',
           message: t('auth.loginSuccess')
         });
-        
-        // Chuyển hướng sau khi thông báo thành công
-        setTimeout(() => {
-          const userStr = localStorage.getItem('user');
-          const user = userStr ? JSON.parse(userStr) : null;
-          // Ưu tiên check localStorage, sau đó kiểm tra trong response nếu có
-          const role = user?.role || (response.data as any)?.role || (response.data as any)?.user?.role;
 
-          if (role === 'Admin') {
-            navigate("/admin/dashboard");
-          } else {
-            navigate("/user/home");
-          }
-        }, 1500);
+        // Force reload để đảm bảo state được cập nhật
+        setTimeout(() => {
+          const defaultRoute = getDefaultRoute();
+          window.location.href = defaultRoute;
+        }, 500);
       } else {
         // Xử lý trường hợp response không thành công dù không có lỗi catch
         setNotification({

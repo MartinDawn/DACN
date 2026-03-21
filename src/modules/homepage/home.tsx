@@ -1,5 +1,5 @@
 import React from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
   UserGroupIcon,
@@ -12,6 +12,11 @@ import HomepageLayout from "./layout/layout";
 
 const Homepage: React.FC = () => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
+
+  const handleViewAllCourses = () => {
+    navigate('/courses');
+  };
 
   const features = [
     {
@@ -92,7 +97,10 @@ const Homepage: React.FC = () => {
             >
               {t('homepage.hero.startFree')}
             </Link>
-            <button className="rounded-full border border-white/40 px-6 py-3 text-sm font-semibold text-white transition hover:bg-white/10">
+            <button
+              onClick={handleViewAllCourses}
+              className="rounded-full border border-white/40 px-6 py-3 text-sm font-semibold text-white transition hover:bg-white/10"
+            >
               {t('homepage.hero.viewCourses')}
             </button>
           </div>
@@ -130,7 +138,10 @@ const Homepage: React.FC = () => {
             <h2 className="text-2xl font-semibold text-gray-900">{t('homepage.popularCourses.title')}</h2>
             <p className="mt-2 text-sm text-gray-500">{t('homepage.popularCourses.subtitle')}</p>
           </div>
-          <button className="rounded-full border border-[#5a2dff]/20 px-4 py-2 text-sm font-semibold text-[#5a2dff] transition hover:bg-[#efeaff]">
+          <button
+            onClick={handleViewAllCourses}
+            className="rounded-full border border-[#5a2dff]/20 px-4 py-2 text-sm font-semibold text-[#5a2dff] transition hover:bg-[#efeaff]"
+          >
             {t('homepage.popularCourses.viewAll')}
           </button>
         </div>

@@ -17,6 +17,19 @@ import { authService } from '../services/auth.service';
 import { mapAuthErrorToTranslation, mapStatusCodeToTranslation } from '../utils/auth.utils';
 import axios from 'axios';
 
+// Function to get default route based on user role
+const getDefaultRoute = (user: User | null): string => {
+    if (!user) return '/login';
+
+    if (user.role?.includes('Admin') || user.role?.includes('Administrator')) {
+        return '/admin/dashboard';
+    } else if (user.role?.includes('Instructor')) {
+        return '/instructor/dashboard';
+    } else {
+        return '/user/home';
+    }
+};
+
 // Function to decode JWT payload
 const decodeJWT = (token: string) => {
     try {
@@ -380,6 +393,7 @@ export const useAuth = () => {
         resetPassword,
         getGoogleAuthUrl,
         getProfile,
-        exchangeGoogleCode
+        exchangeGoogleCode,
+        getDefaultRoute: () => getDefaultRoute(user)
     };
 };
