@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import { lectureService } from '../services/lecture.service';
+import type { EnhancedVideoResponse } from '../../admin/models/course';
 
 interface UseLectureReturn {
   videoUrl: string | null;
@@ -7,6 +8,14 @@ interface UseLectureReturn {
   videoError: string | null;
   getVideoUrl: (videoId: string) => Promise<void>;
   clearVideo: () => void;
+
+  // Enhanced video data with subtitles/transcripts
+  videoData: EnhancedVideoResponse | null;
+  videoSubtitles: Array<{ startTime: number; endTime: number; text: string }> | null;
+  isVideoDataLoading: boolean;
+  videoDataError: string | null;
+  getEnhancedVideoData: (videoId: string) => Promise<void>;
+  clearVideoData: () => void;
 
   documentUrl: string | null;
   isDocumentLoading: boolean;
@@ -39,6 +48,12 @@ export const useLecture = (): UseLectureReturn => {
   const [isVideoLoading, setIsVideoLoading] = useState(false);
   const [videoError, setVideoError] = useState<string | null>(null);
 
+  // Enhanced video data with subtitles
+  const [videoData, setVideoData] = useState<EnhancedVideoResponse | null>(null);
+  const [videoSubtitles, setVideoSubtitles] = useState<Array<{ startTime: number; endTime: number; text: string }> | null>(null);
+  const [isVideoDataLoading, setIsVideoDataLoading] = useState(false);
+  const [videoDataError, setVideoDataError] = useState<string | null>(null);
+
   const [documentUrl, setDocumentUrl] = useState<string | null>(null);
   const [isDocumentLoading, setIsDocumentLoading] = useState(false);
   const [documentError, setDocumentError] = useState<string | null>(null);
@@ -68,6 +83,36 @@ export const useLecture = (): UseLectureReturn => {
     setVideoUrl(null);
     setVideoError(null);
     setIsVideoLoading(false);
+  }, []);
+
+  const getEnhancedVideoData = useCallback(async (videoId: string) => {
+    setIsVideoDataLoading(true);
+    setVideoDataError(null);
+    setVideoData(null);
+    setVideoSubtitles(null);
+    try {
+      const enhancedData = await lectureService.getEnhancedVideoData(videoId);
+      if (enhancedData) {
+        setVideoData(enhancedData);
+        // Extract subtitles from analysis result
+        if (enhancedData.analysisResult?.subtitles) {
+          setVideoSubtitles(enhancedData.analysisResult.subtitles);
+        }
+      } else {
+        setVideoDataError('Không thể tải dữ liệu video.');
+      }
+    } catch (error) {
+      setVideoDataError('Đã xảy ra lỗi khi tải thông tin video.');
+    } finally {
+      setIsVideoDataLoading(false);
+    }
+  }, []);
+
+  const clearVideoData = useCallback(() => {
+    setVideoData(null);
+    setVideoSubtitles(null);
+    setVideoDataError(null);
+    setIsVideoDataLoading(false);
   }, []);
 
   const getDocumentUrl = useCallback(async (documentId: string) => {
@@ -103,6 +148,12 @@ export const useLecture = (): UseLectureReturn => {
     videoError,
     getVideoUrl,
     clearVideo,
+    videoData,
+    videoSubtitles,
+    isVideoDataLoading,
+    videoDataError,
+    getEnhancedVideoData,
+    clearVideoData,
     documentUrl,
     isDocumentLoading,
     documentError,

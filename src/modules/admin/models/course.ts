@@ -325,7 +325,36 @@ export interface LectureResponse {
   documents: DocumentResponse[];
 }
 
-// Response from /api/Lecture/get-video/{videoId}
+// Video segment with timestamp and description
+export interface VideoSegment {
+  startTime: string;
+  title: string;
+  description: string;
+}
+
+// Video subtitle with timing
+export interface VideoSubtitle {
+  startTime: number;
+  endTime: number;
+  text: string;
+}
+
+// Video analysis result
+export interface VideoAnalysisResult {
+  summary: string;
+  segments: VideoSegment[];
+  subtitles: VideoSubtitle[];
+}
+
+// Enhanced Video response from /api/Lecture/get-video/{videoId}
+export interface EnhancedVideoResponse {
+  name: string;
+  videoUrl: string;
+  duration: number;
+  analysisResult: VideoAnalysisResult;
+}
+
+// Response from /api/Lecture/get-video/{videoId} (for course details with lectures)
 export interface GetVideoApiResponse {
   name: string;
   description: string;

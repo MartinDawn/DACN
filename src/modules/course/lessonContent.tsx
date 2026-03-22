@@ -255,8 +255,60 @@ const VideoPlayer: React.FC<{
   url?: string;
   isLoading?: boolean;
   error?: string | null;
-}> = ({ lessonTitle, url, isLoading, error }) => {
+  subtitles?: Array<{ startTime: number; endTime: number; text: string }> | null;
+  summary?: string;
+  segments?: Array<{ startTime: string; title: string; description: string }>;
+}> = ({ lessonTitle, url, isLoading, error, subtitles, summary, segments }) => {
   const { t } = useTranslation();
+  const videoRef = React.useRef<HTMLVideoElement>(null);
+  const [currentSubtitle, setCurrentSubtitle] = React.useState<string | null>(null);
+  const [currentTime, setCurrentTime] = React.useState(0);
+  const [showSubtitles, setShowSubtitles] = React.useState(true);
+  const [expandedSegments, setExpandedSegments] = React.useState<Record<string, boolean>>({});
+
+  // Track current subtitle based on video time
+  React.useEffect(() => {
+    if (!videoRef.current || !subtitles || !showSubtitles) return;
+
+    const handleTimeUpdate = () => {
+      const time = videoRef.current?.currentTime || 0;
+      setCurrentTime(time);
+      
+      const activeSub = subtitles.find(
+        (sub) => time >= sub.startTime && time < sub.endTime
+      );
+      setCurrentSubtitle(activeSub?.text || null);
+    };
+
+    const video = videoRef.current;
+    video.addEventListener('timeupdate', handleTimeUpdate);
+    return () => video.removeEventListener('timeupdate', handleTimeUpdate);
+  }, [subtitles, showSubtitles]);
+
+  const handleSegmentClick = (startTime: string) => {
+    if (!videoRef.current) return;
+    const parts = startTime.split(':').map(Number);
+    let seconds = 0;
+    if (parts.length === 3) {
+      seconds = parts[0] * 3600 + parts[1] * 60 + parts[2];
+    } else if (parts.length === 2) {
+      seconds = parts[0] * 60 + parts[1];
+    }
+    videoRef.current.currentTime = seconds;
+    videoRef.current.play();
+  };
+
+  const formatTime = (seconds: number) => {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const secs = Math.floor(seconds % 60);
+    
+    if (hours > 0) {
+      return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    }
+    return `${minutes}:${secs.toString().padStart(2, '0')}`;
+  };
+
   if (isLoading) {
     return (
       <div className="flex aspect-video w-full items-center justify-center rounded-2xl bg-black shadow-2xl">
@@ -335,25 +387,106 @@ const VideoPlayer: React.FC<{
     );
   }
 
-  // Direct video file or unknown URL — try with <video> tag
+  // Direct video file or unknown URL — try with <video> tag with transcript support
   return (
-    <div className="w-full overflow-hidden rounded-2xl bg-black shadow-2xl">
-      <video
-        controls
-        className="aspect-video w-full bg-black"
-        key={url}
-        controlsList="nodownload"
-      >
-        {isDirectVideoUrl(url) ? (
-          <source
-            src={url}
-            type={url.match(/\.webm/i) ? 'video/webm' : url.match(/\.ogg/i) ? 'video/ogg' : 'video/mp4'}
-          />
-        ) : (
-          <source src={url} />
-        )}
-        {t('lessonContent.browserNotSupport')}
-      </video>
+    <div className="space-y-4">
+      <div className="w-full overflow-hidden rounded-2xl bg-black shadow-2xl relative">
+        {/* Video Container with Subtitle Overlay */}
+        <div className="relative">
+          <video
+            ref={videoRef}
+            controls
+            className="aspect-video w-full bg-black"
+            key={url}
+            controlsList="nodownload"
+          >
+            {isDirectVideoUrl(url) ? (
+              <source
+                src={url}
+                type={url.match(/\.webm/i) ? 'video/webm' : url.match(/\.ogg/i) ? 'video/ogg' : 'video/mp4'}
+              />
+            ) : (
+              <source src={url} />
+            )}
+            {t('lessonContent.browserNotSupport')}
+          </video>
+
+          {/* Subtitle Toggle Button - Bottom Right (mimic video control bar) */}
+          {subtitles && subtitles.length > 0 && (
+            <button
+              onClick={() => setShowSubtitles(!showSubtitles)}
+              className="absolute bottom-3 right-3 px-2.5 py-1.5 text-xs bg-black/70 hover:bg-black/90 text-white rounded-md border border-white/20 transition-colors z-10 font-semibold"
+              title={showSubtitles ? t('lessonContent.hideSubtitles') || 'Ẩn phụ đề' : t('lessonContent.showSubtitles') || 'Hiện phụ đề'}
+            >
+              {showSubtitles ? 'CC On' : 'CC'}
+            </button>
+          )}
+
+          {/* Subtitle Display - Overlay on Video */}
+          {subtitles && subtitles.length > 0 && showSubtitles && currentSubtitle && (
+            <div className="absolute bottom-20 left-0 right-0 flex justify-center px-4">
+              <div className="bg-slate-900/90 text-white px-4 py-2 rounded-lg text-sm text-center max-w-2xl font-medium">
+                {currentSubtitle}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Summary Section */}
+      {summary && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <h3 className="text-sm font-semibold text-blue-900 mb-2">
+            {t('lessonContent.summary') || 'Tóm tắt'}
+          </h3>
+          <p className="text-sm text-blue-800">{summary}</p>
+        </div>
+      )}
+
+      {/* Segments Section */}
+      {segments && segments.length > 0 && (
+        <div className="space-y-3">
+          <h3 className="text-sm font-semibold text-slate-700">
+            {t('lessonContent.content') || 'Nội dung'}
+          </h3>
+          <div className="space-y-2">
+            {segments.map((segment, idx) => (
+              <div key={idx} className="rounded-lg bg-white border border-slate-200 overflow-hidden">
+                <button
+                  onClick={() => setExpandedSegments(prev => ({ ...prev, [idx]: !prev[idx] }))}
+                  className="w-full p-3 flex items-center justify-between hover:bg-slate-50 transition-colors text-left"
+                >
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-xs font-mono text-slate-500 bg-slate-100 px-2 py-0.5 rounded">
+                        {segment.startTime}
+                      </span>
+                      <span className="text-sm font-medium text-slate-900">
+                        {segment.title}
+                      </span>
+                    </div>
+                  </div>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleSegmentClick(segment.startTime);
+                    }}
+                    className="px-2 py-1 text-xs bg-indigo-500 hover:bg-indigo-600 text-white rounded transition-colors ml-2"
+                  >
+                    Phát
+                  </button>
+                  <ChevronDownIcon className={`w-4 h-4 text-slate-400 ml-2 transition-transform ${expandedSegments[idx] ? 'rotate-180' : ''}`} />
+                </button>
+                {expandedSegments[idx] && (
+                  <div className="px-3 pb-3 border-t border-slate-200 bg-slate-50 text-sm text-slate-700">
+                    {segment.description}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -1466,6 +1599,7 @@ const LessonContentPage: React.FC = () => {
 
   const {
     videoUrl, isVideoLoading, videoError, getVideoUrl, clearVideo,
+    videoData, videoSubtitles, isVideoDataLoading, videoDataError, getEnhancedVideoData, clearVideoData,
     documentUrl, isDocumentLoading, documentError, getDocumentUrl, clearDocument,
   } = useLecture();
 
@@ -1574,22 +1708,27 @@ const LessonContentPage: React.FC = () => {
       const vid = currentEntry.lesson.videoId;
       if (vid) {
         getVideoUrl(vid);
+        // Also fetch enhanced video data with subtitles/transcript
+        getEnhancedVideoData(vid);
       } else {
         clearVideo();
+        clearVideoData();
       }
       clearDocument();
       clearQuiz();
     } else if (currentEntry?.lesson.type === 'doc') {
       clearVideo();
+      clearVideoData();
       clearDocument();
       clearQuiz();
     } else {
       // quiz or unknown
       clearVideo();
+      clearVideoData();
       clearDocument();
       clearQuiz();
     }
-  }, [currentEntry?.lesson.id, currentEntry?.lesson.type, getVideoUrl, clearVideo, clearDocument, clearQuiz]);
+  }, [currentEntry?.lesson.id, currentEntry?.lesson.type, getVideoUrl, getEnhancedVideoData, clearVideo, clearVideoData, clearDocument, clearQuiz]);
 
   // Redirect if no lessonId
   useEffect(() => {
@@ -1743,8 +1882,11 @@ const LessonContentPage: React.FC = () => {
             <VideoPlayer
               lessonTitle={lesson.title}
               url={videoUrl ?? (typeof lesson.url === 'string' ? lesson.url : undefined)}
-              isLoading={isVideoLoading}
-              error={videoError}
+              isLoading={isVideoLoading || isVideoDataLoading}
+              error={videoError || videoDataError}
+              subtitles={videoSubtitles}
+              summary={videoData?.analysisResult?.summary}
+              segments={videoData?.analysisResult?.segments}
             />
           )}
 

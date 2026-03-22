@@ -577,12 +577,13 @@ export const useCourseLectures = (courseId: string) => {
     }
   }, []);
 
-  // Get Video content for preview
+  // Get Video content for preview - now returns full video data with analysis, segments, and subtitles
   const getVideo = useCallback(async (videoId: string) => {
     try {
       if (!videoId) return null;
-      const blob = await lectureService.getVideo(videoId);
-      return blob;
+      // Fetch enhanced video data from API (includes name, videoUrl, duration, analysisResult with segments/subtitles)
+      const videoData = await lectureService.getEnhancedVideoData(videoId);
+      return videoData;
     } catch (error: any) {
       console.error("Error fetching video in hook:", error);
       return null;

@@ -12,6 +12,8 @@ import type { InstructorCourse } from "./models/instructor";
 import { Confirm } from "react-confirm-box"; 
 import type { Lecture } from "./models/lecture"; 
 import QuizModal from "./components/QuizModal"; // New Import
+import { EnhancedVideoPreview } from "../shared/components/EnhancedVideoPreview";
+import type { EnhancedVideoResponse } from "../admin/models/course";
 
 const ManageCoursePage: React.FC = () => {
   const params = useParams();
@@ -51,7 +53,7 @@ const ManageCoursePage: React.FC = () => {
   const [videoToDelete, setVideoToDelete] = useState<{ lectureId: string; videoId: string } | null>(null);
 
   // --- Video Preview State ---
-  const [previewVideo, setPreviewVideo] = useState<{ url: string; title: string } | null>(null);
+  const [previewVideo, setPreviewVideo] = useState<EnhancedVideoResponse | null>(null);
 
   // --- Document Modal States ---
   const [showDocumentModal, setShowDocumentModal] = useState(false);
@@ -382,15 +384,19 @@ const ManageCoursePage: React.FC = () => {
     // Dữ liệu từ useCourseLectures đã được chuẩn hóa ID vào trường 'id'
     const vidId = video?.id || video?.videoId || video?.Id || video?.ID;
     
-    // Tên video 
-    const vidName = typeof video === 'string' ? video : (video.name || video.title || video.fileName || "video.mp4");
-
     // Nếu video là object Blob preview local (vừa upload chưa refresh) thì dùng luôn URL local
     const directUrl = video?.url || video?.videoUrl || video?.filePath;
     if (directUrl && typeof directUrl === 'string' && directUrl.startsWith('blob:')) {
+        // Tạo một mock enhanced video response cho local preview
         setPreviewVideo({
-            url: directUrl,
-            title: vidName
+          name: video.name || video.title || "Untitled Video",
+          videoUrl: directUrl,
+          duration: 0, // Không có duration cho blob
+          analysisResult: {
+            summary: '',
+            segments: [],
+            subtitles: []
+          }
         });
         return;
     }
@@ -399,8 +405,14 @@ const ManageCoursePage: React.FC = () => {
        // Fallback: Chỉ dùng URL http có sẵn nếu không có ID
        if (directUrl && typeof directUrl === 'string' && (directUrl.startsWith('http') || directUrl.startsWith('/'))) {
           setPreviewVideo({
-            url: directUrl,
-            title: vidName
+            name: video.name || video.title || "Untitled Video",
+            videoUrl: directUrl,
+            duration: video.duration || 0,
+            analysisResult: {
+              summary: '',
+              segments: [],
+              subtitles: []
+            }
           });
           return;
        }
@@ -408,36 +420,46 @@ const ManageCoursePage: React.FC = () => {
        return;
     }
 
-    const toastId = toast.loading("Đang lấy đường dẫn video...");
+    const toastId = toast.loading("Đang lấy thông tin video...");
     try {
-      // Get video info from API (Return JSON object with URL)
+      // Get enhanced video data from API (Return video object with analysis, segments, subtitles)
       const data = await getVideo(String(vidId));
       
       if (!data) {
         throw new Error("Không nhận được dữ liệu từ server.");
       }
 
-      // FIX: Cập nhật logic lấy URL từ response: 
-      // API Return: { success: true, data: { videoUrl: "https://..." } }
+      // Check if this is enhanced video response with analysisResult
+      if ('videoUrl' in data && 'analysisResult' in data) {
+        // This is already the enhanced response
+        setPreviewVideo(data as EnhancedVideoResponse);
+        toast.dismiss(toastId);
+        return;
+      }
+
+      // Fallback: If only URL is returned, create a mock response
       const remoteUrl = typeof data === 'string' 
           ? data 
           : (
-              // 1. Ưu tiên lấy từ data.data.videoUrl (Theo Format API)
-              (data.data && data.data.videoUrl) || 
-              (data.data && data.data.url) ||
-              // 2. Fallback các trường hợp object phẳng
-              data.videoUrl || 
-              data.url || 
-              data.link || 
-              data.filePath
+              (data as any)?.videoUrl || 
+              (data as any)?.url || 
+              (data as any)?.link || 
+              (data as any)?.filePath
             );
 
       if (remoteUrl) {
-         setPreviewVideo({
-             url: remoteUrl,
-             title: vidName
-         });
-         return; 
+        setPreviewVideo({
+          name: (data as any)?.name || video.name || video.title || "Video",
+          videoUrl: remoteUrl,
+          duration: (data as any)?.duration || video.duration || 0,
+          analysisResult: (data as any)?.analysisResult || {
+            summary: '',
+            segments: [],
+            subtitles: []
+          }
+        });
+        toast.dismiss(toastId);
+        return;
       }
 
       toast.error("Không tìm thấy đường dẫn video hợp lệ trong phản hồi.");
@@ -601,8 +623,8 @@ const ManageCoursePage: React.FC = () => {
       if (e.key === "Escape") {
         // Ưu tiên đóng preview video trước (nếu đang bật)
         if (previewVideo) {
-          if (previewVideo.url && previewVideo.url.startsWith('blob:')) {
-            URL.revokeObjectURL(previewVideo.url);
+          if (previewVideo.videoUrl && previewVideo.videoUrl.startsWith('blob:')) {
+            URL.revokeObjectURL(previewVideo.videoUrl);
           }
           setPreviewVideo(null);
           return;
@@ -902,43 +924,18 @@ const ManageCoursePage: React.FC = () => {
         </div>
       </div>
 
-      {/* --- PREVIEW VIDEO MODAL --- */}
+      {/* --- PREVIEW VIDEO MODAL (with Analysis, Segments, and Subtitles) --- */}
       {previewVideo && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-4xl rounded-xl bg-black shadow-2xl overflow-hidden flex flex-col">
-            <div className="flex justify-between items-center p-4 bg-gray-900 text-white border-b border-gray-800">
-              <h3 className="font-medium text-lg truncate pr-4">{previewVideo.title}</h3>
-              <button 
-                onClick={() => {
-                  // Cleanup: Revoke Object URL để tránh memory leak
-                  if (previewVideo.url && previewVideo.url.startsWith('blob:')) {
-                    URL.revokeObjectURL(previewVideo.url);
-                  }
-                  setPreviewVideo(null);
-                }}
-                className="p-1 hover:bg-gray-800 rounded-full transition-colors"
-                title="Đóng"
-              >
-                <X className="text-gray-400 hover:text-white" />
-              </button>
-            </div>
-            <div className="aspect-video bg-black flex items-center justify-center relative">
-              <video 
-                key={previewVideo.url} 
-                src={previewVideo.url}
-                controls 
-                autoPlay 
-                className="w-full h-full max-h-[80vh]"
-                onError={(e) => {
-                  console.error("Video playback error:", e);
-                  toast.error("Lỗi phát video. Định dạng không được hỗ trợ.");
-                }}
-              >
-                Trình duyệt của bạn không hỗ trợ phát video.
-              </video>
-            </div>
-          </div>
-        </div>
+        <EnhancedVideoPreview
+          videoData={previewVideo}
+          onClose={() => {
+            // Cleanup: Revoke Object URL để tránh memory leak
+            if (previewVideo.videoUrl && previewVideo.videoUrl.startsWith('blob:')) {
+              URL.revokeObjectURL(previewVideo.videoUrl);
+            }
+            setPreviewVideo(null);
+          }}
+        />
       )}
 
       {/* --- ADD CHAPTER MODAL --- */}

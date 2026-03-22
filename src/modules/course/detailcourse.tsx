@@ -23,6 +23,8 @@ import { useCart } from "../user/hooks/useCart";
 import { cartService } from "../user/services/cart.service";
 import { toast } from "react-hot-toast"; // 1. Import toast đã có
 import { lectureService } from "./services/lecture.service";
+import { EnhancedVideoPreview } from "../shared/components/EnhancedVideoPreview";
+import type { EnhancedVideoResponse } from "../admin/models/course";
 
 const DetailCourse: React.FC = () => {
   const { t } = useTranslation();
@@ -52,7 +54,7 @@ const DetailCourse: React.FC = () => {
   const [activeTab, setActiveTab] = useState<(typeof tabs)[number]["id"]>("overview");
 
   // State cho video preview
-  const [previewVideo, setPreviewVideo] = useState<{ id: string; name: string; url: string } | null>(null);
+  const [previewVideo, setPreviewVideo] = useState<EnhancedVideoResponse | null>(null);
   const [isLoadingVideo, setIsLoadingVideo] = useState(false);
 
   useEffect(() => {
@@ -95,20 +97,45 @@ const DetailCourse: React.FC = () => {
         for (const lecture of courseDetail.lectures) {
           const video = lecture.videos.find(v => v.id === videoId && v.isTrial);
           if (video && video.videoUrl) {
-            setPreviewVideo({ id: videoId, name: videoName, url: video.videoUrl });
+            // Tạo mock enhanced response
+            setPreviewVideo({
+              name: videoName,
+              videoUrl: video.videoUrl,
+              duration: video.duration || 0,
+              analysisResult: {
+                summary: '',
+                segments: [],
+                subtitles: []
+              }
+            });
             setIsLoadingVideo(false);
             return;
           }
         }
       }
 
-      // Nếu không có URL sẵn, gọi API để lấy
-      const videoUrl = await lectureService.getSpecificVideoUrl(courseId || '', videoName);
-
-      if (videoUrl) {
-        setPreviewVideo({ id: videoId, name: videoName, url: videoUrl });
+      // Nếu không có URL sẵn, gọi API để lấy dữ liệu video đầy đủ
+      const enhancedVideoData = await lectureService.getEnhancedVideoData(videoId);
+      
+      if (enhancedVideoData) {
+        setPreviewVideo(enhancedVideoData);
       } else {
-        toast.error(t('courseDetail.messages.videoNotAvailable'));
+        // Fallback: Thử lấy chỉ URL nếu enhanced data không khả dụng
+        const videoUrl = await lectureService.getSpecificVideoUrl(courseId || '', videoName);
+        if (videoUrl) {
+          setPreviewVideo({
+            name: videoName,
+            videoUrl: videoUrl,
+            duration: 0,
+            analysisResult: {
+              summary: '',
+              segments: [],
+              subtitles: []
+            }
+          });
+        } else {
+          toast.error(t('courseDetail.messages.videoNotAvailable'));
+        }
       }
     } catch (error) {
       toast.error(t('courseDetail.errors.loadVideo'));
@@ -116,7 +143,7 @@ const DetailCourse: React.FC = () => {
     } finally {
       setIsLoadingVideo(false);
     }
-  }, [courseId, courseDetail]);
+  }, [courseId, courseDetail, t]);
 
   const closePreviewVideo = useCallback(() => {
     setPreviewVideo(null);
@@ -522,47 +549,12 @@ const DetailCourse: React.FC = () => {
         )}
       </div>
 
-      {/* Video Preview Modal */}
+      {/* Video Preview Modal with Enhanced Features (Analysis, Segments, Subtitles) */}
       {previewVideo && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-75 p-4"
-          onClick={closePreviewVideo}
-        >
-          <div
-            className="relative w-full max-w-4xl bg-white rounded-3xl shadow-2xl overflow-hidden"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Modal Header */}
-            <div className="flex items-center justify-between p-6 border-b border-gray-200">
-              <h3 className="text-xl font-bold text-gray-900 truncate min-w-0 flex-1" title={previewVideo.name}>{previewVideo.name}</h3>
-              <button
-                onClick={closePreviewVideo}
-                className="p-2 rounded-full hover:bg-gray-100 transition flex-shrink-0"
-              >
-                <X className="h-6 w-6 text-gray-600" />
-              </button>
-            </div>
-
-            {/* Video Player */}
-            <div className="relative bg-black aspect-video">
-              <video
-                src={previewVideo.url}
-                controls
-                autoPlay
-                className="w-full h-full"
-              >
-                {t('courseDetail.videoModal.browserNotSupported')}
-              </video>
-            </div>
-
-            {/* Modal Footer */}
-            <div className="p-6 bg-gray-50 text-center">
-              <p className="text-sm text-gray-600">
-                {t('courseDetail.videoModal.previewDescription')}
-              </p>
-            </div>
-          </div>
-        </div>
+        <EnhancedVideoPreview
+          videoData={previewVideo}
+          onClose={() => setPreviewVideo(null)}
+        />
       )}
     </UserLayout>
   );
