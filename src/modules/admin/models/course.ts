@@ -351,6 +351,7 @@ export interface EnhancedVideoResponse {
   name: string;
   videoUrl: string;
   duration: number;
+  subtitleUrl?: string;  // VTT format subtitle file URL
   analysisResult: VideoAnalysisResult;
 }
 

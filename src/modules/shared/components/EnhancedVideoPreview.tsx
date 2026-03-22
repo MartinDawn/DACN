@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import { X, ChevronDown, ChevronUp, Clock, BookOpen } from 'lucide-react';
 import type { EnhancedVideoResponse } from '../../admin/models/course';
 
@@ -14,34 +14,9 @@ export const EnhancedVideoPreview: React.FC<EnhancedVideoPreviewProps> = ({
   const videoRef = useRef<HTMLVideoElement>(null);
   const [currentTime, setCurrentTime] = useState(0);
   const [expandedSegments, setExpandedSegments] = useState<Record<string, boolean>>({});
-  const [showSubtitles, setShowSubtitles] = useState(true);
-  const [currentSubtitle, setCurrentSubtitle] = useState<string | null>(null);
 
-  const { name, videoUrl, duration, analysisResult } = videoData;
-  const { summary, segments = [], subtitles = [] } = analysisResult || {};
-
-  // Tự động cập nhật subtitle hiện tại dựa trên thời gian video
-  useEffect(() => {
-    if (!videoRef.current) return;
-
-    const handleTimeUpdate = () => {
-      const time = videoRef.current?.currentTime || 0;
-      setCurrentTime(time);
-
-      // Tìm subtitle phù hợp
-      const currentSub = subtitles.find(
-        (sub) => time >= sub.startTime && time < sub.endTime
-      );
-      setCurrentSubtitle(currentSub?.text || null);
-    };
-
-    const video = videoRef.current;
-    video.addEventListener('timeupdate', handleTimeUpdate);
-
-    return () => {
-      video.removeEventListener('timeupdate', handleTimeUpdate);
-    };
-  }, [subtitles]);
+  const { name, videoUrl, duration, subtitleUrl, analysisResult } = videoData;
+  const { summary, segments = [] } = analysisResult || {};
 
   // Chuyển đến segment khi click
   const handleSegmentClick = (startTime: string) => {
@@ -119,21 +94,24 @@ export const EnhancedVideoPreview: React.FC<EnhancedVideoPreviewProps> = ({
                 ref={videoRef}
                 src={videoUrl}
                 controls
+                crossOrigin="anonymous"
                 className="w-full h-full"
                 onError={() => {
                   console.error('Video playback error');
                 }}
               >
+                {subtitleUrl && (
+                  <track
+                    label="Tiếng Việt"
+                    kind="subtitles"
+                    srcLang="vi"
+                    src={subtitleUrl}
+                    default
+                  />
+                )}
                 Trình duyệt của bạn không hỗ trợ phát video.
               </video>
             </div>
-
-            {/* Subtitle Display */}
-            {showSubtitles && currentSubtitle && (
-              <div className="bg-gray-800 text-white p-3 rounded-lg text-center text-sm min-h-12 flex items-center justify-center">
-                {currentSubtitle}
-              </div>
-            )}
 
             {/* Current Time and Duration */}
             <div className="text-gray-400 text-sm mt-4 flex items-center gap-2">
@@ -142,16 +120,6 @@ export const EnhancedVideoPreview: React.FC<EnhancedVideoPreviewProps> = ({
                 {formatTime(currentTime)} / {formatTime(duration || 0)}
               </span>
             </div>
-
-            {/* Subtitle Toggle */}
-            {subtitles && subtitles.length > 0 && (
-              <button
-                onClick={() => setShowSubtitles(!showSubtitles)}
-                className="mt-3 px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white rounded-lg transition-colors text-sm"
-              >
-                {showSubtitles ? 'Ẩn phụ đề' : 'Hiện phụ đề'}
-              </button>
-            )}
           </div>
 
           {/* Sidebar - Analysis & Segments */}

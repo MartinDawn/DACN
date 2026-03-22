@@ -255,35 +255,13 @@ const VideoPlayer: React.FC<{
   url?: string;
   isLoading?: boolean;
   error?: string | null;
-  subtitles?: Array<{ startTime: number; endTime: number; text: string }> | null;
+  subtitleUrl?: string;
   summary?: string;
   segments?: Array<{ startTime: string; title: string; description: string }>;
-}> = ({ lessonTitle, url, isLoading, error, subtitles, summary, segments }) => {
+}> = ({ lessonTitle, url, isLoading, error, subtitleUrl, summary, segments }) => {
   const { t } = useTranslation();
   const videoRef = React.useRef<HTMLVideoElement>(null);
-  const [currentSubtitle, setCurrentSubtitle] = React.useState<string | null>(null);
-  const [currentTime, setCurrentTime] = React.useState(0);
-  const [showSubtitles, setShowSubtitles] = React.useState(true);
   const [expandedSegments, setExpandedSegments] = React.useState<Record<string, boolean>>({});
-
-  // Track current subtitle based on video time
-  React.useEffect(() => {
-    if (!videoRef.current || !subtitles || !showSubtitles) return;
-
-    const handleTimeUpdate = () => {
-      const time = videoRef.current?.currentTime || 0;
-      setCurrentTime(time);
-      
-      const activeSub = subtitles.find(
-        (sub) => time >= sub.startTime && time < sub.endTime
-      );
-      setCurrentSubtitle(activeSub?.text || null);
-    };
-
-    const video = videoRef.current;
-    video.addEventListener('timeupdate', handleTimeUpdate);
-    return () => video.removeEventListener('timeupdate', handleTimeUpdate);
-  }, [subtitles, showSubtitles]);
 
   const handleSegmentClick = (startTime: string) => {
     if (!videoRef.current) return;
@@ -396,40 +374,42 @@ const VideoPlayer: React.FC<{
           <video
             ref={videoRef}
             controls
+            crossOrigin="anonymous"
             className="aspect-video w-full bg-black"
             key={url}
             controlsList="nodownload"
+            onLoadedMetadata={(e) => {
+              const video = e.currentTarget;
+              if (video.textTracks?.length > 0) {
+                for (let i = 0; i < video.textTracks.length; i++) {
+                  if (video.textTracks[i].kind === 'subtitles') {
+                    video.textTracks[i].mode = 'showing';
+                    break;
+                  }
+                }
+              }
+            }}
           >
-            {isDirectVideoUrl(url) ? (
-              <source
-                src={url}
-                type={url.match(/\.webm/i) ? 'video/webm' : url.match(/\.ogg/i) ? 'video/ogg' : 'video/mp4'}
-              />
-            ) : (
-              <source src={url} />
-            )}
-            {t('lessonContent.browserNotSupport')}
-          </video>
-
-          {/* Subtitle Toggle Button - Bottom Right (mimic video control bar) */}
-          {subtitles && subtitles.length > 0 && (
-            <button
-              onClick={() => setShowSubtitles(!showSubtitles)}
-              className="absolute bottom-3 right-3 px-2.5 py-1.5 text-xs bg-black/70 hover:bg-black/90 text-white rounded-md border border-white/20 transition-colors z-10 font-semibold"
-              title={showSubtitles ? t('lessonContent.hideSubtitles') || 'Ẩn phụ đề' : t('lessonContent.showSubtitles') || 'Hiện phụ đề'}
-            >
-              {showSubtitles ? 'CC On' : 'CC'}
-            </button>
+          {isDirectVideoUrl(url) ? (
+            <source
+              src={url}
+              type={url.match(/\.webm/i) ? 'video/webm' : url.match(/\.ogg/i) ? 'video/ogg' : 'video/mp4'}
+            />
+          ) : (
+            <source src={url} />
           )}
-
-          {/* Subtitle Display - Overlay on Video */}
-          {subtitles && subtitles.length > 0 && showSubtitles && currentSubtitle && (
-            <div className="absolute bottom-20 left-0 right-0 flex justify-center px-4">
-              <div className="bg-slate-900/90 text-white px-4 py-2 rounded-lg text-sm text-center max-w-2xl font-medium">
-                {currentSubtitle}
-              </div>
-            </div>
+          {subtitleUrl && (
+            <track
+              label={t('lessonContent.vietnamese') || 'Tiếng Việt'}
+              kind="subtitles"
+              srcLang="vi"
+              src={subtitleUrl}
+              default
+              crossOrigin="anonymous"
+            />
           )}
+          {t('lessonContent.browserNotSupport')}
+        </video>
         </div>
       </div>
 
@@ -1599,7 +1579,7 @@ const LessonContentPage: React.FC = () => {
 
   const {
     videoUrl, isVideoLoading, videoError, getVideoUrl, clearVideo,
-    videoData, videoSubtitles, isVideoDataLoading, videoDataError, getEnhancedVideoData, clearVideoData,
+    videoData, isVideoDataLoading, videoDataError, getEnhancedVideoData, clearVideoData,
     documentUrl, isDocumentLoading, documentError, getDocumentUrl, clearDocument,
   } = useLecture();
 
@@ -1884,7 +1864,7 @@ const LessonContentPage: React.FC = () => {
               url={videoUrl ?? (typeof lesson.url === 'string' ? lesson.url : undefined)}
               isLoading={isVideoLoading || isVideoDataLoading}
               error={videoError || videoDataError}
-              subtitles={videoSubtitles}
+              subtitleUrl={videoData?.subtitleUrl}
               summary={videoData?.analysisResult?.summary}
               segments={videoData?.analysisResult?.segments}
             />

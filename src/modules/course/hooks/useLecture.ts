@@ -11,7 +11,6 @@ interface UseLectureReturn {
 
   // Enhanced video data with subtitles/transcripts
   videoData: EnhancedVideoResponse | null;
-  videoSubtitles: Array<{ startTime: number; endTime: number; text: string }> | null;
   isVideoDataLoading: boolean;
   videoDataError: string | null;
   getEnhancedVideoData: (videoId: string) => Promise<void>;
@@ -48,9 +47,8 @@ export const useLecture = (): UseLectureReturn => {
   const [isVideoLoading, setIsVideoLoading] = useState(false);
   const [videoError, setVideoError] = useState<string | null>(null);
 
-  // Enhanced video data with subtitles
+  // Enhanced video data
   const [videoData, setVideoData] = useState<EnhancedVideoResponse | null>(null);
-  const [videoSubtitles, setVideoSubtitles] = useState<Array<{ startTime: number; endTime: number; text: string }> | null>(null);
   const [isVideoDataLoading, setIsVideoDataLoading] = useState(false);
   const [videoDataError, setVideoDataError] = useState<string | null>(null);
 
@@ -89,15 +87,10 @@ export const useLecture = (): UseLectureReturn => {
     setIsVideoDataLoading(true);
     setVideoDataError(null);
     setVideoData(null);
-    setVideoSubtitles(null);
     try {
       const enhancedData = await lectureService.getEnhancedVideoData(videoId);
       if (enhancedData) {
         setVideoData(enhancedData);
-        // Extract subtitles from analysis result
-        if (enhancedData.analysisResult?.subtitles) {
-          setVideoSubtitles(enhancedData.analysisResult.subtitles);
-        }
       } else {
         setVideoDataError('Không thể tải dữ liệu video.');
       }
@@ -110,7 +103,6 @@ export const useLecture = (): UseLectureReturn => {
 
   const clearVideoData = useCallback(() => {
     setVideoData(null);
-    setVideoSubtitles(null);
     setVideoDataError(null);
     setIsVideoDataLoading(false);
   }, []);
@@ -149,7 +141,6 @@ export const useLecture = (): UseLectureReturn => {
     getVideoUrl,
     clearVideo,
     videoData,
-    videoSubtitles,
     isVideoDataLoading,
     videoDataError,
     getEnhancedVideoData,
