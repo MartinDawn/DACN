@@ -14,7 +14,7 @@ import {
 } from "@heroicons/react/24/outline";
 import { useCart } from "../user/hooks/useCart";
 import { useAuth } from "../auth/hooks/useAuth";
-import { useMyNotifications } from "./hooks/useNotifications";
+import { useNotificationContext } from "../../contexts/NotificationContext";
 import { useTranslation } from 'react-i18next';
 import { useLanguage } from '../../contexts/LanguageContext';
 
@@ -30,7 +30,7 @@ const Navbar: React.FC = () => {
 
   const { cart } = useCart();
   const { user, logout } = useAuth();
-  const { unreadCount } = useMyNotifications();
+  const { unreadCount } = useNotificationContext();
 
   const [searchTerm, setSearchTerm] = useState("");
 
