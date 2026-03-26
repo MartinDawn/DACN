@@ -1,8 +1,10 @@
 import React, { useState, ReactNode, useRef, useEffect } from 'react';
 import { NavLink, useLocation, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../auth/hooks/useAuth';
-import { UserIcon, KeyIcon, ArrowLeftOnRectangleIcon } from "@heroicons/react/24/outline";
+import { UserIcon, KeyIcon, ArrowLeftOnRectangleIcon, GlobeAltIcon, ChevronDownIcon } from "@heroicons/react/24/outline";
 import { useNotifications } from '../hooks/useNotifications';
+import { useTranslation } from 'react-i18next';
+import { useLanguage } from '../../../contexts/LanguageContext';
 
 // Icons for Layout
 const DashboardIcon = () => (<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>);
@@ -28,6 +30,17 @@ interface SidebarItemProps {
     hasSubmenu?: boolean;
     isExpanded?: boolean;
 }
+
+interface LanguageOption {
+  code: 'vi' | 'en';
+  name: string;
+  shortCode: string;
+}
+
+const languages: LanguageOption[] = [
+    { code: 'vi' as const, name: 'Tiếng Việt', shortCode: '🇻🇳' },
+    { code: 'en' as const, name: 'English', shortCode: '🇺🇸' },
+];
 
 const SidebarItem = ({ icon: Icon, label, isActive = false, hasSubmenu = false, isExpanded = true }: SidebarItemProps) => (
   <div
@@ -67,11 +80,15 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarExpanded, setSidebarExpanded] = useState(true);
   const location = useLocation();
+  const { t } = useTranslation();
+  const { currentLanguage, changeLanguage } = useLanguage();
 
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [isProfileOpen, setProfileOpen] = useState(false);
+  const [isLanguageOpen, setLanguageOpen] = useState(false);
   const profileMenuRef = useRef<HTMLDivElement>(null);
+  const languageMenuRef = useRef<HTMLDivElement>(null);
   const [isLogoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
 
   const { notifications, unreadCount, loading: notifLoading, error: notifError, markAsRead, markAllAsRead, deleteNotification } = useNotifications();
@@ -82,6 +99,9 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     const handleClickOutside = (event: MouseEvent) => {
       if (profileMenuRef.current && !profileMenuRef.current.contains(event.target as Node)) {
         setProfileOpen(false);
+      }
+      if (languageMenuRef.current && !languageMenuRef.current.contains(event.target as Node)) {
+        setLanguageOpen(false);
       }
       if (notificationMenuRef.current && !notificationMenuRef.current.contains(event.target as Node)) {
         setNotificationOpen(false);
@@ -94,12 +114,22 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   const handleConfirmLogout = () => {
     logout();
     setLogoutConfirmOpen(false);
-    navigate("/login"); 
+    navigate("/login");
+  };
+
+  // Language functions
+  const handleLanguageMenuToggle = () => {
+    setLanguageOpen((prev) => !prev);
+  };
+
+  const handleLanguageSelect = (langCode: 'vi' | 'en') => {
+    changeLanguage(langCode);
+    setLanguageOpen(false);
   };
 
   const userInitials = user?.fullName ? user.fullName[0].toUpperCase() : (user?.email ? user.email[0].toUpperCase() : 'A');
   // Xử lý hiển thị role (nếu là mảng thì join lại, nếu không có thì để mặc định)
-  const displayRole = Array.isArray(user?.role) ? user.role.join(", ") : (user?.role || "Quản trị viên");
+  const displayRole = Array.isArray(user?.role) ? user.role.join(", ") : (user?.role || t('admin.administrator'));
 
   const toggleSidebar = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -138,53 +168,59 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         <div className="no-scrollbar flex flex-col overflow-y-auto duration-300 ease-linear">
           <nav className="mt-5 py-4 px-4 lg:mt-9 lg:px-6">
             <div>
-              <h3 className={`mb-3 ml-4 text-xs font-semibold uppercase tracking-[0.18em] text-gray-400 ${!sidebarExpanded && 'hidden'}`}>Danh mục</h3>
+              <h3 className={`mb-3 ml-4 text-xs font-semibold uppercase tracking-[0.18em] text-gray-400 ${!sidebarExpanded && 'hidden'}`}>{t('admin.categories')}</h3>
               <ul className="mb-6 flex flex-col gap-1.5">
                 <li>
                   <NavLink to="/admin/dashboard">
-                    <SidebarItem 
-                      icon={DashboardIcon} 
-                      label="Dashboard" 
-                      isActive={location.pathname === '/admin/dashboard'} 
+                    <SidebarItem
+                      icon={DashboardIcon}
+                      label={t('admin.dashboardTitle')}
+                      isActive={location.pathname === '/admin/dashboard'}
                       isExpanded={sidebarExpanded}
                     />
                   </NavLink>
                 </li>
-                {/* <li><SidebarItem icon={CalendarIcon} label="Lịch" isExpanded={sidebarExpanded}/></li> */}
                 <li>
                   <NavLink to="/admin/users">
-                    <SidebarItem 
-                      icon={UsersIcon} 
-                      label="Quản lý người dùng" 
-                      isActive={location.pathname === '/admin/users'} 
+                    <SidebarItem
+                      icon={UsersIcon}
+                      label={t('admin.userManagement')}
+                      isActive={location.pathname === '/admin/users'}
                       isExpanded={sidebarExpanded}
                     />
                   </NavLink>
                 </li>
                 <li>
                   <NavLink to="/admin/courses">
-                    <SidebarItem 
-                      icon={BookOpenIcon} 
-                      label="Quản lý khóa học" 
-                      isActive={location.pathname === '/admin/courses'} 
+                    <SidebarItem
+                      icon={BookOpenIcon}
+                      label={t('admin.courseManagement')}
+                      isActive={location.pathname === '/admin/courses'}
                       isExpanded={sidebarExpanded}
                     />
                   </NavLink>
                 </li>
-                {/* <li><SidebarItem icon={ProfileIcon} label="Hồ sơ người dùng" isExpanded={sidebarExpanded}/></li> */}
-                <li><SidebarItem icon={FormIcon} label="Biểu mẫu" hasSubmenu={true} isExpanded={sidebarExpanded}/></li>
-                <li><SidebarItem icon={TableIcon} label="Bảng" hasSubmenu={true} isExpanded={sidebarExpanded}/></li>
-                {/* <li><SidebarItem icon={PageIcon} label="Trang" hasSubmenu={true} isExpanded={sidebarExpanded}/></li> */}
+                <li><SidebarItem icon={FormIcon} label={t('admin.forms')} hasSubmenu={true} isExpanded={sidebarExpanded}/></li>
+                <li><SidebarItem icon={TableIcon} label={t('admin.tables')} hasSubmenu={true} isExpanded={sidebarExpanded}/></li>
               </ul>
             </div>
             <div>
-              <h3 className={`mb-3 ml-4 text-xs font-semibold uppercase tracking-[0.18em] text-gray-400 ${!sidebarExpanded && 'hidden'}`}>Khác</h3>
+              <h3 className={`mb-3 ml-4 text-xs font-semibold uppercase tracking-[0.18em] text-gray-400 ${!sidebarExpanded && 'hidden'}`}>{t('admin.others')}</h3>
               <ul className="mb-6 flex flex-col gap-1.5">
-                <li><SidebarItem icon={ChartPieIcon} label="Biểu đồ" hasSubmenu={true} isExpanded={sidebarExpanded}/></li>
-                <li><SidebarItem icon={FormIcon} label="Giao diện UI" hasSubmenu={true} isExpanded={sidebarExpanded}/></li>
+                <li><SidebarItem icon={ChartPieIcon} label={t('admin.charts')} hasSubmenu={true} isExpanded={sidebarExpanded}/></li>
+                <li>
+                  <NavLink to="/admin/course-review">
+                    <SidebarItem
+                      icon={FormIcon}
+                      label={t('admin.courseReview') || 'Course Review'}
+                      isActive={location.pathname === '/admin/course-review'}
+                      isExpanded={sidebarExpanded}
+                    />
+                  </NavLink>
+                </li>
                 <li>
                   <NavLink to="/admin/notifications">
-                    <SidebarItem icon={BellIcon} label="Thông báo" isActive={location.pathname === '/admin/notifications'} isExpanded={sidebarExpanded}/>
+                    <SidebarItem icon={BellIcon} label={t('admin.notifications')} isActive={location.pathname === '/admin/notifications'} isExpanded={sidebarExpanded}/>
                   </NavLink>
                 </li>
               </ul>
@@ -215,7 +251,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                    </span>
                   <input
                     type="text"
-                    placeholder="Tìm kiếm hoặc nhập lệnh..."
+                    placeholder={t('admin.searchPlaceholder')}
                     className="w-full rounded-full border border-gray-200 bg-[#F4F7FF] py-2.5 pl-11 pr-16 text-sm font-medium text-gray-600 outline-none transition focus:border-[#5a2dff] focus:bg-white xl:w-125"
                   />
             
@@ -224,21 +260,62 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             </div>
             
             {/* Right Header */}
-            <div className="flex items-center gap-3 2xsm:gap-7">
-               <ul className="flex items-center gap-2 2xsm:gap-4">
-                  <li>
-                    <button className="relative flex h-10 w-10 items-center justify-center rounded-full bg-[#EEF2FF] text-gray-500 transition hover:text-[#5a2dff]">
+            <div className="flex items-center gap-3 2xsm:gap-4">
+               <ul className="flex items-center gap-2 2xsm:gap-3">
+                  {/* Dark Mode Toggle */}
+                  {/* <li>
+                    <button className="relative rounded-full border border-gray-200 p-2 text-gray-500 transition hover:text-[#5a2dff]">
                        <MoonIcon />
                      </button>
+                  </li> */}
+
+                  {/* Language Switcher */}
+                  <li className="relative" ref={languageMenuRef}>
+                    <button
+                      onClick={handleLanguageMenuToggle}
+                      className="flex items-center gap-2 rounded-full border border-gray-200 px-3 py-2 text-gray-500 transition hover:text-[#5a2dff]"
+                      title={t('common.selectLanguage')}
+                    >
+                      <GlobeAltIcon className="h-5 w-5" />
+                      <span className="hidden sm:block text-sm font-medium">
+                        {languages.find(lang => lang.code === currentLanguage)?.shortCode}
+                      </span>
+                      <ChevronDownIcon className="h-4 w-4" />
+                    </button>
+                    {isLanguageOpen && (
+                      <div className="absolute right-0 mt-3 w-48 rounded-2xl border border-gray-100 bg-white p-2 shadow-xl z-50">
+                        <div className="space-y-1">
+                          {languages.map((language) => (
+                            <button
+                              key={language.code}
+                              onClick={() => handleLanguageSelect(language.code)}
+                              className={`flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm transition ${
+                                currentLanguage === language.code
+                                  ? 'bg-[#f6f0ff] text-[#5a2dff] font-semibold'
+                                  : 'text-gray-600 hover:bg-[#efeaff] hover:text-[#5a2dff]'
+                              }`}
+                            >
+                              <span className="text-lg">{language.shortCode}</span>
+                              <span>{language.name}</span>
+                              {currentLanguage === language.code && (
+                                <div className="ml-auto h-2 w-2 rounded-full bg-[#5a2dff]"></div>
+                              )}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </li>
+
+                  {/* Notifications */}
                   <li className="relative" ref={notificationMenuRef}>
                     <button
                       onClick={() => setNotificationOpen(!isNotificationOpen)}
-                      className="relative flex h-10 w-10 items-center justify-center rounded-full bg-[#EEF2FF] text-gray-500 transition hover:text-[#5a2dff]"
+                      className="relative rounded-full border border-gray-200 p-2 text-gray-500 transition hover:text-[#5a2dff]"
                     >
                       {unreadCount > 0 && (
-                        <span className="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
-                          {unreadCount > 9 ? '9+' : unreadCount}
+                        <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-[#ff7e6c] text-xs font-semibold text-white">
+                          {unreadCount > 99 ? "99+" : unreadCount}
                         </span>
                       )}
                       <BellIcon />
@@ -248,11 +325,11 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                     {isNotificationOpen && (
                       <div className="absolute right-0 mt-3 w-80 rounded-2xl border border-gray-100 bg-white shadow-xl z-50">
                         <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
-                          <h5 className="font-semibold text-gray-900 text-sm">Thông báo</h5>
+                          <h5 className="font-semibold text-gray-900 text-sm">{t('notifications.title')}</h5>
                           <div className="flex items-center gap-2">
                             {unreadCount > 0 && (
                               <span className="rounded-full bg-red-50 px-2 py-0.5 text-xs font-semibold text-red-500">
-                                {unreadCount} chưa đọc
+                                {unreadCount} {t('notifications.unread')}
                               </span>
                             )}
                             {unreadCount > 0 && (
@@ -260,7 +337,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                                 onClick={markAllAsRead}
                                 className="text-xs text-[#5a2dff] hover:underline font-medium whitespace-nowrap"
                               >
-                                Đọc tất cả
+                                {t('notifications.markAllRead')}
                               </button>
                             )}
                           </div>
@@ -272,18 +349,18 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
                               </svg>
-                              <span className="mt-2 block">Đang tải thông báo...</span>
+                              <span className="mt-2 block">{t('notifications.loading')}</span>
                             </li>
                           ) : notifError ? (
                             <li className="px-4 py-8 text-center text-sm text-red-400">{notifError}</li>
                           ) : notifications.length === 0 ? (
-                            <li className="px-4 py-8 text-center text-sm text-gray-400">Không có thông báo nào</li>
+                            <li className="px-4 py-8 text-center text-sm text-gray-400">{t('notifications.empty')}</li>
                           ) : (
                             notifications.map((notif) => {
                               const typeLabel = notif.type === 'CourseRequest'
-                                ? 'Yêu cầu duyệt khóa học'
+                                ? t('notifications.courseRequest')
                                 : notif.type === 'InstructorRequest'
-                                ? 'Yêu cầu trở thành giảng viên'
+                                ? t('notifications.instructorRequest')
                                 : notif.type;
                               const notifRoute = notif.type === 'CourseRequest'
                                 ? '/admin/courses'
@@ -315,7 +392,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                                       }}
                                       className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-[#5a2dff]/10 px-2.5 py-0.5 text-xs font-medium text-[#5a2dff] hover:bg-[#5a2dff]/20 transition-colors"
                                     >
-                                      Xét duyệt
+                                      {t('notifications.review')}
                                       <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
                                       </svg>
@@ -330,7 +407,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                                   {!notif.isRead && (
                                     <button
                                       onClick={() => markAsRead(notif.id)}
-                                      title="Đánh dấu đã đọc"
+                                      title={t('notifications.markAsRead')}
                                       className="flex h-6 w-6 items-center justify-center rounded-full text-gray-400 hover:bg-[#5a2dff]/10 hover:text-[#5a2dff] transition-colors"
                                     >
                                       <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -340,7 +417,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                                   )}
                                   <button
                                     onClick={() => deleteNotification(notif.id)}
-                                    title="Xóa thông báo"
+                                    title={t('notifications.delete')}
                                     className="flex h-6 w-6 items-center justify-center rounded-full text-gray-400 hover:bg-red-50 hover:text-red-500 transition-colors"
                                   >
                                     <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -356,12 +433,14 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                       </div>
                     )}
                   </li>
-                  <li>
-                    <button className="relative flex h-10 w-10 items-center justify-center rounded-full bg-[#EEF2FF] text-gray-500 transition hover:text-[#5a2dff]">
-                      <span className="absolute -top-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-red-500"></span>
+
+                  {/* Messages */}
+                  {/* <li>
+                    <button className="relative rounded-full border border-gray-200 p-2 text-gray-500 transition hover:text-[#5a2dff]">
+                      <span className="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full bg-red-500"></span>
                       <MessageIcon />
                      </button>
-                  </li>
+                  </li> */}
                </ul>
 
                {/* User Area */}
@@ -371,7 +450,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                     className="flex items-center gap-4"
                   >
                     <span className="hidden text-right lg:block">
-                        <span className="block text-sm font-medium text-black">{user?.fullName || "Admin"}</span>
+                        <span className="block text-sm font-medium text-black">{user?.fullName || t('admin.administrator')}</span>
                         <span className="block text-xs font-medium text-gray-500">{displayRole}</span>
                     </span>
                     
@@ -408,24 +487,24 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                                 </span>
                             )}
                             <div className="text-sm overflow-hidden">
-                                <p className="font-semibold text-gray-900 truncate">{user?.fullName || "Admin"}</p>
+                                <p className="font-semibold text-gray-900 truncate">{user?.fullName || t('admin.administrator')}</p>
                                 <p className="text-xs text-gray-500 truncate">{user?.email}</p>
                             </div>
                         </div>
                         <ul className="flex flex-col gap-1 text-sm text-gray-600">
                             <li>
                                 <Link to="/admin/profile" className="flex items-center gap-2 rounded-lg px-3 py-2 hover:bg-[#efeaff] hover:text-[#5a2dff] transition-colors">
-                                    <UserIcon className="h-4 w-4" /> <span>Thông tin cá nhân</span>
+                                    <UserIcon className="h-4 w-4" /> <span>{t('user.personalInfo')}</span>
                                 </Link>
                             </li>
                             <li>
                                 <Link to="/admin/change-password" className="flex items-center gap-2 rounded-lg px-3 py-2 hover:bg-[#efeaff] hover:text-[#5a2dff] transition-colors">
-                                    <KeyIcon className="h-4 w-4" /> <span>Đổi mật khẩu</span>
+                                    <KeyIcon className="h-4 w-4" /> <span>{t('user.changePassword')}</span>
                                 </Link>
                             </li>
                             <li>
                                 <button onClick={() => setLogoutConfirmOpen(true)} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 hover:bg-[#ffeceb] hover:text-[#ff4b3a] transition-colors text-left">
-                                    <ArrowLeftOnRectangleIcon className="h-4 w-4" /> <span>Đăng xuất</span>
+                                    <ArrowLeftOnRectangleIcon className="h-4 w-4" /> <span>{t('navigation.logout')}</span>
                                 </button>
                             </li>
                         </ul>
@@ -446,22 +525,22 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
        {isLogoutConfirmOpen && (
             <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm">
             <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl animate-in fade-in zoom-in duration-200">
-                <h3 className="text-lg font-semibold text-gray-900">Xác nhận đăng xuất</h3>
-                <p className="mt-2 text-sm text-gray-500">Bạn có chắc chắn muốn đăng xuất khỏi hệ thống quản trị không?</p>
+                <h3 className="text-lg font-semibold text-gray-900">{t('navigation.logout')}?</h3>
+                <p className="mt-2 text-sm text-gray-500">{t('common.confirmLogout')}</p>
                 <div className="mt-6 flex justify-end gap-3 text-sm font-semibold">
                 <button
                     type="button"
                     onClick={() => setLogoutConfirmOpen(false)}
                     className="rounded-full border border-gray-200 px-4 py-2 text-gray-600 transition hover:bg-gray-100"
                 >
-                    Hủy
+                    {t('common.cancel')}
                 </button>
                 <button
                     type="button"
                     onClick={handleConfirmLogout}
                     className="rounded-full bg-[#5a2dff] px-4 py-2 text-white transition hover:bg-[#4920d9]"
                 >
-                    Đăng xuất
+                    {t('common.confirm')}
                 </button>
                 </div>
             </div>

@@ -12,10 +12,13 @@ import {
 import { useAuth } from "./hooks/useAuth";
 import type { LoginRequest } from "./models/auth";
 import { AuthNotification } from "./components/AuthNotification";
+import { useTranslation } from 'react-i18next';
+import { mapAuthErrorToTranslation } from './utils/auth.utils';
 
 const LoginPage: React.FC = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
-  const { login, loading, error, getGoogleAuthUrl, getProfile } = useAuth();
+  const { login, loading, error, getGoogleAuthUrl, getProfile, getDefaultRoute } = useAuth();
   const [formData, setFormData] = useState<LoginRequest>({
     username: "",
     password: "",
@@ -49,16 +52,15 @@ const LoginPage: React.FC = () => {
           localStorage.setItem("accessToken", accessToken);
           const profileRes = await getProfile(accessToken);
           if (profileRes?.success && profileRes.data) {
-            if (profileRes.data.role === 'Admin') {
-              navigate("/admin/dashboard");
-            } else {
-              navigate("/user/home");
-            }
+            setTimeout(() => {
+              const defaultRoute = getDefaultRoute();
+              window.location.href = defaultRoute;
+            }, 500);
           } else {
             setNotification({
               show: true,
               type: "error",
-              message: profileRes?.message || "Không lấy được thông tin người dùng"
+              message: profileRes?.message || t('errors.auth.userNotFound')
             });
           }
         } catch (err) {
@@ -86,34 +88,26 @@ const LoginPage: React.FC = () => {
         setNotification({
           show: true,
           type: 'success',
-          message: response.message
+          message: t('auth.loginSuccess')
         });
-        
-        // Chuyển hướng sau khi thông báo thành công
-        setTimeout(() => {
-          const userStr = localStorage.getItem('user');
-          const user = userStr ? JSON.parse(userStr) : null;
-          // Ưu tiên check localStorage, sau đó kiểm tra trong response nếu có
-          const role = user?.role || (response.data as any)?.role || (response.data as any)?.user?.role;
 
-          if (role === 'Admin') {
-            navigate("/admin/dashboard");
-          } else {
-            navigate("/user/home");
-          }
-        }, 1500);
+        // Force reload để đảm bảo state được cập nhật
+        setTimeout(() => {
+          const defaultRoute = getDefaultRoute();
+          window.location.href = defaultRoute;
+        }, 500);
       } else {
         // Xử lý trường hợp response không thành công dù không có lỗi catch
         setNotification({
           show: true,
           type: 'error',
-          message: response?.message || 'Thông tin đăng nhập không chính xác.'
+          message: response?.message || t('auth.invalidCredentials')
         });
       }
     } catch (err) {
       console.error("Login failed:", err);
       // Sử dụng error state từ hook nếu có, nếu không thì dùng thông báo chung
-      const errorMessage = error || (err instanceof Error ? err.message : 'Đăng nhập thất bại. Vui lòng thử lại.');
+      const errorMessage = error || mapAuthErrorToTranslation((err instanceof Error ? err.message : null), t);
       setNotification({
         show: true,
         type: 'error',
@@ -133,7 +127,7 @@ const LoginPage: React.FC = () => {
         setNotification({
           show: true,
           type: "error",
-          message: "Không thể lấy đường dẫn Google. Vui lòng thử lại."
+          message: t('errors.auth.googleAuthUrlFailed')
         });
       }
     } catch (err) {
@@ -141,7 +135,7 @@ const LoginPage: React.FC = () => {
       setNotification({
         show: true,
         type: "error",
-        message: (err instanceof Error && err.message) ? err.message : "Lỗi khi kết nối với Google."
+        message: mapAuthErrorToTranslation((err instanceof Error && err.message) ? err.message : null, t)
       });
     }
   };
@@ -155,13 +149,13 @@ const LoginPage: React.FC = () => {
         onClose={() => setNotification(prev => ({ ...prev, show: false }))}
       />
       <Link to="/" className="absolute left-4 top-4 z-10 inline-flex items-center gap-2 text-sm font-medium text-indigo-500 hover:text-indigo-400">
-        ← Trang chủ
+        ← {t('navigation.home')}
       </Link>
       <div className="w-full max-w-md rounded-3xl border border-gray-200 bg-white p-8 shadow-[0_24px_80px_rgba(15,23,42,0.08)]">
         <div className="space-y-2 text-center">
-          <h1 className="text-3xl font-semibold text-gray-900">Đăng nhập</h1>
+          <h1 className="text-3xl font-semibold text-gray-900">{t('auth.login')}</h1>
           <p className="text-sm text-gray-500">
-            Đăng nhập để tiếp tục học tập
+            {t('auth.loginDescription')}
           </p>
         </div>
 
@@ -172,15 +166,15 @@ const LoginPage: React.FC = () => {
             className="flex h-12 w-full items-center justify-center gap-3 rounded-2xl border border-gray-200 bg-white text-sm font-medium text-gray-700 transition-colors hover:border-gray-300 hover:bg-gray-50"
           >
             <FcGoogle className="text-lg" />
-            Đăng nhập với Google
+            {t('auth.orLoginWith')} Google
           </button>
-         
+
         </div>
 
         <div className="mt-6 flex items-center gap-4">
           <span className="h-px flex-1 bg-gray-200" />
           <span className="text-xs font-semibold uppercase tracking-[0.3em] text-gray-400">
-            hoặc
+            {t('auth.orLoginWith').toLowerCase()}
           </span>
           <span className="h-px flex-1 bg-gray-200" />
         </div>
@@ -188,7 +182,7 @@ const LoginPage: React.FC = () => {
         <form className="mt-6 space-y-6" onSubmit={handleSubmit}>
           <div className="space-y-2">
             <label htmlFor="username" className="text-sm font-medium text-gray-700">
-              Tên đăng nhập
+              {t('auth.email')}
             </label>
             <div className="flex items-center gap-3 rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 transition focus-within:border-indigo-400 focus-within:bg-white focus-within:shadow-[0_0_0_4px_rgba(99,102,241,0.08)]">
               <HiOutlineEnvelope className="text-lg text-gray-400" />
@@ -196,7 +190,7 @@ const LoginPage: React.FC = () => {
                 id="username"
                 name="username"
                 type="text"
-                placeholder="Nhập tên đăng nhập"
+                placeholder={t('auth.email')}
                 className="w-full bg-transparent text-sm text-gray-900 placeholder-gray-400 outline outline"
                 value={formData.username}
                 onChange={(e) => setFormData({ ...formData, username: e.target.value })}
@@ -207,7 +201,7 @@ const LoginPage: React.FC = () => {
 
           <div className="space-y-2">
             <label htmlFor="password" className="text-sm font-medium text-gray-700">
-              Mật khẩu
+              {t('auth.password')}
             </label>
             <div className="flex items-center gap-3 rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 transition focus-within:border-indigo-400 focus-within:bg-white focus-within:shadow-[0_0_0_4px_rgba(99,102,241,0.08)]">
               <HiOutlineLockClosed className="text-lg text-gray-400" />
@@ -215,7 +209,7 @@ const LoginPage: React.FC = () => {
                 id="password"
                 name="password"
                 type={showPassword ? "text" : "password"}
-                placeholder="Nhập mật khẩu"
+                placeholder={t('auth.password')}
                 className="w-full bg-transparent text-sm text-gray-900 placeholder-gray-400 outline-none"
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
@@ -225,7 +219,7 @@ const LoginPage: React.FC = () => {
                 type="button"
                 onClick={() => setShowPassword((prev) => !prev)}
                 className="text-lg text-gray-400 transition hover:text-gray-600"
-                aria-label={showPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
+                aria-label={showPassword ? "Hide password" : "Show password"}
               >
                 {showPassword ? <HiOutlineEyeSlash /> : <HiOutlineEye />}
               </button>
@@ -240,20 +234,20 @@ const LoginPage: React.FC = () => {
                 checked={rememberMe}
                 onChange={(e) => setRememberMe(e.target.checked)}
               />
-              <span className="text-sm text-gray-600">Ghi nhớ đăng nhập</span>
+              <span className="text-sm text-gray-600">{t('auth.rememberMe')}</span>
             </label>
 
             <Link
               to="/forgot-password"
               className="text-sm font-semibold text-indigo-500 hover:text-indigo-400"
             >
-              Quên mật khẩu?
+              {t('auth.forgotPassword')}
             </Link>
           </div>
 
           {error && (
             <div className="text-red-500 text-sm text-center">
-              {error}
+              {mapAuthErrorToTranslation(error, t)}
             </div>
           )}
 
@@ -262,14 +256,14 @@ const LoginPage: React.FC = () => {
             className="h-12 w-full rounded-2xl bg-[#8b3dff] text-sm font-semibold text-white shadow-[0_10px_30px_rgba(139,61,255,0.35)] transition hover:bg-[#7a2df0] disabled:opacity-60"
             disabled={loading || !formData.username || !formData.password}
           >
-            {loading ? "Đang xử lý..." : "Đăng nhập"}
+            {loading ? t('common.loading') : t('auth.login')}
           </button>
         </form>
 
         <p className="mt-6 text-center text-sm text-gray-500">
-          Chưa có tài khoản?{" "}
+          {t('auth.dontHaveAccount')}{" "}
           <Link to="/register" className="font-semibold text-indigo-500 hover:text-indigo-400">
-            Đăng ký ngay
+            {t('auth.register')}
           </Link>
         </p>
       </div>

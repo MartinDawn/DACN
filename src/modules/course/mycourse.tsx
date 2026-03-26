@@ -1,6 +1,7 @@
 // src/modules/course/mycourse.tsx
 
 import React, { useState, useMemo, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import {
   ArrowLeftIcon,
   BookOpenIcon,
@@ -38,31 +39,32 @@ type CourseProgress = MyCourse & {
 
 // --- CONSTANTS ---
 
-const filters: { label: string; value: FilterValue }[] = [
-  { label: "Tất cả khóa học", value: "all" },
-  { label: "Đang học", value: "inProgress" },
-  { label: "Đã hoàn thành", value: "completed" },
-  { label: "Chưa bắt đầu", value: "notStarted" },
-];
-
-const quickActions = [
-  { title: "Khám phá thêm khóa học", icon: BookOpenIcon, href: "/courses" },
-  { title: "Đặt mục tiêu học tập", icon: SparklesIcon, href: "#" },
-  { title: "Tải chứng chỉ", icon: DocumentArrowDownIcon, href: "#" },
-];
-
-const achievements = [
-  { title: "Hoàn thành khóa học đầu tiên", date: "18 tháng 1, 2024" },
-  { title: "Đã học 5 giờ", date: "15 tháng 1, 2024" },
-  { title: "Chuyên gia JavaScript", date: "18 tháng 1, 2024" },
-  { title: "Học liên tục một tuần", date: "20 tháng 1, 2024" },
-];
-
 // --- COMPONENT ---
 
 const MyCoursePage: React.FC = () => {
+  const { t } = useTranslation();
   // 2. KHỞI TẠO NAVIGATE
   const navigate = useNavigate();
+
+  const quickActions = [
+    { title: t('home.quickActions.extraCourses'), icon: BookOpenIcon, href: "/courses" },
+    { title: t('home.quickActions.setGoals'), icon: SparklesIcon, href: "#" },
+    { title: t('common.downloadCertificate'), icon: DocumentArrowDownIcon, href: "#" },
+  ];
+
+  const achievements = [
+    { title: t('home.achievements.firstCourse'), date: "18 tháng 1, 2024" },
+    { title: t('home.achievements.studiedHours'), date: "15 tháng 1, 2024" },
+    { title: t('home.achievements.jsExpert'), date: "18 tháng 1, 2024" },
+    { title: t('home.achievements.studyStreak'), date: "20 tháng 1, 2024" },
+  ];
+
+  const filters: { label: string; value: FilterValue }[] = [
+    { label: t('myCourses.filters.all'), value: "all" },
+    { label: t('myCourses.filters.inProgress'), value: "inProgress" },
+    { label: t('myCourses.filters.completed'), value: "completed" },
+    { label: t('myCourses.filters.notStarted'), value: "notStarted" },
+  ];
 
   // State quản lý UI (filter và search)
   const [activeFilter, setActiveFilter] = useState<FilterValue>("all");
@@ -219,7 +221,7 @@ const MyCoursePage: React.FC = () => {
         });
         success = response.success;
         if (!success) {
-          alert(response.message || 'Không thể gửi đánh giá');
+          alert(response.message || t('courseDetail.errors.submitRating'));
         }
       }
 
@@ -271,95 +273,92 @@ const MyCoursePage: React.FC = () => {
           className="inline-flex items-center gap-2 text-sm font-semibold text-[#5a2dff] transition hover:text-[#3c1cd6]"
         >
           <ArrowLeftIcon className="h-4 w-4" />
-          Quay lại trang chủ
+          {t('myCourses.backToHome')}
         </Link>
         
         {/* Section Header & Stats */}
         <section className="space-y-6">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
             <div>
-              {/* <p className="text-sm font-semibold uppercase tracking-[0.3em] text-indigo-400">
-                Dashboard
-              </p> */}
-              <h1 className="text-3xl font-bold text-gray-900">
-                Khóa học của tôi
+              <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-900 via-gray-800 to-gray-700 bg-clip-text text-transparent">
+                {t('myCourses.title')}
               </h1>
-              <p className="mt-2 text-sm text-gray-500">
-                Theo dõi tiến độ và tiếp tục học tập
+              <p className="mt-3 text-base text-gray-600 leading-relaxed max-w-2xl">
+                {t('myCourses.subtitle')}
               </p>
             </div>
-            <div className="relative w-full max-w-sm">
+            <div className="relative w-full max-w-md">
               <MagnifyingGlassIcon className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
               <input
                 type="search"
-                placeholder="Tìm kiếm khóa học..."
+                placeholder={t('myCourses.searchPlaceholder')}
                 value={searchTerm}
                 onChange={(event) => setSearchTerm(event.target.value)}
-                className="h-12 w-full rounded-full border border-gray-200 bg-gray-50 pl-12 pr-4 text-sm font-medium text-gray-600 outline-none transition focus:border-[#5a2dff] focus:bg-white"
+                className="h-12 w-full rounded-full border border-gray-200 bg-gray-50/50 pl-12 pr-4 text-sm font-medium text-gray-700 outline-none transition focus:border-[#5a2dff] focus:bg-white focus:ring-4 focus:ring-[#5a2dff]/10 hover:bg-white"
               />
             </div>
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-4">
             {/* Stat: Total Courses */}
-            <div className="rounded-3xl bg-white p-6 shadow-[0_18px_40px_rgba(15,23,42,0.08)]">
-              <div className="flex items-center justify-between">
-                <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-[#efe7ff] text-[#5a2dff]">
+            <div className="rounded-3xl bg-gradient-to-br from-white to-[#efe7ff]/30 p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border border-[#5a2dff]/10">
+              <div className="flex items-center justify-between mb-4">
+                <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-[#5a2dff] to-[#7c3aed] text-white shadow-md">
                   <BookOpenIcon className="h-6 w-6" />
                 </span>
-                <span className="text-xs font-semibold uppercase text-indigo-400">
-                  Tổng cộng
+                <span className="text-xs font-bold uppercase tracking-wider text-[#5a2dff] bg-[#5a2dff]/10 px-3 py-1 rounded-full">
+                  {t('myCourses.stats.total')}
                 </span>
               </div>
-              <p className="mt-6 text-3xl font-semibold text-gray-900">
+              <p className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
                 {coursesWithProgress.length}
               </p>
-              <p className="text-sm text-gray-500">Khóa học đã đăng ký</p>
+              <p className="text-sm text-gray-600 font-medium">{t('myCourses.stats.enrolled')}</p>
             </div>
             {/* Stat: Completed */}
-            <div className="rounded-3xl bg-white p-6 shadow-[0_18px_40px_rgba(15,23,42,0.08)]">
-              <div className="flex items-center justify-between">
-                <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-500">
+            <div className="rounded-3xl bg-gradient-to-br from-white to-emerald-50/50 p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border border-emerald-200/50">
+              <div className="flex items-center justify-between mb-4">
+                <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-md">
                   <CheckCircleIcon className="h-6 w-6" />
                 </span>
-                <span className="text-xs font-semibold uppercase text-emerald-400">
-                  Đã hoàn thành
+                <span className="text-xs font-bold uppercase tracking-wider text-emerald-600 bg-emerald-100 px-3 py-1 rounded-full">
+                  {t('myCourses.stats.completed')}
                 </span>
               </div>
-              <p className="mt-6 text-3xl font-semibold text-gray-900">
+              <p className="text-3xl font-bold bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">
                 {completedCount}
               </p>
-              <p className="text-sm text-gray-500">Khóa học đã kết thúc</p>
+              <p className="text-sm text-gray-600 font-medium">{t('myCourses.stats.finished')}</p>
             </div>
             {/* Stat: Total Hours */}
-            <div className="rounded-3xl bg-white p-6 shadow-[0_18px_40px_rgba(15,23,42,0.08)]">
-              <div className="flex items-center justify-between">
-                <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-sky-50 text-sky-500">
+            <div className="rounded-3xl bg-gradient-to-br from-white to-sky-50/50 p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border border-sky-200/50">
+              <div className="flex items-center justify-between mb-4">
+                <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-500 to-blue-600 text-white shadow-md">
                   <ClockIcon className="h-6 w-6" />
                 </span>
-                <span className="text-xs font-semibold uppercase text-sky-400">
-                  Tổng thời gian
+                <span className="text-xs font-bold uppercase tracking-wider text-sky-600 bg-sky-100 px-3 py-1 rounded-full">
+                  {t('myCourses.stats.totalTime')}
                 </span>
               </div>
-              <p className="mt-6 text-3xl font-semibold text-gray-900">
+              <p className="text-3xl font-bold bg-gradient-to-r from-sky-600 to-blue-600 bg-clip-text text-transparent">
                 {totalHours}h
               </p>
-              <p className="text-sm text-gray-500">Thời gian học tích lũy</p>
+              <p className="text-sm text-gray-600 font-medium">{t('myCourses.stats.studyTime')}</p>
             </div>
             {/* Stat: In Progress */}
-            <div className="rounded-3xl bg-white p-6 shadow-[0_18px_40px_rgba(15,23,42,0.08)]">
-              <div className="flex items-center justify-between">
-                <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-500">
+            <div className="rounded-3xl bg-gradient-to-br from-white to-orange-50/50 p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border border-orange-200/50">
+              <div className="flex items-center justify-between mb-4">
+                <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-orange-500 to-red-500 text-white shadow-md">
                   <SparklesIcon className="h-6 w-6" />
                 </span>
-                <span className="text-xs font-semibold uppercase text-indigo-400">
-                  Đang học
+                <span className="text-xs font-bold uppercase tracking-wider text-orange-600 bg-orange-100 px-3 py-1 rounded-full">
+                  {t('myCourses.filters.inProgress')}
                 </span>
               </div>
-              <p className="mt-6 text-3xl font-semibold text-gray-900">
+              <p className="text-3xl font-bold bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">
                 {inProgressCount}
               </p>
-              <p className="text-sm text-gray-500">Khóa học đang theo dõi</p>
+              <p className="text-sm text-gray-600 font-medium">{t('myCourses.sidebar.trackingCourses')}</p>
             </div>
           </div>
         </section>
@@ -388,7 +387,7 @@ const MyCoursePage: React.FC = () => {
             <div className="space-y-5">
               {/* Trạng thái Loading / Error */}
               {isMyCoursesLoading && (
-                <div className="text-center p-8">Đang tải các khóa học của bạn...</div>
+                <div className="text-center p-8">{t('myCourses.loading.courses')}</div>
               )}
               {myCoursesError && (
                 <div className="text-center p-8 text-red-500">{myCoursesError}</div>
@@ -397,7 +396,7 @@ const MyCoursePage: React.FC = () => {
               {/* Render danh sách khóa học */}
               {!isMyCoursesLoading && !myCoursesError && visibleCourses.map((course) => {
                 // (Các biến logic bên trong map giữ nguyên)
-                const lessonsLabel = `${course.lessonsCompleted}/${course.lessonsTotal} bài học`;
+                const lessonsLabel = `${course.lessonsCompleted}/${course.lessonsTotal} ${t('myCourses.course.lessons')}`;
                 const statusBadge =
                   course.status === "completed"
                     ? "bg-emerald-50 text-emerald-600"
@@ -406,34 +405,35 @@ const MyCoursePage: React.FC = () => {
                     : "bg-gray-100 text-gray-500";
                 const statusText =
                   course.status === "completed"
-                    ? "Đã hoàn thành"
+                    ? t('myCourses.filters.completed')
                     : course.status === "inProgress"
-                    ? "Đang học"
-                    : "Chưa bắt đầu";
+                    ? t('myCourses.filters.inProgress')
+                    : t('myCourses.filters.notStarted');
                 const actionLabel =
                   course.status === "completed"
-                    ? "Xem lại"
+                    ? t('myCourses.course.actions.review')
                     : course.status === "inProgress"
-                    ? "Tiếp tục"
-                    : "Bắt đầu";
+                    ? t('myCourses.course.actions.continue')
+                    : t('myCourses.course.actions.start');
                 const actionVariant = "bg-[#5a2dff]"; // Luôn là màu chính
 
                 return (
                   <article
                     key={course.id}
-                    className="flex flex-col gap-6 rounded-3xl border border-gray-100 bg-white p-6 shadow-[0_24px_56px_rgba(15,23,42,0.08)] transition hover:-translate-y-1 hover:shadow-[0_32px_70px_rgba(15,23,42,0.12)] sm:flex-row"
+                    className="group flex flex-col gap-6 rounded-3xl border border-gray-100 bg-white p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-2 hover:border-[#5a2dff]/20 sm:flex-row"
                   >
                     <div className="relative h-40 w-full overflow-hidden rounded-2xl sm:h-auto sm:w-48">
                       <img
                         src={course.imageUrl || "https://placehold.co/900x600"}
                         alt={course.name}
-                        className="h-full w-full object-cover transition duration-300 sm:group-hover:scale-105"
+                        className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
                       />
                       <span
-                        className={`absolute left-3 top-3 inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${statusBadge}`}
+                        className={`absolute left-3 top-3 inline-flex items-center rounded-full px-3 py-1.5 text-xs font-semibold backdrop-blur-sm ${statusBadge}`}
                       >
                         {statusText}
                       </span>
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                     </div>
                     <div className="flex flex-1 flex-col justify-between gap-4">
                       <div className="space-y-3">
@@ -452,45 +452,44 @@ const MyCoursePage: React.FC = () => {
                             ★ {course.rating.toFixed(1)} {/* Dùng rating thật */}
                           </span>
                         </div>
-                        <div className="space-y-2">
+                        <div className="space-y-3">
                           <div className="flex items-center justify-between text-xs font-semibold text-gray-500">
                             <span>{lessonsLabel}</span>
-                            <span>{course.progress}%</span>
+                            <span className="bg-[#5a2dff]/10 text-[#5a2dff] px-2 py-1 rounded-full">{course.progress}%</span>
                           </div>
-                          <div className="h-2 w-full rounded-full bg-gray-100">
+                          <div className="h-2.5 w-full rounded-full bg-gray-100 overflow-hidden">
                             <div
-                              className="h-full rounded-full bg-[#5a2dff] transition-all"
+                              className="h-full rounded-full bg-gradient-to-r from-[#5a2dff] to-[#7c3aed] transition-all duration-700 ease-out"
                               style={{ width: `${course.progress}%` }}
                             />
                           </div>
-                          <p className="text-xs text-gray-400">
-                            Lần học cuối: {course.lastActivity}
+                          <p className="text-xs text-gray-500 bg-gray-50 px-2 py-1 rounded-full inline-block">
+                            {t('myCourses.course.lastStudied')} {course.lastActivity}
                           </p>
                         </div>
                       </div>
                       <div className="flex flex-wrap items-center justify-between gap-3">
                         <p className="text-sm font-medium text-gray-500">
-                          Thời lượng:{" "}
+                          {t('myCourses.course.duration')}{" "}
                           <span className="font-semibold text-gray-900">
-                            {course.durationHours} giờ
+                            {course.durationHours} {t('myCourses.course.hours')}
                           </span>
                         </p>
                         <div className="flex items-center gap-2">
-                          {/* 3. THÊM onClick VÀO NÚT NÀY */}
                           <button
                             type="button"
                             onClick={() => navigate(`/user/course-progress/${course.id}`)}
-                            className={`rounded-full px-4 py-2 text-sm font-semibold text-white shadow-sm shadow-[#5a2dff]/30 transition ${actionVariant} hover:bg-[#4a21eb]`}
+                            className={`rounded-full px-5 py-2.5 text-sm font-semibold text-white shadow-lg transition-all duration-200 ${actionVariant} hover:bg-[#4a21eb] hover:shadow-xl hover:-translate-y-0.5 hover:shadow-[#5a2dff]/30`}
                           >
                             {actionLabel}
                           </button>
                           <button
                             type="button"
                             onClick={() => openCommentsModal(course)}
-                            className="inline-flex items-center gap-1.5 rounded-full border border-indigo-300 bg-indigo-50 px-4 py-2 text-sm font-semibold text-indigo-600 transition hover:bg-indigo-100 hover:border-indigo-400"
+                            className="inline-flex items-center gap-2 rounded-full border border-indigo-300 bg-indigo-50 px-4 py-2.5 text-sm font-semibold text-indigo-600 transition-all duration-200 hover:bg-indigo-100 hover:border-indigo-400 hover:shadow-md hover:-translate-y-0.5"
                           >
                             <ChatBubbleLeftRightIcon className="h-4 w-4" />
-                            Nhận xét
+                            {t('myCourses.course.actions.comments')}
                           </button>
                         </div>
                       </div>
@@ -503,8 +502,8 @@ const MyCoursePage: React.FC = () => {
               {!isMyCoursesLoading && !myCoursesError && !visibleCourses.length && (
                 <div className="rounded-3xl border border-dashed border-gray-200 bg-white p-12 text-center text-sm font-semibold text-gray-500">
                   {searchTerm
-                    ? "Không tìm thấy khóa học nào khớp với tìm kiếm."
-                    : "Bạn chưa đăng ký khóa học nào trong mục này."
+                    ? t('myCourses.empty.noResults')
+                    : t('myCourses.empty.noEnrolled')
                   }
                 </div>
               )}
@@ -515,10 +514,10 @@ const MyCoursePage: React.FC = () => {
           <aside className="space-y-6">
             <div className="rounded-3xl bg-white p-6 shadow-[0_24px_56px_rgba(15,23,42,0.08)]">
               <h3 className="text-lg font-semibold text-gray-900">
-                Tiến độ tổng quan
+                {t('myCourses.sidebar.overviewTitle')}
               </h3>
               <p className="mt-1 text-sm text-gray-500">
-                Mức độ hoàn thành trung bình của tất cả khóa học
+                {t('myCourses.sidebar.overviewDesc')}
               </p>
               <div className="mt-6 flex items-center gap-6">
                 <div className="relative flex h-28 w-28 items-center justify-center rounded-full bg-[#efe7ff]">
@@ -528,19 +527,19 @@ const MyCoursePage: React.FC = () => {
                 </div>
                 <div className="space-y-3 text-sm text-gray-500">
                   <div className="flex items-center justify-between">
-                    <span>Đã hoàn thành</span>
+                    <span>{t('myCourses.filters.completed')}</span>
                     <span className="font-semibold text-gray-900">
                       {completedCount}
                     </span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span>Đang học</span>
+                    <span>{t('myCourses.filters.inProgress')}</span>
                     <span className="font-semibold text-gray-900">
                       {inProgressCount}
                     </span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span>Chưa bắt đầu</span>
+                    <span>{t('myCourses.filters.notStarted')}</span>
                     <span className="font-semibold text-gray-900">
                       {notStartedCount}
                     </span>
@@ -552,7 +551,7 @@ const MyCoursePage: React.FC = () => {
             <div className="space-y-6">
               <div className="rounded-3xl bg-white p-6 shadow-[0_24px_56px_rgba(15,23,42,0.08)]">
                 <h3 className="text-lg font-semibold text-gray-900">
-                  Thao tác nhanh
+                  {t('myCourses.sidebar.quickActionsTitle')}
                 </h3>
                 <div className="mt-4 space-y-3">
                   {quickActions.map(({ title, icon: Icon, href }) => (
@@ -575,7 +574,7 @@ const MyCoursePage: React.FC = () => {
 
               <div className="rounded-3xl bg-white p-6 shadow-[0_24px_56px_rgba(15,23,42,0.08)]">
                 <h3 className="text-lg font-semibold text-gray-900">
-                  Thành tích gần đây
+                  {t('myCourses.sidebar.achievementsTitle')}
                 </h3>
                 <ul className="mt-4 space-y-4 text-sm text-gray-600">
                   {achievements.map((achievement) => (
@@ -603,7 +602,7 @@ const MyCoursePage: React.FC = () => {
             <div className="flex items-start justify-between gap-4 p-8 pb-6 border-b border-gray-100">
               <div className="flex-1">
                 <h2 className="text-xl font-bold text-gray-900">
-                  Nhận xét khóa học
+                  {t('myCourses.comments.modalTitle')}
                 </h2>
                 <p className="mt-1 text-sm text-gray-500 line-clamp-2">{commentsModal.name}</p>
               </div>
@@ -615,7 +614,7 @@ const MyCoursePage: React.FC = () => {
                     className="rounded-full bg-[#5a2dff] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#4a21eb] flex items-center gap-2"
                   >
                     <StarIcon className="h-4 w-4" />
-                    {commentsData.myComment ? 'Đánh giá lại' : 'Đánh giá'}
+                    {commentsData.myComment ? t('myCourses.comments.rateAgain') : t('myCourses.comments.rate')}
                   </button>
                 )}
                 <button
@@ -632,7 +631,7 @@ const MyCoursePage: React.FC = () => {
             <div className="flex-1 overflow-y-auto p-8">
               {isLoadingComments ? (
                 <div className="text-center py-12 text-gray-500">
-                  Đang tải nhận xét...
+                  {t('myCourses.loading.comments')}
                 </div>
               ) : commentsData ? (
                 <div className="space-y-6">
@@ -658,7 +657,7 @@ const MyCoursePage: React.FC = () => {
                         <div className="flex-1">
                           <div className="flex items-center justify-between">
                             <div>
-                              <p className="font-semibold text-gray-900">{commentsData.myComment.userName} <span className="text-xs font-normal text-indigo-600">(Bạn)</span></p>
+                              <p className="font-semibold text-gray-900">{commentsData.myComment.userName} <span className="text-xs font-normal text-indigo-600">{t('myCourses.comments.you')}</span></p>
                               <div className="flex items-center gap-1 mt-1">
                                 {[...Array(5)].map((_, i) => (
                                   <StarIcon
@@ -686,7 +685,7 @@ const MyCoursePage: React.FC = () => {
                                       <div className="h-8 w-8 rounded-full bg-indigo-500 flex items-center justify-center">
                                         <span className="text-white font-semibold text-xs">GV</span>
                                       </div>
-                                      <p className="text-sm font-semibold text-indigo-700">Phản hồi từ giảng viên</p>
+                                      <p className="text-sm font-semibold text-indigo-700">{t('myCourses.comments.instructorReply')}</p>
                                     </div>
                                     <span className="text-xs text-gray-400">
                                       {formatDate(reply.timestamp)}
@@ -705,7 +704,7 @@ const MyCoursePage: React.FC = () => {
                   {/* All Comments Section */}
                   <div>
                     <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                      Tất cả nhận xét ({commentsData.allComments.length})
+                      {t('myCourses.comments.allComments', { count: commentsData.allComments.length })}
                     </h3>
                     <div className="space-y-5">
                       {commentsData.allComments.map((comment) => (
@@ -757,7 +756,7 @@ const MyCoursePage: React.FC = () => {
                                           <div className="h-8 w-8 rounded-full bg-indigo-500 flex items-center justify-center">
                                             <span className="text-white font-semibold text-xs">GV</span>
                                           </div>
-                                          <p className="text-sm font-semibold text-indigo-700">Phản hồi từ giảng viên</p>
+                                          <p className="text-sm font-semibold text-indigo-700">{t('myCourses.comments.instructorReply')}</p>
                                         </div>
                                         <span className="text-xs text-gray-400">
                                           {formatDate(reply.timestamp)}
@@ -777,13 +776,13 @@ const MyCoursePage: React.FC = () => {
 
                   {commentsData.allComments.length === 0 && !commentsData.myComment && (
                     <div className="text-center py-12 text-gray-500">
-                      Chưa có nhận xét nào cho khóa học này
+                      {t('myCourses.comments.noComments')}
                     </div>
                   )}
                 </div>
               ) : (
                 <div className="text-center py-12 text-red-500">
-                  Không thể tải nhận xét. Vui lòng thử lại.
+                  {t('myCourses.comments.loadError')}
                 </div>
               )}
             </div>
@@ -798,7 +797,7 @@ const MyCoursePage: React.FC = () => {
             {/* Header */}
             <div className="flex items-center justify-between p-6 border-b border-gray-100">
               <h3 className="text-lg font-bold text-gray-900">
-                {commentsData?.myComment ? 'Đánh giá lại khóa học' : 'Đánh giá khóa học'}
+                {commentsData?.myComment ? t('myCourses.rating.modalTitleUpdate') : t('myCourses.rating.modalTitle')}
               </h3>
               <button
                 type="button"
@@ -816,7 +815,7 @@ const MyCoursePage: React.FC = () => {
               {/* Star Rating */}
               <div className="space-y-2">
                 <label className="block text-sm font-semibold text-gray-900">
-                  Đánh giá của bạn
+                  {t('myCourses.rating.yourRating')}
                 </label>
                 <div className="flex items-center gap-2">
                   {[1, 2, 3, 4, 5].map((star) => (
@@ -842,7 +841,7 @@ const MyCoursePage: React.FC = () => {
               {/* Content */}
               <div className="space-y-2">
                 <label htmlFor="rating-content" className="block text-sm font-semibold text-gray-900">
-                  Nhận xét của bạn
+                  {t('myCourses.rating.yourComment')}
                 </label>
                 <textarea
                   id="rating-content"
@@ -850,7 +849,7 @@ const MyCoursePage: React.FC = () => {
                   onChange={(e) => setRatingContent(e.target.value)}
                   rows={4}
                   className="w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 outline-none transition focus:border-[#5a2dff] focus:bg-white resize-none"
-                  placeholder="Chia sẻ trải nghiệm của bạn về khóa học này..."
+                  placeholder={t('myCourses.rating.commentPlaceholder')}
                 ></textarea>
               </div>
             </div>
@@ -863,7 +862,7 @@ const MyCoursePage: React.FC = () => {
                 disabled={isSubmittingRating}
                 className="rounded-full px-5 py-2.5 text-sm font-semibold text-gray-700 transition hover:bg-gray-100 disabled:opacity-50"
               >
-                Hủy
+                {t('myCourses.rating.cancel')}
               </button>
               <button
                 type="button"
@@ -871,7 +870,7 @@ const MyCoursePage: React.FC = () => {
                 disabled={isSubmittingRating || !ratingContent.trim()}
                 className="rounded-full bg-[#5a2dff] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#4a21eb] disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isSubmittingRating ? 'Đang gửi...' : 'Gửi đánh giá'}
+                {isSubmittingRating ? t('myCourses.rating.submitting') : t('myCourses.rating.submit')}
               </button>
             </div>
           </div>

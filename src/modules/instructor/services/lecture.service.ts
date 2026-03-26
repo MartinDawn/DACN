@@ -1,5 +1,5 @@
 import apiClient from "../../auth/services/apiClient";
-import type { ApiResponse } from "../../course/models/course";
+import type { ApiResponse, EnhancedVideoResponse } from "../../admin/models/course";
 import type {
   Lecture,
   CreateLecturePayload,
@@ -241,6 +241,27 @@ export const lectureService = {
       return response.data;
     } catch (error) {
       console.error("API getVideo error:", error);
+      return null;
+    }
+  },
+
+  // Get enhanced video data with analysis, segments, and subtitles
+  // Endpoint: GET /api/Lecture/get-video/{videoId}
+  // Returns: { name, videoUrl, duration, analysisResult: { summary, segments, subtitles } }
+  async getEnhancedVideoData(videoId: string, lang = "vi"): Promise<EnhancedVideoResponse | null> {
+    try {
+      const response = await apiClient.get<ApiResponse<EnhancedVideoResponse>>(`/Lecture/get-video/${videoId}`, {
+        headers: { 
+          "Accept-Language": lang,
+        },
+      });
+
+      if (response.data?.success && response.data?.data) {
+        return response.data.data;
+      }
+      return null;
+    } catch (error) {
+      console.error('Error getting enhanced video data:', error);
       return null;
     }
   },

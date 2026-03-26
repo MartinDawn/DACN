@@ -2,6 +2,7 @@
 
 import React, { useMemo, useEffect, useState, useCallback } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import UserLayout from './layout/layout';
 import {
   AcademicCapIcon,
@@ -61,11 +62,11 @@ type LessonTimelineEntry = {
 
 // --- CONSTANTS ---
 
-export const lessonTypeLabel: Record<LessonType, string> = {
-  video: 'Video',
-  quiz: 'Quiz',
-  doc: 'Tài liệu',
-};
+export const getLessonTypeLabel = (t: (key: string) => string): Record<LessonType, string> => ({
+  video: t('lessonTypes.video'),
+  quiz: t('lessonTypes.quiz'),
+  doc: t('lessonTypes.doc'),
+});
 
 export const lessonTypeStyles: Record<LessonType, string> = {
   video: 'bg-indigo-100 text-indigo-600',
@@ -108,7 +109,7 @@ const extractItemsFromLecture = (lecture: ApiLecture): LessonItem[] => {
   const items: LessonItem[] = [];
 
   const getName = (entry: { title?: string; name?: string } | string): string =>
-    typeof entry === 'string' ? entry : (entry.title ?? entry.name ?? 'Không có tiêu đề');
+    typeof entry === 'string' ? entry : (entry.title ?? entry.name ?? t('lessonContent.noTitle'));
 
   const getId = (entry: { id?: string } | string, fallback: string): string =>
     typeof entry === 'string' ? fallback : (entry.id ?? fallback);
@@ -168,7 +169,7 @@ const extractItemsFromLecture = (lecture: ApiLecture): LessonItem[] => {
         id: getId(d as { id?: string }, `${lecture.id}-doc-${i}`),
         title: getName(d as string | { title?: string; name?: string }),
         type: 'doc',
-        duration: 'Tài liệu',
+        duration: '',
         isCompleted: false,
         isPreview: false,
       });
@@ -203,7 +204,7 @@ const extractItemsFromLecture = (lecture: ApiLecture): LessonItem[] => {
       id: `${lecture.id}-doc-${index}`,
       title: name,
       type: 'doc',
-      duration: 'Tài liệu',
+      duration: t('lessonContent.document'),
       isCompleted: false,
       isPreview: false,
     });
@@ -254,13 +255,44 @@ const VideoPlayer: React.FC<{
   url?: string;
   isLoading?: boolean;
   error?: string | null;
-}> = ({ lessonTitle, url, isLoading, error }) => {
+  subtitleUrl?: string;
+  summary?: string;
+  segments?: Array<{ startTime: string; title: string; description: string }>;
+}> = ({ lessonTitle, url, isLoading, error, subtitleUrl, summary, segments }) => {
+  const { t } = useTranslation();
+  const videoRef = React.useRef<HTMLVideoElement>(null);
+  const [expandedSegments, setExpandedSegments] = React.useState<Record<string, boolean>>({});
+
+  const handleSegmentClick = (startTime: string) => {
+    if (!videoRef.current) return;
+    const parts = startTime.split(':').map(Number);
+    let seconds = 0;
+    if (parts.length === 3) {
+      seconds = parts[0] * 3600 + parts[1] * 60 + parts[2];
+    } else if (parts.length === 2) {
+      seconds = parts[0] * 60 + parts[1];
+    }
+    videoRef.current.currentTime = seconds;
+    videoRef.current.play();
+  };
+
+  const formatTime = (seconds: number) => {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const secs = Math.floor(seconds % 60);
+    
+    if (hours > 0) {
+      return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    }
+    return `${minutes}:${secs.toString().padStart(2, '0')}`;
+  };
+
   if (isLoading) {
     return (
       <div className="flex aspect-video w-full items-center justify-center rounded-2xl bg-black shadow-2xl">
         <div className="text-center space-y-3">
           <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-indigo-500 border-t-transparent" />
-          <p className="text-sm font-semibold text-slate-400">Đang tải video...</p>
+          <p className="text-sm font-semibold text-slate-400">{t('lessonContent.loadingLesson')}</p>
         </div>
       </div>
     );
@@ -282,7 +314,7 @@ const VideoPlayer: React.FC<{
       <div className="flex aspect-video w-full items-center justify-center rounded-2xl bg-black shadow-2xl">
         <div className="text-center space-y-2">
           <PlayCircleIcon className="mx-auto h-14 w-14 text-slate-600" />
-          <p className="text-sm font-semibold text-slate-400">Không tìm thấy URL video.</p>
+          <p className="text-sm font-semibold text-slate-400">{t('lessonContent.lessonNotFound')}</p>
         </div>
       </div>
     );
@@ -333,25 +365,108 @@ const VideoPlayer: React.FC<{
     );
   }
 
-  // Direct video file or unknown URL — try with <video> tag
+  // Direct video file or unknown URL — try with <video> tag with transcript support
   return (
-    <div className="w-full overflow-hidden rounded-2xl bg-black shadow-2xl">
-      <video
-        controls
-        className="aspect-video w-full bg-black"
-        key={url}
-        controlsList="nodownload"
-      >
-        {isDirectVideoUrl(url) ? (
-          <source
-            src={url}
-            type={url.match(/\.webm/i) ? 'video/webm' : url.match(/\.ogg/i) ? 'video/ogg' : 'video/mp4'}
-          />
-        ) : (
-          <source src={url} />
-        )}
-        Trình duyệt của bạn không hỗ trợ video.
-      </video>
+    <div className="space-y-4">
+      <div className="w-full overflow-hidden rounded-2xl bg-black shadow-2xl relative">
+        {/* Video Container with Subtitle Overlay */}
+        <div className="relative">
+          <video
+            ref={videoRef}
+            controls
+            crossOrigin="anonymous"
+            className="aspect-video w-full bg-black"
+            key={url}
+            controlsList="nodownload"
+            onLoadedMetadata={(e) => {
+              const video = e.currentTarget;
+              if (video.textTracks?.length > 0) {
+                for (let i = 0; i < video.textTracks.length; i++) {
+                  if (video.textTracks[i].kind === 'subtitles') {
+                    video.textTracks[i].mode = 'showing';
+                    break;
+                  }
+                }
+              }
+            }}
+          >
+          {isDirectVideoUrl(url) ? (
+            <source
+              src={url}
+              type={url.match(/\.webm/i) ? 'video/webm' : url.match(/\.ogg/i) ? 'video/ogg' : 'video/mp4'}
+            />
+          ) : (
+            <source src={url} />
+          )}
+          {subtitleUrl && (
+            <track
+              label={t('lessonContent.vietnamese') || 'Tiếng Việt'}
+              kind="subtitles"
+              srcLang="vi"
+              src={subtitleUrl}
+              default
+              crossOrigin="anonymous"
+            />
+          )}
+          {t('lessonContent.browserNotSupport')}
+        </video>
+        </div>
+      </div>
+
+      {/* Summary Section */}
+      {summary && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <h3 className="text-sm font-semibold text-blue-900 mb-2">
+            {t('lessonContent.summary') || 'Tóm tắt'}
+          </h3>
+          <p className="text-sm text-blue-800">{summary}</p>
+        </div>
+      )}
+
+      {/* Segments Section */}
+      {segments && segments.length > 0 && (
+        <div className="space-y-3">
+          <h3 className="text-sm font-semibold text-slate-700">
+            {t('lessonContent.content') || 'Nội dung'}
+          </h3>
+          <div className="space-y-2">
+            {segments.map((segment, idx) => (
+              <div key={idx} className="rounded-lg bg-white border border-slate-200 overflow-hidden">
+                <button
+                  onClick={() => setExpandedSegments(prev => ({ ...prev, [idx]: !prev[idx] }))}
+                  className="w-full p-3 flex items-center justify-between hover:bg-slate-50 transition-colors text-left"
+                >
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-xs font-mono text-slate-500 bg-slate-100 px-2 py-0.5 rounded">
+                        {segment.startTime}
+                      </span>
+                      <span className="text-sm font-medium text-slate-900">
+                        {segment.title}
+                      </span>
+                    </div>
+                  </div>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleSegmentClick(segment.startTime);
+                    }}
+                    className="px-2 py-1 text-xs bg-indigo-500 hover:bg-indigo-600 text-white rounded transition-colors ml-2"
+                  >
+                    Phát
+                  </button>
+                  <ChevronDownIcon className={`w-4 h-4 text-slate-400 ml-2 transition-transform ${expandedSegments[idx] ? 'rotate-180' : ''}`} />
+                </button>
+                {expandedSegments[idx] && (
+                  <div className="px-3 pb-3 border-t border-slate-200 bg-slate-50 text-sm text-slate-700">
+                    {segment.description}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -367,22 +482,112 @@ type NormalizedQuestion = {
   explanation?: string;
 };
 
-const normalizeQuizQuestions = (rawQuestions: ApiQuizQuestion[]): NormalizedQuestion[] =>
-  rawQuestions.map((q, idx) => {
+// Helper to format question titles like "Question 1", "Question 2", etc.
+const formatQuestionTitle = (index: number, t: any) => {
+  return `${t('lessonContent.question')} ${index}`;
+};
+
+const normalizeQuizQuestions = (rawQuestions: ApiQuizQuestion[], t: any): NormalizedQuestion[] => {
+  console.log('[normalizeQuizQuestions] Raw quiz questions:', JSON.stringify(rawQuestions, null, 2));
+
+  if (!Array.isArray(rawQuestions)) {
+    console.warn('[normalizeQuizQuestions] rawQuestions is not an array:', rawQuestions);
+    return [];
+  }
+
+  return rawQuestions.map((q, idx) => {
+    if (!q || typeof q !== 'object') {
+      console.warn(`[normalizeQuizQuestions] Question ${idx} is not a valid object:`, q);
+      return {
+        id: `q-${idx}`,
+        question: formatQuestionTitle(idx + 1, t),
+        options: [],
+        correctAnswer: undefined,
+        explanation: undefined,
+      };
+    }
+
+    // Debug log for each question
+    console.log(`[normalizeQuizQuestions] Question ${idx}:`, {
+      id: q.id,
+      questionText: q.questionText,
+      content: q.content,
+      question: q.question,
+      text: q.text,
+      allKeys: Object.keys(q as any),
+      questionValue: q.questionText ?? q.content ?? q.question ?? q.text
+    });
+
     const rawAnswers = q.answers ?? q.options ?? q.choices ?? [];
+    const questionFields = q as any; // Cast để access tất cả fields
+
+    // Thử nhiều field names có thể có và kiểm tra giá trị hợp lệ
+    let questionText =
+      q.questionText ??
+      q.content ??
+      q.question ??
+      q.text ??
+      questionFields.title ??
+      questionFields.description ??
+      questionFields.questionContent ??
+      questionFields.name;
+
+    // Kiểm tra nếu questionText không phải string hoặc là string rỗng/invalid
+    if (!questionText || typeof questionText !== 'string' || questionText.trim() === '') {
+      console.warn(`[normalizeQuizQuestions] No valid question text found for question ${idx}, using fallback`);
+      questionText = formatQuestionTitle(idx + 1, t);
+    }
+
+    // Kiểm tra và thay thế nếu questionText trông như data lỗi
+    if (typeof questionText === 'string' &&
+        (questionText.startsWith('string') ||
+         questionText.match(/^[a-z]+\d+$/i) ||
+         questionText.length < 3)) {
+      console.error(`[normalizeQuizQuestions] Detected potentially invalid question text: "${questionText}" for question ${idx}, using fallback`);
+      console.log('Question object:', q);
+      questionText = formatQuestionTitle(idx + 1, t);
+    }
+
     return {
       id: q.id ?? `q-${idx}`,
-      question: q.questionText ?? q.content ?? q.question ?? q.text ?? `Câu ${idx + 1}`,
+      question: questionText,
       imageUrl: q.imageUrl,
-      options: rawAnswers.map((a, i) => ({
-        id: a.id ?? `opt-${idx}-${i}`,
-        label: a.content ?? a.text ?? a.label ?? a.answerText ?? `Đáp án ${i + 1}`,
-        isCorrect: a.isCorrect,
-      })),
+      options: Array.isArray(rawAnswers) ? rawAnswers.map((a, i) => {
+        if (!a || typeof a !== 'object') {
+          console.warn(`[normalizeQuizQuestions] Answer ${i} is not a valid object:`, a);
+          return {
+            id: `opt-${idx}-${i}`,
+            label: `${t('lessonContent.answer')} ${i + 1}`,
+            isCorrect: false,
+          };
+        }
+
+        const answerFields = a as any;
+        let answerLabel =
+          a.content ??
+          a.text ??
+          a.label ??
+          a.answerText ??
+          answerFields.title ??
+          answerFields.description ??
+          answerFields.name;
+
+        if (!answerLabel || typeof answerLabel !== 'string' || answerLabel.trim() === '') {
+          console.warn(`[normalizeQuizQuestions] No valid answer text found for answer ${i} of question ${idx}, using fallback`);
+          answerLabel = `${t('lessonContent.answer')} ${i + 1}`;
+        }
+
+        return {
+          id: a.id ?? `opt-${idx}-${i}`,
+          label: answerLabel,
+          isCorrect: a.isCorrect,
+        };
+      }) : [],
       correctAnswer: q.correctAnswer,
       explanation: q.explanation,
     };
   });
+};
 
 // --- SUB-COMPONENTS ---
 
@@ -439,6 +644,7 @@ const QuizContent: React.FC<QuizContentProps> = ({
   onViewAttempt,
   onClearReview,
 }) => {
+  const { t } = useTranslation();
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [showHistory, setShowHistory] = useState(false);
   const [showReview, setShowReview] = useState(false);
@@ -508,13 +714,13 @@ const QuizContent: React.FC<QuizContentProps> = ({
     return (
       <div className="space-y-5">
         <div className="flex items-center justify-between">
-          <h3 className="text-base font-semibold text-slate-800">Lịch sử làm bài</h3>
+          <h3 className="text-base font-semibold text-slate-800">{t('lessonContent.quizHistory')}</h3>
           <button
             type="button"
             onClick={() => setShowHistory(false)}
             className="rounded-full border border-slate-200 px-4 py-1.5 text-xs font-semibold text-slate-600 transition hover:border-indigo-200 hover:text-indigo-600"
           >
-            ← Quay lại
+            {t('lessonContent.goBack')}
           </button>
         </div>
 
@@ -532,7 +738,7 @@ const QuizContent: React.FC<QuizContentProps> = ({
 
         {!isHistoryLoading && !historyError && attemptHistory.length === 0 && (
           <div className="rounded-2xl border border-slate-100 bg-slate-50 p-6 text-sm font-semibold text-slate-500 text-center">
-            Chưa có lần làm nào được ghi lại.
+            {t('lessonContent.noRecords')}
           </div>
         )}
 
@@ -542,10 +748,10 @@ const QuizContent: React.FC<QuizContentProps> = ({
               <thead className="bg-slate-50 text-xs font-semibold uppercase text-slate-500">
                 <tr>
                   <th className="px-4 py-3 text-left">#</th>
-                  <th className="px-4 py-3 text-left">Ngày làm</th>
-                  <th className="px-4 py-3 text-left">Thời gian nộp</th>
-                  <th className="px-4 py-3 text-center">Đúng / Tổng</th>
-                  <th className="px-4 py-3 text-center">Kết quả</th>
+                  <th className="px-4 py-3 text-left">{t('lessonContent.dateCompleted')}</th>
+                  <th className="px-4 py-3 text-left">{t('lessonContent.submitTime')}</th>
+                  <th className="px-4 py-3 text-center">{t('lessonContent.correctTotal')}</th>
+                  <th className="px-4 py-3 text-center">{t('lessonContent.result')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 bg-white">
@@ -580,7 +786,7 @@ const QuizContent: React.FC<QuizContentProps> = ({
                           onClick={() => { onViewAttempt(id); setShowReview(true); setShowHistory(false); }}
                           className="inline-flex items-center gap-1 rounded-full bg-amber-50 border border-amber-200 px-3 py-1 text-xs font-semibold text-amber-700 transition hover:bg-amber-100"
                         >
-                          Xem lại
+                          {t('lessonContent.reviewAttempt')}
                         </button>
                       </td>
                     </tr>
@@ -593,10 +799,13 @@ const QuizContent: React.FC<QuizContentProps> = ({
 
         <button
           type="button"
-          onClick={onStart}
+          onClick={() => {
+            setShowHistory(false);
+            onStart();
+          }}
           className="rounded-full bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-amber-500"
         >
-          Làm lại quiz
+          {t('lessonContent.retakeQuiz')}
         </button>
       </div>
     );
@@ -608,13 +817,13 @@ const QuizContent: React.FC<QuizContentProps> = ({
       <div className="space-y-5">
         {/* Header */}
         <div className="flex items-center justify-between">
-          <h3 className="text-base font-semibold text-slate-800">Chi tiết lần làm bài</h3>
+          <h3 className="text-base font-semibold text-slate-800">{t('lessonContent.detailedResults')}</h3>
           <button
             type="button"
             onClick={() => { setShowReview(false); onClearReview(); setShowHistory(true); }}
             className="rounded-full border border-slate-200 px-4 py-1.5 text-xs font-semibold text-slate-600 transition hover:border-indigo-200 hover:text-indigo-600"
           >
-            ← Quay lại lịch sử
+            {t('lessonContent.backToHistory')}
           </button>
         </div>
 
@@ -623,7 +832,7 @@ const QuizContent: React.FC<QuizContentProps> = ({
           <div className="flex items-center justify-center py-16">
             <div className="text-center space-y-3">
               <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-amber-500 border-t-transparent" />
-              <p className="text-sm font-semibold text-slate-500">Đang tải kết quả...</p>
+              <p className="text-sm font-semibold text-slate-500">{t('lessonContent.loadingResults')}</p>
             </div>
           </div>
         )}
@@ -663,22 +872,22 @@ const QuizContent: React.FC<QuizContentProps> = ({
               </p>
               <p className="text-sm font-semibold text-slate-600">
                 {reviewResult.passed == null
-                  ? 'Đã hoàn thành'
+                  ? t('lessonContent.isCompleted')
                   : reviewResult.passed
-                  ? 'Chúc mừng! Bạn đạt yêu cầu'
-                  : 'Chưa đạt yêu cầu'}
+                  ? t('lessonContent.congratulationsPass')
+                  : t('lessonContent.notMeetRequirements')}
               </p>
               {reviewResult.completedAt && (
                 <div className="flex items-center gap-1.5 rounded-full bg-white/70 px-3 py-1 text-xs text-slate-500">
                   <ClockIcon className="h-3.5 w-3.5" />
-                  Nộp lúc: {new Date(reviewResult.completedAt).toLocaleString('vi-VN')}
+                  {t('lessonContent.submittedAt')}: {new Date(reviewResult.completedAt).toLocaleString('vi-VN')}
                 </div>
               )}
             </div>
 
             {/* Per-answer detail — full question view if quizDetail available, otherwise summary */}
             {(() => {
-              const questions = normalizeQuizQuestions(quizDetail?.questions ?? []);
+              const questions = normalizeQuizQuestions(quizDetail?.questions ?? [], t);
               const allAnswers = reviewResult.answers ?? reviewResult.detailedResults ?? [];
               const resultMap: Record<string, { correctAnswerId?: string; isCorrect?: boolean; explanation?: string }> = {};
               allAnswers.forEach((a) => {
@@ -694,7 +903,7 @@ const QuizContent: React.FC<QuizContentProps> = ({
               if (questions.length > 0) {
                 return (
                   <div className="space-y-3">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Xem lại từng câu</p>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{t('lessonContent.reviewByQuestion')}</p>
                     {questions.map((q, idx) => {
                       const apiInfo = resultMap[q.id];
                       const correctId =
@@ -712,23 +921,29 @@ const QuizContent: React.FC<QuizContentProps> = ({
                           ? apiInfo.isCorrect
                           : null;
 
+                      // Don't show question text if it's just the fallback "Question N" title
+                      const questionTitle = formatQuestionTitle(idx + 1, t);
+                      const shouldShowQuestionText = q.question && q.question !== questionTitle;
+
                       return (
                         <div key={q.id} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
                           <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-wide text-amber-500">
-                            <span>Câu {idx + 1}</span>
+                            <span>{questionTitle}</span>
                             {isCorrect !== null && (
                               <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 ${
                                 isCorrect ? 'bg-emerald-100 text-emerald-600' : 'bg-rose-100 text-rose-600'
                               }`}>
                                 <CheckCircleIcon className="h-3.5 w-3.5" />
-                                {isCorrect ? 'Chính xác' : 'Sai'}
+                                {isCorrect ? t('lessonContent.accurate') : t('lessonContent.incorrect')}
                               </span>
                             )}
                           </div>
-                          <p className="mt-2 text-sm font-semibold text-slate-900">{q.question}</p>
+                          {shouldShowQuestionText && (
+                            <p className="mt-2 text-sm font-semibold text-slate-900">{q.question}</p>
+                          )}
                           {q.imageUrl && (
                             <div className="mt-2 overflow-hidden rounded-xl border border-slate-200">
-                              <img src={q.imageUrl} alt="Hình ảnh câu hỏi" className="w-full object-contain max-h-72" />
+                              <img src={q.imageUrl} alt={t('lessonContent.questionImageAlt')} className="w-full object-contain max-h-72" />
                             </div>
                           )}
                           <div className="mt-2 grid gap-1.5">
@@ -755,7 +970,7 @@ const QuizContent: React.FC<QuizContentProps> = ({
                           </div>
                           {(q.explanation || apiInfo?.explanation) && (
                             <p className="mt-2 rounded-xl bg-amber-50 p-2.5 text-xs text-amber-800">
-                              <strong>Giải thích:</strong> {q.explanation || apiInfo?.explanation}
+                              <strong>{t('lessonContent.explanation')}</strong> {q.explanation || apiInfo?.explanation}
                             </p>
                           )}
                         </div>
@@ -769,7 +984,7 @@ const QuizContent: React.FC<QuizContentProps> = ({
               if (allAnswers.length > 0) {
                 return (
                   <div className="space-y-3">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Kết quả từng câu</p>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{t('lessonContent.resultsByQuestion')}</p>
                     <div className="grid gap-2">
                       {allAnswers.map((a, idx) => {
                         const answerCorrect =
@@ -789,7 +1004,7 @@ const QuizContent: React.FC<QuizContentProps> = ({
                               : 'border-slate-100 bg-slate-50 text-slate-600'
                           }`}
                         >
-                          <span className="font-medium">Câu {idx + 1}</span>
+                          <span className="font-medium">{formatQuestionTitle(idx + 1, t)}</span>
                           <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold ${
                             answerCorrect === true
                               ? 'bg-emerald-100 text-emerald-700'
@@ -798,7 +1013,7 @@ const QuizContent: React.FC<QuizContentProps> = ({
                               : 'bg-slate-100 text-slate-500'
                           }`}>
                             <CheckCircleIcon className="h-3.5 w-3.5" />
-                            {answerCorrect === true ? 'Đúng' : answerCorrect === false ? 'Sai' : 'N/A'}
+                            {answerCorrect === true ? t('lessonContent.correct') : answerCorrect === false ? t('lessonContent.incorrect') : 'N/A'}
                           </span>
                         </div>
                         );
@@ -817,17 +1032,22 @@ const QuizContent: React.FC<QuizContentProps> = ({
         <div className="flex flex-wrap items-center gap-3 pt-2 border-t border-slate-100">
           <button
             type="button"
-            onClick={onStart}
+            onClick={() => {
+              setShowReview(false);
+              onClearReview();
+              setShowHistory(false);
+              onStart();
+            }}
             className="rounded-full bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-amber-500"
           >
-            Làm lại quiz
+            {t('lessonContent.retakeQuiz')}
           </button>
           <button
             type="button"
             onClick={() => { setShowReview(false); onClearReview(); setShowHistory(true); }}
             className="rounded-full border border-slate-200 px-5 py-2.5 text-sm font-semibold text-slate-600 transition hover:border-amber-200 hover:text-amber-600"
           >
-            Xem lịch sử làm bài
+            {t('lessonContent.viewHistory')}
           </button>
         </div>
       </div>
@@ -840,7 +1060,7 @@ const QuizContent: React.FC<QuizContentProps> = ({
       <div className="flex items-center justify-center py-16">
         <div className="text-center space-y-3">
           <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-amber-500 border-t-transparent" />
-          <p className="text-sm font-semibold text-slate-500">Đang bắt đầu quiz...</p>
+          <p className="text-sm font-semibold text-slate-500">{t('lessonContent.startingQuiz')}</p>
         </div>
       </div>
     );
@@ -859,14 +1079,14 @@ const QuizContent: React.FC<QuizContentProps> = ({
             onClick={onStart}
             className="rounded-full bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-amber-500"
           >
-            Thử lại
+            {t('lessonContent.retryBtn')}
           </button>
           <button
             type="button"
             onClick={() => { onViewHistory(); setShowHistory(true); }}
             className="rounded-full border border-slate-200 px-5 py-2.5 text-sm font-semibold text-slate-600 transition hover:border-amber-200 hover:text-amber-600"
           >
-            Xem lịch sử làm bài
+            {t('lessonContent.viewHistory')}
           </button>
         </div>
       </div>
@@ -882,12 +1102,12 @@ const QuizContent: React.FC<QuizContentProps> = ({
           <QuestionMarkCircleIcon className="h-8 w-8 text-amber-500" />
         </span>
         <div className="text-center space-y-1">
-          <p className="text-base font-semibold text-slate-800">Sẵn sàng làm bài?</p>
-          <p className="text-sm text-slate-500">Nhấn bắt đầu để nhận câu hỏi và làm bài quiz.</p>
+          <p className="text-base font-semibold text-slate-800">{t('lessonContent.readyToTakeQuiz')}</p>
+          <p className="text-sm text-slate-500">{t('lessonContent.pressStartInstructions')}</p>
           {displayTime != null && displayTime > 0 && (
             <p className="text-sm text-slate-500">
-              Thời gian làm bài:{' '}
-              <span className="font-semibold text-amber-600">{displayTime} phút</span>
+              {t('lessonContent.quizTime')}{' '}
+              <span className="font-semibold text-amber-600">{displayTime} {t('lessonContent.minutes')}</span>
             </p>
           )}
         </div>
@@ -897,14 +1117,14 @@ const QuizContent: React.FC<QuizContentProps> = ({
             onClick={onStart}
             className="rounded-full bg-slate-900 px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-amber-500"
           >
-            Bắt đầu làm quiz
+            {t('lessonContent.startQuiz')}
           </button>
           <button
             type="button"
             onClick={() => { onViewHistory(); setShowHistory(true); }}
             className="rounded-full border border-slate-200 px-5 py-2.5 text-sm font-semibold text-slate-600 transition hover:border-amber-200 hover:text-amber-600"
           >
-            Xem lịch sử làm bài
+            {t('lessonContent.viewHistory')}
           </button>
         </div>
       </div>
@@ -918,7 +1138,7 @@ const QuizContent: React.FC<QuizContentProps> = ({
         <div className="text-center space-y-3">
           <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-amber-500 border-t-transparent" />
           <p className="text-sm font-semibold text-slate-500">
-            {isSubmitting ? 'Đang nộp bài...' : 'Đang tải kết quả...'}
+            {isSubmitting ? t('lessonContent.submittingAnswers') : t('lessonContent.loadingResults')}
           </p>
         </div>
       </div>
@@ -954,7 +1174,7 @@ const QuizContent: React.FC<QuizContentProps> = ({
       }
     });
 
-    const questions = normalizeQuizQuestions(quizDetail?.questions ?? []);
+    const questions = normalizeQuizQuestions(quizDetail?.questions ?? [], t);
 
     return (
       <div className="space-y-5">
@@ -980,14 +1200,14 @@ const QuizContent: React.FC<QuizContentProps> = ({
           </p>
           <p className="text-sm font-semibold text-slate-600">
             {attemptResult.passed == null
-              ? 'Đã nộp bài thành công'
+              ? t('lessonContent.submitSuccess')
               : attemptResult.passed
-              ? 'Chúc mừng! Bạn đã đạt yêu cầu'
-              : 'Chưa đạt yêu cầu — Hãy thử lại!'}
+              ? t('lessonContent.congratulationsSuccess')
+              : t('lessonContent.notMeetRequirementsRetry')}
           </p>
           {attemptResult.correctAnswers != null && (
             <p className="text-xs text-slate-500">
-              Đúng {attemptResult.correctAnswers} / {attemptResult.totalQuestions ?? questions.length} câu
+              {formatQuizScore(attemptResult.correctAnswers, attemptResult.totalQuestions ?? questions.length, t)}
             </p>
           )}
         </div>
@@ -1001,7 +1221,7 @@ const QuizContent: React.FC<QuizContentProps> = ({
         {/* Per-question review (if result contains answer breakdown or questions have isCorrect info) */}
         {questions.length > 0 && (
           <div className="space-y-3">
-            <h4 className="text-sm font-semibold text-slate-700">Xem lại từng câu</h4>
+            <h4 className="text-sm font-semibold text-slate-700">{t('lessonContent.reviewByQuestion')}</h4>
             {questions.map((q, idx) => {
               const userAnswerId = answers[q.id];
               const apiInfo = resultMap[q.id];
@@ -1014,23 +1234,29 @@ const QuizContent: React.FC<QuizContentProps> = ({
                   ? apiInfo.isCorrect
                   : correctId != null && userAnswerId === correctId;
 
+              // Don't show question text if it's just the fallback "Question N" title
+              const questionTitle = formatQuestionTitle(idx + 1, t);
+              const shouldShowQuestionText = q.question && q.question !== questionTitle;
+
               return (
                 <div key={q.id} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
                   <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-wide text-amber-500">
-                    <span>Câu {idx + 1}</span>
+                    <span>{questionTitle}</span>
                     {(correctId || apiInfo) && (
                       <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 ${
                         isCorrect ? 'bg-emerald-100 text-emerald-600' : 'bg-rose-100 text-rose-600'
                       }`}>
                         <CheckCircleIcon className="h-3.5 w-3.5" />
-                        {isCorrect ? 'Chính xác' : 'Sai'}
+                        {isCorrect ? t('lessonContent.accurate') : t('lessonContent.incorrect')}
                       </span>
                     )}
                   </div>
-                  <p className="mt-2 text-sm font-semibold text-slate-900">{q.question}</p>
+                  {shouldShowQuestionText && (
+                    <p className="mt-2 text-sm font-semibold text-slate-900">{q.question}</p>
+                  )}
                   {q.imageUrl && (
                     <div className="mt-2 overflow-hidden rounded-xl border border-slate-200">
-                      <img src={q.imageUrl} alt="Hình ảnh câu hỏi" className="w-full object-contain max-h-72" />
+                      <img src={q.imageUrl} alt={t('lessonContent.questionImageAlt')} className="w-full object-contain max-h-72" />
                     </div>
                   )}
                   <div className="mt-2 grid gap-1.5">
@@ -1057,7 +1283,7 @@ const QuizContent: React.FC<QuizContentProps> = ({
                   </div>
                   {q.explanation && (
                     <p className="mt-2 rounded-xl bg-amber-50 p-2.5 text-xs text-amber-800">
-                      <strong>Giải thích:</strong> {q.explanation}
+                      <strong>{t('lessonContent.explanation')}</strong> {q.explanation}
                     </p>
                   )}
                 </div>
@@ -1069,17 +1295,20 @@ const QuizContent: React.FC<QuizContentProps> = ({
         <div className="flex flex-wrap items-center gap-3 pt-2">
           <button
             type="button"
-            onClick={onStart}
+            onClick={() => {
+              setShowHistory(false);
+              onStart();
+            }}
             className="rounded-full bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-amber-500"
           >
-            Làm lại
+            {t('lessonContent.retake')}
           </button>
           <button
             type="button"
             onClick={() => { onViewHistory(); setShowHistory(true); }}
             className="rounded-full border border-slate-200 px-5 py-2.5 text-sm font-semibold text-slate-600 transition hover:border-amber-200 hover:text-amber-600"
           >
-            Xem lịch sử làm bài
+            {t('lessonContent.viewHistory')}
           </button>
         </div>
       </div>
@@ -1087,13 +1316,13 @@ const QuizContent: React.FC<QuizContentProps> = ({
   }
 
   // ── Quiz screen: show questions ──
-  const questions = normalizeQuizQuestions(quizDetail?.questions ?? []);
+  const questions = normalizeQuizQuestions(quizDetail?.questions ?? [], t);
   const total = questions.length;
 
   if (total === 0) {
     return (
       <div className="rounded-2xl border border-amber-100 bg-amber-50 p-6 text-sm font-semibold text-amber-700">
-        Quiz này chưa có câu hỏi.
+        {t('lessonContent.noQuestions')}
       </div>
     );
   }
@@ -1114,6 +1343,14 @@ const QuizContent: React.FC<QuizContentProps> = ({
     return `${m}:${s}`;
   };
 
+  const formatQuestionsCount = (count: number, t: any) => {
+    return count === 1 ? `1 ${t('lessonContent.question')}` : `${count} ${t('lessonContent.questions')}`;
+  };
+
+  const formatQuestionNumber = (index: number, total: number, t: any) => {
+    return t('lessonContent.questionNum', { index, total });
+  };
+
   const totalSecs = (testTime ?? quizDetail?.timeLimit ?? 0) * 60;
   const timerColorClass =
     timeLeft === null
@@ -1127,7 +1364,7 @@ const QuizContent: React.FC<QuizContentProps> = ({
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between">
-        <h3 className="text-base font-semibold text-slate-800">{total} câu hỏi</h3>
+        <h3 className="text-base font-semibold text-slate-800">{formatQuestionsCount(total, t)}</h3>
         <div className="flex items-center gap-4">
           {timeLeft !== null && (
             <span className={`flex items-center gap-1 text-sm font-bold tabular-nums ${timerColorClass}`}>
@@ -1135,26 +1372,29 @@ const QuizContent: React.FC<QuizContentProps> = ({
               {formatTime(timeLeft)}
             </span>
           )}
-          <span className="text-xs text-slate-500">
-            Đã trả lời: {answeredCount}/{total}
-          </span>
         </div>
       </div>
 
       {questions.map((question, index) => {
         const selected = answers[question.id];
+        // Don't show question text if it's just the fallback "Question N" title
+        const questionTitle = formatQuestionTitle(index + 1, t);
+        const shouldShowQuestionText = question.question && question.question !== questionTitle;
+
         return (
           <div
             key={question.id}
             className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
           >
             <p className="text-xs font-semibold uppercase tracking-wide text-amber-500">
-              Câu {index + 1} / {total}
+              {formatQuestionNumber(index + 1, total, t)}
             </p>
-            <h4 className="mt-3 text-sm font-semibold text-slate-900">{question.question}</h4>
+            {shouldShowQuestionText && (
+              <h4 className="mt-3 text-sm font-semibold text-slate-900">{question.question}</h4>
+            )}
             {question.imageUrl && (
               <div className="mt-3 overflow-hidden rounded-xl border border-slate-200">
-                <img src={question.imageUrl} alt="Hình ảnh câu hỏi" className="w-full object-contain max-h-72" />
+                <img src={question.imageUrl} alt={t('lessonContent.questionImageAlt')} className="w-full object-contain max-h-72" />
               </div>
             )}
             <div className="mt-3 grid gap-2">
@@ -1201,14 +1441,14 @@ const QuizContent: React.FC<QuizContentProps> = ({
           disabled={answeredCount !== total}
           className="rounded-full bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-amber-500 disabled:cursor-not-allowed disabled:bg-slate-300"
         >
-          Nộp bài ({answeredCount}/{total})
+          {t('lessonContent.submitAnswers', { answered: answeredCount, total })}
         </button>
         <button
           type="button"
           onClick={() => { onViewHistory(); setShowHistory(true); }}
           className="rounded-full border border-slate-200 px-5 py-2.5 text-sm font-semibold text-slate-600 transition hover:border-amber-200 hover:text-amber-600"
         >
-          Xem lịch sử làm bài
+          {t('lessonContent.viewHistory')}
         </button>
       </div>
     </div>
@@ -1226,7 +1466,7 @@ const DocumentViewer: React.FC<{
     return (
       <div className="flex items-center justify-center gap-3 rounded-2xl border border-sky-100 bg-sky-50 py-10">
         <div className="h-6 w-6 animate-spin rounded-full border-4 border-sky-400 border-t-transparent" />
-        <p className="text-sm font-semibold text-sky-600">Đang tải tài liệu...</p>
+        <p className="text-sm font-semibold text-sky-600">{t('lessonContent.downloading')}</p>
       </div>
     );
   }
@@ -1247,7 +1487,7 @@ const DocumentViewer: React.FC<{
         </span>
         <div className="text-center space-y-1">
           <p className="text-base font-semibold text-slate-800">{title}</p>
-          <p className="text-sm text-slate-500">Tài liệu đang được tải về...</p>
+          <p className="text-sm text-slate-500">{t('lessonContent.downloading')}</p>
         </div>
       </div>
     );
@@ -1284,7 +1524,7 @@ const DocumentViewer: React.FC<{
           </span>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-semibold text-slate-900 truncate">{title}</p>
-            <p className="text-xs text-slate-500">Tài liệu đính kèm</p>
+            <p className="text-xs text-slate-500">{t('lessonContent.document')}</p>
           </div>
         </div>
       )}
@@ -1298,7 +1538,7 @@ const DocumentViewer: React.FC<{
           className="inline-flex items-center gap-2 rounded-full bg-sky-500 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-sky-600"
         >
           <ArrowDownTrayIcon className="h-4 w-4" />
-          Tải tài liệu
+          {t('lessonContent.downloadDocument')}
         </a>
         {!isPdf && !isImage && (
           <button
@@ -1307,7 +1547,7 @@ const DocumentViewer: React.FC<{
             className="inline-flex items-center gap-2 rounded-full border border-slate-200 px-5 py-2.5 text-sm font-semibold text-slate-600 transition hover:border-sky-300 hover:text-sky-600"
           >
             <ArrowDownTrayIcon className="h-4 w-4" />
-            Lưu về máy
+            {t('lessonContent.saveToDevice')}
           </button>
         )}
       </div>
@@ -1318,7 +1558,12 @@ const DocumentViewer: React.FC<{
 // --- MAIN COMPONENT ---
 
 const LessonContentPage: React.FC = () => {
+  const { t } = useTranslation();
   const { courseId, lessonId } = useParams<{ courseId: string; lessonId: string }>();
+
+  const getLessonTypeLabel = (type: LessonType) => {
+    return t(`lessonTypes.${type}`);
+  };
   const navigate = useNavigate();
 
   const {
@@ -1334,6 +1579,7 @@ const LessonContentPage: React.FC = () => {
 
   const {
     videoUrl, isVideoLoading, videoError, getVideoUrl, clearVideo,
+    videoData, isVideoDataLoading, videoDataError, getEnhancedVideoData, clearVideoData,
     documentUrl, isDocumentLoading, documentError, getDocumentUrl, clearDocument,
   } = useLecture();
 
@@ -1442,22 +1688,27 @@ const LessonContentPage: React.FC = () => {
       const vid = currentEntry.lesson.videoId;
       if (vid) {
         getVideoUrl(vid);
+        // Also fetch enhanced video data with subtitles/transcript
+        getEnhancedVideoData(vid);
       } else {
         clearVideo();
+        clearVideoData();
       }
       clearDocument();
       clearQuiz();
     } else if (currentEntry?.lesson.type === 'doc') {
       clearVideo();
+      clearVideoData();
       clearDocument();
       clearQuiz();
     } else {
       // quiz or unknown
       clearVideo();
+      clearVideoData();
       clearDocument();
       clearQuiz();
     }
-  }, [currentEntry?.lesson.id, currentEntry?.lesson.type, getVideoUrl, clearVideo, clearDocument, clearQuiz]);
+  }, [currentEntry?.lesson.id, currentEntry?.lesson.type, getVideoUrl, getEnhancedVideoData, clearVideo, clearVideoData, clearDocument, clearQuiz]);
 
   // Redirect if no lessonId
   useEffect(() => {
@@ -1527,7 +1778,7 @@ const LessonContentPage: React.FC = () => {
         <div className="flex h-96 items-center justify-center">
           <div className="text-center space-y-3">
             <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-indigo-600 border-t-transparent" />
-            <p className="text-sm font-semibold text-slate-600">Đang tải bài học...</p>
+            <p className="text-sm font-semibold text-slate-600">{t('lessonContent.loadingLesson')}</p>
           </div>
         </div>
       </UserLayout>
@@ -1543,7 +1794,7 @@ const LessonContentPage: React.FC = () => {
             to="/user/mycourses"
             className="rounded-full bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700"
           >
-            Quay lại
+            {t('lessonContent.backBtn')}
           </Link>
         </div>
       </UserLayout>
@@ -1560,12 +1811,12 @@ const LessonContentPage: React.FC = () => {
             className="inline-flex items-center gap-2 rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 hover:border-indigo-200 hover:text-indigo-600"
           >
             <ArrowLeftIcon className="h-4 w-4" />
-            Quay lại khóa học
+            {t('lessonContent.backToCourse')}
           </button>
           <div className="mt-6 rounded-2xl border border-rose-200 bg-rose-50 p-6 text-sm font-semibold text-rose-600">
             {lessonId
-              ? `Không tìm thấy bài học này trong khóa học.`
-              : 'Khóa học này chưa có bài học nào.'}
+              ? t('lessonContent.lessonNotFoundInCourse')
+              : t('lessonContent.courseHasNoLessons')}
           </div>
         </div>
       </UserLayout>
@@ -1578,7 +1829,7 @@ const LessonContentPage: React.FC = () => {
   // Tabs: only overview (quiz content is shown directly in main area above)
   const tabs: Array<{ id: 'overview' | 'content'; label: string; icon: React.ComponentType<React.SVGProps<SVGSVGElement>> }> =
     [
-      { id: 'overview', label: 'Tổng quan', icon: ListBulletIcon },
+      { id: 'overview', label: t('common.overview'), icon: ListBulletIcon },
     ];
 
   return (
@@ -1586,7 +1837,7 @@ const LessonContentPage: React.FC = () => {
       {/* Breadcrumb */}
       <div className="mb-6 flex flex-wrap items-center gap-1.5 text-sm">
         <Link to="/user/mycourses" className="font-medium text-indigo-500 hover:text-indigo-600">
-          Khóa học của tôi
+          {t('navigation.myCourses')}
         </Link>
         <ChevronRightIcon className="h-3.5 w-3.5 text-slate-400" />
         <button
@@ -1611,8 +1862,11 @@ const LessonContentPage: React.FC = () => {
             <VideoPlayer
               lessonTitle={lesson.title}
               url={videoUrl ?? (typeof lesson.url === 'string' ? lesson.url : undefined)}
-              isLoading={isVideoLoading}
-              error={videoError}
+              isLoading={isVideoLoading || isVideoDataLoading}
+              error={videoError || videoDataError}
+              subtitleUrl={videoData?.subtitleUrl}
+              summary={videoData?.analysisResult?.summary}
+              segments={videoData?.analysisResult?.segments}
             />
           )}
 
@@ -1623,7 +1877,7 @@ const LessonContentPage: React.FC = () => {
                 <span className="flex h-9 w-9 items-center justify-center rounded-2xl bg-amber-100">
                   <QuestionMarkCircleIcon className="h-5 w-5 text-amber-500" />
                 </span>
-                <h2 className="text-base font-semibold text-slate-800">Làm bài Quiz</h2>
+                <h2 className="text-base font-semibold text-slate-800">{t('lessonContent.doQuiz')}</h2>
               </div>
               <QuizContent
                 isStarting={isQuizLoading}
@@ -1662,11 +1916,11 @@ const LessonContentPage: React.FC = () => {
                 <div className="flex flex-wrap items-center gap-2">
                   <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold ${lessonTypeStyles[lesson.type]}`}>
                     <LessonIcon className="h-3.5 w-3.5" />
-                    {lessonTypeLabel[lesson.type]}
+                    {getLessonTypeLabel(lesson.type)}
                   </span>
-                  
+
                   <span className="text-xs text-slate-400">
-                    Bài {currentIndex + 1} / {timeline.length}
+                    {t('lessonContent.lessonNum')} {currentIndex + 1} / {timeline.length}
                   </span>
                 </div>
                 <h1 className="text-xl font-bold text-slate-900 leading-snug truncate overflow-hidden max-w-md" title={lesson.title}>{lesson.title}</h1>
@@ -1687,7 +1941,7 @@ const LessonContentPage: React.FC = () => {
                     ) : (
                       <ArrowDownTrayIcon className="h-4 w-4" />
                     )}
-                    Tải tài liệu
+                    {t('lessonContent.downloadDocument')}
                   </button>
                 )}
                 <button
@@ -1703,7 +1957,7 @@ const LessonContentPage: React.FC = () => {
                     ? <CheckCircleSolid className="h-4 w-4 text-emerald-500" />
                     : <CheckCircleIcon className="h-4 w-4" />
                   }
-                  {markedDone ? 'Đã hoàn thành' : 'Đánh dấu hoàn thành'}
+                  {markedDone ? t('lessonContent.completed') : t('lessonContent.markAsCompleted')}
                 </button>
               </div>
             </div>
@@ -1717,7 +1971,7 @@ const LessonContentPage: React.FC = () => {
                 className="inline-flex items-center gap-2 rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 transition hover:border-indigo-200 hover:text-indigo-600 disabled:cursor-not-allowed disabled:opacity-40"
               >
                 <ChevronLeftIcon className="h-4 w-4" />
-                Bài trước
+                {t('lessonContent.previousLesson')}
                 {previousEntry && (
                   <span className="hidden sm:inline text-xs text-slate-400 max-w-[120px] truncate">
                     – {previousEntry.lesson.title}
@@ -1736,7 +1990,7 @@ const LessonContentPage: React.FC = () => {
                     {nextEntry.lesson.title} –
                   </span>
                 )}
-                Bài tiếp theo
+                {t('lessonContent.nextLesson')}
                 <ChevronRightIcon className="h-4 w-4" />
               </button>
             </div>
@@ -1771,20 +2025,20 @@ const LessonContentPage: React.FC = () => {
                 <div className="space-y-4">
                   <div>
                     <h3 className="text-xs font-semibold uppercase tracking-widest text-indigo-400">
-                      Về bài học này
+                      {t('lessonContent.aboutThisLesson')}
                     </h3>
                     <p className="mt-2 text-sm leading-relaxed text-slate-600">
-                      {lesson.type === 'video' && 'Bài giảng video với ví dụ trực quan và hướng dẫn chi tiết từng bước.'}
-                      {lesson.type === 'quiz' && 'Quiz ngắn giúp bạn kiểm tra và củng cố kiến thức vừa học trong chương này.'}
-                      {lesson.type === 'doc' && 'Tài liệu tham khảo bổ sung, bao gồm tóm tắt, checklist và links hữu ích.'}
+                      {lesson.type === 'video' && t('lessonContent.videoLessonDescription')}
+                      {lesson.type === 'quiz' && t('lessonContent.quizLessonDescription')}
+                      {lesson.type === 'doc' && t('lessonContent.docLessonDescription')}
                     </p>
                   </div>
                   <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                     {[
-                      { label: 'Loại', value: lessonTypeLabel[lesson.type] },
-                      { label: 'Thời lượng', value: lesson.duration },
-                      { label: 'Chương', value: section.title },
-                      { label: 'Tình trạng', value: markedDone ? 'Hoàn thành' : 'Chưa học' },
+                      { label: t('lessonContent.type'), value: getLessonTypeLabel(lesson.type) },
+                      { label: t('course.duration'), value: lesson.duration },
+                      { label: t('lessonContent.chapter'), value: section.title },
+                      { label: t('lessonContent.status'), value: markedDone ? t('lessonContent.completed') : t('lessonContent.notStarted') },
                     ].map(({ label, value }) => (
                       <div key={label} className="rounded-xl bg-slate-50 p-3">
                         <p className="text-xs text-slate-400">{label}</p>
@@ -1810,13 +2064,13 @@ const LessonContentPage: React.FC = () => {
               type="button"
               onClick={() => setSidebarOpen((prev) => !prev)}
               className="flex w-full items-center justify-between rounded-2xl bg-white px-4 py-3 shadow-md shadow-slate-900/5 text-sm font-semibold text-slate-700 hover:text-indigo-600 transition"
-              title={sidebarOpen ? 'Ẩn nội dung khóa học' : 'Xem nội dung khóa học'}
+              title={sidebarOpen ? t('lessonContent.hideCourseContent') : t('lessonContent.showCourseContent')}
             >
               {sidebarOpen ? (
                 <>
                   <span className="flex items-center gap-2">
                     <ListBulletIcon className="h-4 w-4" />
-                    Nội dung khóa học
+                    {t('lessonContent.courseContent')}
                   </span>
                   <XMarkIcon className="h-4 w-4 text-slate-400" />
                 </>
@@ -1828,12 +2082,9 @@ const LessonContentPage: React.FC = () => {
             {sidebarOpen && (
               <div className="rounded-2xl bg-white shadow-md shadow-slate-900/5 overflow-hidden max-h-[calc(100vh-180px)] overflow-y-auto">
                 {/* Header */}
-                <div className="sticky top-0 z-10 border-b border-slate-100 bg-white px-5 py-4">
-                  <p className="text-xs text-slate-500">
-                    {completedCount}/{timeline.length} bài đã hoàn thành
-                  </p>
+                <div className="sticky top-0 z-10 border-b border-slate-100 bg-white px-5 py-2">
                   {/* Progress bar */}
-                  <div className="mt-2 h-1.5 w-full rounded-full bg-slate-100">
+                  <div className="h-1.5 w-full rounded-full bg-slate-100">
                     <div
                       className="h-full rounded-full bg-indigo-500 transition-all"
                       style={{
@@ -1869,9 +2120,6 @@ const LessonContentPage: React.FC = () => {
                             <p className="text-sm font-semibold text-slate-800 leading-snug">
                               {secIndex + 1}. {sec.title}
                             </p>
-                            <p className="mt-0.5 text-xs text-slate-400">
-                              {completedInSection}/{sec.items.length} bài học
-                            </p>
                           </div>
                         </button>
 
@@ -1902,16 +2150,18 @@ const LessonContentPage: React.FC = () => {
                                   </span>
 
                                   <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-2 mb-1">
+                                      <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold ${lessonTypeStyles[item.type]}`}>
+                                        <ItemIcon className="h-2.5 w-2.5" />
+                                        {getLessonTypeLabel(item.type)}
+                                      </span>
+                                      <span className="text-[10px] font-medium text-slate-500">
+                                        {t('lessonContent.lessonNum')} {itemIndex + 1} / {sec.items.length}
+                                      </span>
+                                    </div>
                                     <p className={`text-sm leading-snug truncate ${isActive ? 'font-semibold text-indigo-700' : 'font-medium text-slate-700'}`}>
                                       {item.title}
                                     </p>
-                                    <div className="mt-1 flex items-center gap-2">
-                                      <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold ${lessonTypeStyles[item.type]}`}>
-                                        <ItemIcon className="h-2.5 w-2.5" />
-                                        {lessonTypeLabel[item.type]}
-                                      </span>
-                                      <span className="text-[10px] text-slate-400">{item.duration}</span>
-                                    </div>
                                   </div>
                                 </button>
                               );

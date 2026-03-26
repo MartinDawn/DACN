@@ -1,5 +1,6 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { notificationService } from "../services/notification.service";
+import { useRefreshOnLanguageChange } from "../../../hooks/useRefreshOnLanguageChange";
 import type {
   NotificationApiItem,
   NotificationCategory,
@@ -94,18 +95,29 @@ export const useMyNotifications = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Track if notifications have been loaded for language refresh
+  const notificationsLoaded = useRef(false);
+
   const fetchNotifications = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
       const data = await notificationService.getMyNotifications();
       setItems(data.map(mapApiToUi));
+      notificationsLoaded.current = true;
     } catch {
       setError("Không thể tải thông báo. Vui lòng thử lại.");
     } finally {
       setLoading(false);
     }
   }, []);
+
+  // Auto refresh on language change
+  useRefreshOnLanguageChange(() => {
+    if (notificationsLoaded.current) {
+      fetchNotifications();
+    }
+  });
 
   useEffect(() => {
     fetchNotifications();

@@ -1,6 +1,7 @@
-import { useState, useCallback, Dispatch, SetStateAction, useEffect } from "react";
+import { useState, useCallback, Dispatch, SetStateAction, useEffect, useRef } from "react";
 import { toast } from "react-hot-toast";
 import { lectureService } from "../services/lecture.service";
+import { useRefreshOnLanguageChange } from "../../../hooks/useRefreshOnLanguageChange";
 import type { Lecture } from "../models/lecture";
 
 interface CreateLectureInput {
@@ -212,6 +213,9 @@ export const useCourseLectures = (courseId: string) => {
   // State for document uploading
   const [uploadingDocLectureIds, setUploadingDocLectureIds] = useState<Record<string, boolean>>({});
 
+  // Track if lectures have been loaded for language refresh
+  const lecturesLoaded = useRef(false);
+
   const fetchLectures = useCallback(async () => {
     if (!courseId) return;
     setLecturesLoading(true);
@@ -220,6 +224,7 @@ export const useCourseLectures = (courseId: string) => {
       const courseContent = await lectureService.getCourseContent(courseId);
       const normalized = mapCourseContentToLectures(courseContent, courseId);
       setLectures(normalized);
+      lecturesLoaded.current = true;
     } catch (error) {
       console.error(error);
       setLectures([]);
@@ -227,6 +232,13 @@ export const useCourseLectures = (courseId: string) => {
       setLecturesLoading(false);
     }
   }, [courseId]);
+
+  // Auto refresh on language change
+  useRefreshOnLanguageChange(() => {
+    if (lecturesLoaded.current && courseId) {
+      fetchLectures();
+    }
+  });
 
   useEffect(() => {
     fetchLectures();
@@ -565,12 +577,13 @@ export const useCourseLectures = (courseId: string) => {
     }
   }, []);
 
-  // Get Video content for preview
+  // Get Video content for preview - now returns full video data with analysis, segments, and subtitles
   const getVideo = useCallback(async (videoId: string) => {
     try {
       if (!videoId) return null;
-      const blob = await lectureService.getVideo(videoId);
-      return blob;
+      // Fetch enhanced video data from API (includes name, videoUrl, duration, analysisResult with segments/subtitles)
+      const videoData = await lectureService.getEnhancedVideoData(videoId);
+      return videoData;
     } catch (error: any) {
       console.error("Error fetching video in hook:", error);
       return null;

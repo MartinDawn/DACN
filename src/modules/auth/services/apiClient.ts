@@ -5,12 +5,28 @@ const API_URL = '/api';
 // const API_URL = 'http://localhost:5223/api';
 
 /**
+ * Get current language from localStorage or default to 'vi'
+ * Safe for SSR environments
+ */
+const getCurrentLanguage = (): string => {
+  if (typeof window === 'undefined') {
+    return 'vi'; // Default for SSR
+  }
+  try {
+    return localStorage.getItem('language') || 'vi';
+  } catch (error) {
+    console.warn('Failed to access localStorage:', error);
+    return 'vi';
+  }
+};
+
+/**
  * Tạo instance axios trung tâm
  */
 const apiClient = axios.create({
   baseURL: API_URL,
   headers: {
-    'Accept-Language': 'vi',
+    'Accept-Language': getCurrentLanguage(),
     'Content-Type': 'application/json',
   },
   withCredentials: true, // Quan trọng để gửi cookie (refresh token)
@@ -18,9 +34,20 @@ const apiClient = axios.create({
 
 apiClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-    // Chỉ lấy token từ localStorage khi request
-    const token = localStorage.getItem('accessToken');
-    
+    // Safely get token from localStorage
+    let token = null;
+    if (typeof window !== 'undefined') {
+      try {
+        token = localStorage.getItem('accessToken');
+      } catch (error) {
+        console.warn('Failed to access localStorage for token:', error);
+      }
+    }
+
+    // Luôn cập nhật Accept-Language header với ngôn ngữ hiện tại
+    const currentLanguage = getCurrentLanguage();
+    config.headers['Accept-Language'] = currentLanguage;
+
     // Không gắn token cho request refresh
     if (token && !config.url?.includes('/Account/refresh-token')) {
       config.headers['Authorization'] = `Bearer ${token}`;
@@ -74,10 +101,12 @@ apiClient.interceptors.response.use(
     if (originalRequest.url?.includes('/Account/refresh-token')) {
       console.error('Refresh token failed or expired. Cleaning up client session.');
       // local cleanup (don't import authService)
-      try {
-        localStorage.removeItem('accessToken');
-      } catch (e) {
-        // ignore
+      if (typeof window !== 'undefined') {
+        try {
+          localStorage.removeItem('accessToken');
+        } catch (e) {
+          console.warn('Failed to remove access token from localStorage:', e);
+        }
       }
       delete apiClient.defaults.headers.common['Authorization'];
       return Promise.reject(error);
@@ -107,7 +136,13 @@ apiClient.interceptors.response.use(
       const newAccessToken = response.data.data.accessToken;
 
       // 1. Lưu token mới
-      localStorage.setItem('accessToken', newAccessToken);
+      if (typeof window !== 'undefined') {
+        try {
+          localStorage.setItem('accessToken', newAccessToken);
+        } catch (error) {
+          console.warn('Failed to save access token to localStorage:', error);
+        }
+      }
 
       // 2. Cập nhật header mặc định
       apiClient.defaults.headers.common['Authorization'] = `Bearer ${newAccessToken}`;
@@ -125,10 +160,12 @@ apiClient.interceptors.response.use(
 
       processQueue(refreshError as Error, null);
 
-      try {
-        localStorage.removeItem('accessToken');
-      } catch (e) {
-        // ignore
+      if (typeof window !== 'undefined') {
+        try {
+          localStorage.removeItem('accessToken');
+        } catch (e) {
+          console.warn('Failed to remove access token from localStorage:', e);
+        }
       }
       delete apiClient.defaults.headers.common['Authorization'];
 

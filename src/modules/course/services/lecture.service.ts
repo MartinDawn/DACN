@@ -1,5 +1,5 @@
 import apiClient from "../../auth/services/apiClient";
-import type { ApiResponse, GetVideoApiResponse } from '../models/course';
+import type { ApiResponse, GetVideoApiResponse, EnhancedVideoResponse } from '../models/course';
 
 // Type for video URL response - can be string or object with videoUrl
 export type VideoUrlResponse = string | {
@@ -29,11 +29,32 @@ export const lectureService = {
    * Lấy thông tin video và khóa học từ API get-video
    * Trả về toàn bộ course detail bao gồm danh sách videos
    */
-  async getVideoDetail(videoId: string): Promise<ApiResponse<GetVideoApiResponse>> {
-    const response = await apiClient.get<ApiResponse<GetVideoApiResponse>>(
+  async getVideoDetail(videoId: string): Promise<ApiResponse<GetVideoApiResponse | EnhancedVideoResponse>> {
+    const response = await apiClient.get<ApiResponse<GetVideoApiResponse | EnhancedVideoResponse>>(
       `/Lecture/get-video/${videoId}`
     );
     return response.data;
+  },
+
+  /**
+   * Lấy thông tin video chi tiết với analysis, segments, và subtitles
+   * GET /api/Lecture/get-video/{videoId}
+   * Trả về: { name, videoUrl, duration, analysisResult: { summary, segments, subtitles } }
+   */
+  async getEnhancedVideoData(videoId: string): Promise<EnhancedVideoResponse | null> {
+    try {
+      const response = await apiClient.get<ApiResponse<EnhancedVideoResponse>>(
+        `/Lecture/get-video/${videoId}`
+      );
+      
+      if (response.data?.success && response.data?.data) {
+        return response.data.data;
+      }
+      return null;
+    } catch (error) {
+      console.error('Error getting enhanced video data:', error);
+      return null;
+    }
   },
 
   /**

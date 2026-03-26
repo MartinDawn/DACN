@@ -1,8 +1,9 @@
 // src/hooks/useUserProfile.ts (ĐÃ SỬA LỖI)
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { toast } from "react-hot-toast";
 import { profileService } from "../services/profile.service";
+import { useRefreshOnLanguageChange } from "../../../hooks/useRefreshOnLanguageChange";
 import type { UserProfile, UpdateProfilePayload } from "../models/userProfile.model";
 
 // --- Helpers (Giữ nguyên, không đổi) ---
@@ -57,17 +58,21 @@ export const useUserProfileData = () => {
   const [error, setError] = useState<string | null>(null);
   const [profileData, setProfileData] = useState<UserProfile | null>(null);
 
+  // Track if profile has been loaded for language refresh
+  const profileLoaded = useRef(false);
+
   const fetchProfile = useCallback(async () => {
     try {
       setIsLoading(true);
       setError(null);
-      
+
       // --- SỬA ĐỔI ---
       // Service (getProfile) bây giờ trả về UserProfile trực tiếp
       // hoặc ném ra lỗi (mà khối catch sẽ bắt)
       const data = await profileService.getProfile();
       setProfileData(data); // Gán data trực tiếp
-      
+      profileLoaded.current = true;
+
       // Bỏ toàn bộ phần check response.data.success
 
     } catch (err: any) {
@@ -80,6 +85,13 @@ export const useUserProfileData = () => {
       setIsLoading(false);
     }
   }, []);
+
+  // Auto refresh on language change
+  useRefreshOnLanguageChange(() => {
+    if (profileLoaded.current) {
+      fetchProfile();
+    }
+  });
 
   return { profileData, isLoading, error, fetchProfile };
 };

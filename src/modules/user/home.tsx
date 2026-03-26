@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import {
   AcademicCapIcon,
   BookOpenIcon,
@@ -8,14 +9,11 @@ import {
   UserGroupIcon,
 } from "@heroicons/react/24/outline";
 import UserLayout from "./layout/layout";
-import PostCard from "./components/post_card";
+import PostCard from "../../components/shared/PostCard";
 
 import { useCourses } from '../course/hooks/useCourses';
 // Sửa đường dẫn này cho đúng với file MyInfo.tsx
-import { useUserProfileData } from "../avatar_info/hooks/useUserProfile"; 
-
-const summaryTabs = ["Tổng quan", "Khóa học của tôi", "Thành tích"] as const;
-type SummaryTab = (typeof summaryTabs)[number];
+import { useUserProfileData } from "../avatar_info/hooks/useUserProfile";
 
 type QuickAction = {
   title: string;
@@ -23,33 +21,10 @@ type QuickAction = {
   icon: React.ComponentType<{ className?: string }>;
 };
 
-const quickActions: QuickAction[] = [
-  {
-    title: "Khóa học của tôi",
-    description: "Các khóa học bạn đã đăng ký",
-    icon: BookOpenIcon,
-  },
-  {
-    title: "Duyệt khóa học",
-    description: "Khám phá thư viện khóa học phong phú",
-    icon: MagnifyingGlassIcon,
-  },
-  {
-    title: "Danh mục",
-    description: "Chọn lĩnh vực bạn yêu thích",
-    icon: Squares2X2Icon,
-  },
-  {
-    title: "Giảng dạy",
-    description: "Bắt đầu trở thành giảng viên",
-    icon: UserGroupIcon,
-  },
-];
-
 const SummaryTabSwitcher: React.FC<{
-  tabs: readonly SummaryTab[];
-  activeTab: SummaryTab;
-  onChange: (tab: SummaryTab) => void;
+  tabs: readonly string[];
+  activeTab: string;
+  onChange: (tab: string) => void;
 }> = ({ tabs, activeTab, onChange }) => (
   <div className="mt-10 grid grid-cols-3 gap-2 rounded-full bg-gray-100 p-1 text-sm font-semibold text-gray-500">
     {tabs.map((tab) => (
@@ -68,7 +43,33 @@ const SummaryTabSwitcher: React.FC<{
 );
 
 const UserHome: React.FC = () => {
-  const [activeTab, setActiveTab] = React.useState<SummaryTab>(summaryTabs[0]);
+  const { t } = useTranslation();
+
+  const summaryTabs = [t('home.tabs.overview'), t('home.tabs.myCourses'), t('home.tabs.achievements')];
+  const [activeTab, setActiveTab] = React.useState<string>(summaryTabs[0]);
+
+  const quickActions: QuickAction[] = [
+    {
+      title: t('home.quickActions.myCourses'),
+      description: t('home.quickActions.myCoursesDesc'),
+      icon: BookOpenIcon,
+    },
+    {
+      title: t('home.quickActions.browseCourses'),
+      description: t('home.quickActions.browseCoursesDesc'),
+      icon: MagnifyingGlassIcon,
+    },
+    {
+      title: t('home.quickActions.categories'),
+      description: t('home.quickActions.categoriesDesc'),
+      icon: Squares2X2Icon,
+    },
+    {
+      title: t('home.quickActions.teaching'),
+      description: t('home.quickActions.teachingDesc'),
+      icon: UserGroupIcon,
+    },
+  ];
 
   // GỌI TẤT CẢ DỮ LIỆU TỪ HOOKS
   const {
@@ -97,19 +98,19 @@ const UserHome: React.FC = () => {
   // TẠO STATS ĐỘNG TỪ DỮ LIỆU HOOKS
   const stats = React.useMemo(() => {
     const defaultStats = [
-      { label: "Khóa học", value: "0", accent: "text-[#5a2dff]" },
-      { label: "Hoàn thành", value: "0%", accent: "text-emerald-500" },
-      { label: "Thời gian học", value: "0.0h", accent: "text-sky-500" },
-      { label: "Chứng chỉ", value: "0", accent: "text-amber-500" },
+      { label: t('home.stats.courses'), value: "0", accent: "text-[#5a2dff]" },
+      { label: t('home.stats.completed'), value: "0%", accent: "text-emerald-500" },
+      { label: t('home.stats.studyTime'), value: "0.0h", accent: "text-sky-500" },
+      { label: t('home.stats.certificates'), value: "0", accent: "text-amber-500" },
     ];
 
     // Bây giờ `profileData` sẽ có dữ liệu
     if (profileData && profileData.stats) {
       return [
-        { label: "Khóa học", value: myCourses.length.toString(), accent: "text-[#5a2dff]" },
-        { label: "Hoàn thành", value: `${profileData.stats.completionProgress}%`, accent: "text-emerald-500" },
-        { label: "Thời gian học", value: `${profileData.stats.totalHours}h`, accent: "text-sky-500" },
-        { label: "Chứng chỉ", value: profileData.stats.totalCertificates.toString(), accent: "text-amber-500" },
+        { label: t('home.stats.courses'), value: myCourses.length.toString(), accent: "text-[#5a2dff]" },
+        { label: t('home.stats.completed'), value: `${profileData.stats.completionProgress}%`, accent: "text-emerald-500" },
+        { label: t('home.stats.studyTime'), value: `${profileData.stats.totalHours}h`, accent: "text-sky-500" },
+        { label: t('home.stats.certificates'), value: profileData.stats.totalCertificates.toString(), accent: "text-amber-500" },
       ];
     }
     return defaultStats;
@@ -118,7 +119,7 @@ const UserHome: React.FC = () => {
   // HÀM RENDER "KHÓA HỌC CỦA TÔI"
   const renderMyCourses = () => {
     if (isMyCoursesLoading) {
-      return <div className="text-center py-8">Đang tải khóa học của bạn...</div>;
+      return <div className="text-center py-8">{t('home.loading.courses')}</div>;
     }
 
     if (myCourses.length === 0) {
@@ -128,16 +129,16 @@ const UserHome: React.FC = () => {
             <ClockIcon className="h-10 w-10 text-gray-400" />
           </div>
           <h3 className="mt-6 text-lg font-semibold text-gray-900">
-            Bạn chưa đăng ký khóa học nào
+            {t('home.empty.title')}
           </h3>
           <p className="mt-2 text-sm text-gray-500">
-            Bắt đầu khám phá thư viện khóa học phong phú của EduViet ngay hôm nay.
+            {t('home.empty.description')}
           </p>
           <button
             type="button"
             className="mt-6 rounded-full bg-[#5a2dff] px-5 py-2 text-sm font-semibold text-white shadow-sm shadow-[#5a2dff]/30 transition hover:bg-[#4a21eb]"
           >
-            Duyệt khóa học
+            {t('home.empty.browseCourses')}
           </button>
         </div>
       );
@@ -166,19 +167,19 @@ const UserHome: React.FC = () => {
   const achievementStats = React.useMemo(() => {
     if (profileData && profileData.stats) {
       return [
-        { label: "Tổng thời gian học", value: `${profileData.stats.totalHours} giờ` },
-        { label: "Khóa học đã đăng ký", value: myCourses.length.toString() },
-        { label: "Khóa học đã hoàn thành", value: profileData.stats.totalCertificates.toString() },
-        { label: "Tỷ lệ hoàn thành", value: `${profileData.stats.completionProgress}%` },
+        { label: t('home.stats.totalStudyTime'), value: `${profileData.stats.totalHours} ${t('courseDetail.time.hours')}` },
+        { label: t('home.stats.enrolledCourses'), value: myCourses.length.toString() },
+        { label: t('home.stats.completedCourses'), value: profileData.stats.totalCertificates.toString() },
+        { label: t('home.stats.completionRate'), value: `${profileData.stats.completionProgress}%` },
       ];
     }
     return [
-      { label: "Tổng thời gian học", value: "0.0 giờ" },
-      { label: "Khóa học đã đăng ký", value: "0" },
-      { label: "Khóa học đã hoàn thành", value: "0" },
-      { label: "Tỷ lệ hoàn thành", value: "0%" },
+      { label: t('home.stats.totalStudyTime'), value: `0.0 ${t('courseDetail.time.hours')}` },
+      { label: t('home.stats.enrolledCourses'), value: "0" },
+      { label: t('home.stats.completedCourses'), value: "0" },
+      { label: t('home.stats.completionRate'), value: "0%" },
     ];
-  }, [profileData, myCourses.length]);
+  }, [profileData, myCourses.length, t]);
 
   // (Phần JSX bên dưới giữ nguyên, nó sẽ tự động cập nhật khi `stats` và `profileData` thay đổi)
   return (
@@ -201,10 +202,10 @@ const UserHome: React.FC = () => {
               )}
               <div>
                 <h1 className="text-2xl font-semibold text-gray-900">
-                  Chào mừng trở lại, {isProfileLoading ? "..." : (profileData?.fullName || 'bạn')}!
+                  {t('home.welcomeBack', { name: isProfileLoading ? "..." : (profileData?.fullName || 'bạn') })}
                 </h1>
                 <p className="text-sm text-gray-500">
-                  Tiếp tục hành trình học tập của bạn
+                  {t('home.continueJourney')}
                 </p>
               </div>
             </div>
@@ -228,15 +229,15 @@ const UserHome: React.FC = () => {
           />
         </section>
 
-        {activeTab === "Tổng quan" && (
+        {activeTab === summaryTabs[0] && (
           <>
             <section className="rounded-4xl bg-white p-8 shadow-[0_24px_56px_rgba(90,90,140,0.08)]">
               {/* ... (Quick Actions giữ nguyên) ... */}
               <div className="flex flex-wrap items-center justify-between gap-4">
                 <div>
-                  <h2 className="text-lg font-semibold text-gray-900">Hành động nhanh</h2>
+                  <h2 className="text-lg font-semibold text-gray-900">{t('home.quickActions.title')}</h2>
                   <p className="text-sm text-gray-500">
-                    Các hành động nhanh để tiếp tục học tập
+                    {t('home.quickActions.description')}
                   </p>
                 </div>
               </div>
@@ -261,8 +262,8 @@ const UserHome: React.FC = () => {
 
             <section className="space-y-4">
               <div>
-                <h2 className="text-lg font-semibold text-gray-900">Tiếp tục học</h2>
-                <p className="text-sm text-gray-500">Các khóa học bạn đang theo dõi</p>
+                <h2 className="text-lg font-semibold text-gray-900">{t('home.continueStudying')}</h2>
+                <p className="text-sm text-gray-500">{t('home.quickActions.myCoursesDesc')}</p>
               </div>
               {/* SỬ DỤNG HÀM RENDER MỚI */}
               {renderMyCourses()}
@@ -271,14 +272,14 @@ const UserHome: React.FC = () => {
             {/* KHÓA HỌC ĐỀ XUẤT (GIỮ NGUYÊN) */}
             <section className="rounded-4xl bg-white p-8 shadow-[0_24px_56px_rgba(90,90,140,0.08)]">
               <div>
-                <h2 className="text-lg font-semibold text-gray-900">Khóa học đề xuất</h2>
-                <p className="text-sm text-gray-500">Dựa trên sở thích của bạn</p>
+                <h2 className="text-lg font-semibold text-gray-900">{t('home.recommendations')}</h2>
+                <p className="text-sm text-gray-500">{t('home.recommendationDescription')}</p>
               </div>
               <div className="mt-6 grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
                 {isRecommendedLoading ? (
-                  <div className="col-span-full text-center py-8">Đang tải khóa học...</div>
+                  <div className="col-span-full text-center py-8">{t('home.loading.recommendations')}</div>
                 ) : recommendedCourses.length === 0 ? (
-                  <div className="col-span-full text-center py-8">Không có khóa học đề xuất</div>
+                  <div className="col-span-full text-center py-8">{t('home.noRecommendations')}</div>
                 ) : (
                   recommendedCourses.map((course) => (
                     <PostCard
@@ -298,11 +299,11 @@ const UserHome: React.FC = () => {
           </>
         )}
 
-        {activeTab === "Khóa học của tôi" && (
+        {activeTab === summaryTabs[1] && (
           <section className="rounded-4xl bg-white p-8 shadow-[0_24px_56px_rgba(90,99,140,0.08)]">
             <div>
-              <h2 className="text-lg font-semibold text-gray-900">Khóa học đã đăng ký</h2>
-              <p className="text-sm text-gray-500">Quản lý và theo dõi tiến độ học tập</p>
+              <h2 className="text-lg font-semibold text-gray-900">{t('home.coursePage.registered')}</h2>
+              <p className="text-sm text-gray-500">{t('home.coursePage.manageProgress')}</p>
             </div>
             {/* SỬ DỤNG HÀM RENDER MỚI */}
             <div className="mt-8">
@@ -311,24 +312,24 @@ const UserHome: React.FC = () => {
           </section>
         )}
 
-        {activeTab === "Thành tích" && (
+        {activeTab === summaryTabs[2] && (
           <section className="rounded-4xl bg-white p-8 shadow-[0_24px_56px_rgba(90,90,140,0.08)]">
             <div className="grid gap-6 lg:grid-cols-2">
               <div className="flex flex-col items-center justify-center rounded-3xl border border-dashed border-gray-200 bg-gray-50/70 p-10 text-center">
                 <span className="inline-flex h-24 w-24 items-center justify-center rounded-full bg-white shadow">
                   <AcademicCapIcon className="h-12 w-12 text-[#5a2dff]" />
                 </span>
-                <h3 className="mt-6 text-lg font-semibold text-gray-900">Chứng chỉ</h3>
+                <h3 className="mt-6 text-lg font-semibold text-gray-900">{t('home.achievements.certificates')}</h3>
                 <p className="mt-2 text-sm text-gray-500">
-                  Hoàn thành khóa học đầu tiên để nhận chứng chỉ của bạn.
+                  {t('home.achievements.certificateDescription')}
                 </p>
               </div>
               <div className="rounded-3xl border border-gray-100 bg-gray-50/70 p-6">
-                <h3 className="text-base font-semibold text-gray-900">Thống kê học tập</h3>
+                <h3 className="text-base font-semibold text-gray-900">{t('home.achievements.learningStats')}</h3>
                 {/* DÙNG STATS THÀNH TÍCH ĐỘNG */}
                 <dl className="mt-6 space-y-4">
                   {isProfileLoading || isMyCoursesLoading ? ( // Thêm kiểm tra loading
-                     <div className="text-sm text-gray-500">Đang tải thống kê...</div>
+                     <div className="text-sm text-gray-500">{t('home.loading.stats')}</div>
                   ) : (
                     achievementStats.map(({ label, value }) => (
                       <div key={label} className="flex items-center justify-between text-sm">

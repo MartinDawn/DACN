@@ -1,31 +1,36 @@
 // src/hooks/useCoursesFilter.ts
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { courseService } from '../services/course.service';
 // Import thêm PaginatedCourses
 import type { MyCourse, FilterParams, PaginatedCourses } from '../models/course';
 import type { Tag } from '../models/tag.ts';
+import { useRefreshOnLanguageChange } from '../../../hooks/useRefreshOnLanguageChange';
 
 export const useCoursesFilter = () => {
   const [courses, setCourses] = useState<MyCourse[]>([]);
   // Thêm state để lưu thông tin phân trang (tùy chọn nhưng nên có)
   const [pagination, setPagination] = useState<Omit<PaginatedCourses, 'items'> | null>(null);
-  
+
   const [coursesLoading, setCoursesLoading] = useState(true);
   const [coursesError, setCoursesError] = useState<string | null>(null);
   const [tags, setTags] = useState<Tag[]>([]);
   const [tagsLoading, setTagsLoading] = useState(true);
   const [tagsError, setTagsError] = useState<string | null>(null);
 
+  // Track last filter params for language refresh
+  const lastFilterParams = useRef<FilterParams | null>(null);
+
   const fetchFilteredCourses = useCallback(async (params: FilterParams) => {
     setCoursesLoading(true);
     setCoursesError(null);
+    lastFilterParams.current = params; // Track filter params for refresh
     try {
       const response = await courseService.getFilteredCourses(params);
       if (response.success) {
         // SỬA Ở ĐÂY: Lấy mảng 'items' từ trong 'data'
-        setCourses(response.data.items); 
-        
+        setCourses(response.data.items);
+
         // Tách và lưu thông tin phân trang
         const { items, ...paginationInfo } = response.data;
         setPagination(paginationInfo);
@@ -58,6 +63,13 @@ export const useCoursesFilter = () => {
     };
     fetchTags();
   }, []);
+
+  // Auto refresh on language change
+  useRefreshOnLanguageChange(() => {
+    if (lastFilterParams.current) {
+      fetchFilteredCourses(lastFilterParams.current);
+    }
+  });
 
   return {
     courses,

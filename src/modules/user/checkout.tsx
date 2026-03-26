@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useTranslation } from 'react-i18next';
 import {
   ArrowLeftIcon,
   BuildingLibraryIcon,
@@ -21,29 +22,30 @@ const currencyFormatter = new Intl.NumberFormat("vi-VN", {
   maximumFractionDigits: 0,
 });
 
-const paymentMethods = [
-  {
-    value: "card",
-    label: "Thẻ tín dụng/ghi nợ",
-    description: "Visa, Mastercard, JCB",
-    Icon: CreditCardIcon,
-  },
-  {
-    value: "vnpay", // Đổi key để dễ xử lý logic
-    label: "VNPay / Mobile Banking",
-    description: "Quét mã QR hoặc dùng thẻ ATM nội địa",
-    Icon: BuildingLibraryIcon,
-  },
-  {
-    value: "wallet",
-    label: "Ví điện tử khác",
-    description: "MoMo, ZaloPay, ShopeePay",
-    Icon: DevicePhoneMobileIcon,
-  },
-];
-
 const CheckoutPage: React.FC = () => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
+
+  const paymentMethods = [
+    {
+      value: "card",
+      label: t('checkout.paymentMethod.creditCard'),
+      description: t('checkout.paymentMethod.creditCardDesc'),
+      Icon: CreditCardIcon,
+    },
+    {
+      value: "vnpay", // Đổi key để dễ xử lý logic
+      label: t('checkout.paymentMethod.vnpay'),
+      description: t('checkout.paymentMethod.vnpayDesc'),
+      Icon: BuildingLibraryIcon,
+    },
+    {
+      value: "wallet",
+      label: t('checkout.paymentMethod.wallet'),
+      description: t('checkout.paymentMethod.walletDesc'),
+      Icon: DevicePhoneMobileIcon,
+    },
+  ];
   
   // 2. LẤY DỮ LIỆU TỪ CÁC HOOK
   const { cart, loading: isCartLoading, error: cartError } = useCart();
@@ -114,22 +116,22 @@ const CheckoutPage: React.FC = () => {
         // nên code phía sau dòng này có thể không chạy.
     } else if (paymentMethod === 'card') {
         // Xử lý thanh toán thẻ (Logic cũ hoặc API khác)
-        alert("Chức năng thanh toán thẻ đang được phát triển. Vui lòng chọn VNPay.");
-        // navigate("/user/mycourses"); 
+        alert(t('checkout.errors.cardMethodUnavailable'));
+        // navigate("/user/mycourses");
     } else {
-        alert("Phương thức thanh toán này chưa được hỗ trợ.");
+        alert(t('checkout.errors.methodUnavailable'));
     }
   };
 
   const isCardMethod = paymentMethod === "card";
   const isLoading = isCartLoading || isProfileLoading;
-  const apiError = cartError || (profileData === null && !isProfileLoading ? "Không tải được profile" : null);
+  const apiError = cartError || (profileData === null && !isProfileLoading ? t('user.profileLoadError') : null);
 
   if (isLoading) {
     return (
       <UserLayout>
         <div className="flex h-96 items-center justify-center">
-            <div className="text-center">Đang tải thông tin thanh toán...</div>
+            <div className="text-center">{t('checkout.loading')}</div>
         </div>
       </UserLayout>
     );
@@ -149,9 +151,9 @@ const CheckoutPage: React.FC = () => {
     return (
       <UserLayout>
         <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4 text-center">
-          <p className="text-lg font-semibold">Không có khóa học nào trong giỏ hàng.</p>
+          <p className="text-lg font-semibold">{t('checkout.empty.title')}</p>
           <Link to="/courses" className="rounded-full bg-[#5a2dff] px-5 py-2 text-sm font-semibold text-white">
-            Khám phá khóa học
+            {t('checkout.empty.exploreCourses')}
           </Link>
         </div>
       </UserLayout>
@@ -167,18 +169,18 @@ const CheckoutPage: React.FC = () => {
             className="inline-flex items-center gap-2 text-sm font-semibold text-[#5a2dff] transition hover:text-[#3c1cd6]"
           >
             <ArrowLeftIcon className="h-4 w-4" />
-            Quay lại giỏ hàng
+            {t('checkout.backToCart')}
           </Link>
-          <h2 className="text-2xl font-bold text-gray-900">Thanh toán đơn hàng</h2>
+          <h2 className="text-2xl font-bold text-gray-900">{t('checkout.title')}</h2>
           <p className="mt-1 text-sm text-gray-500">
-            Hoàn tất thông tin để truy cập toàn bộ nội dung khóa học chỉ với vài bước.
+            {t('checkout.subtitle')}
           </p>
         </header>
 
         {/* Hiển thị lỗi thanh toán nếu có */}
         {paymentError && (
             <div className="p-4 mb-4 text-sm text-red-700 bg-red-100 rounded-lg" role="alert">
-                <span className="font-medium">Lỗi thanh toán!</span> {paymentError}
+                <span className="font-medium">{t('user.paymentError')}</span> {paymentError}
             </div>
         )}
 
@@ -186,46 +188,46 @@ const CheckoutPage: React.FC = () => {
           <section className="space-y-8">
             {/* Thông tin thanh toán */}
             <div className="rounded-3xl border border-gray-100 p-6 shadow-sm bg-white">
-              <h3 className="text-lg font-semibold text-gray-900">Thông tin người mua</h3>
+              <h3 className="text-lg font-semibold text-gray-900">{t('checkout.buyerInfo.title')}</h3>
               <div className="mt-6 grid gap-4 sm:grid-cols-2">
                 <label className="space-y-2 text-sm font-semibold text-gray-600">
-                  Họ và tên *
+                  {t('checkout.buyerInfo.fullName')}
                   <input
                     value={form.fullName}
                     onChange={handleChange("fullName")}
                     className="h-11 w-full rounded-2xl border border-gray-200 px-4 text-sm font-medium text-gray-700 outline-none transition focus:border-[#5a2dff] focus:ring-2 focus:ring-[#5a2dff]/10"
-                    placeholder="Nhập họ và tên"
+                    placeholder={t('checkout.buyerInfo.fullNamePlaceholder')}
                     required
                   />
                 </label>
                 <label className="space-y-2 text-sm font-semibold text-gray-600">
-                  Email *
+                  {t('checkout.buyerInfo.email')}
                   <input
                     type="email"
                     value={form.email}
                     onChange={handleChange("email")}
                     className="h-11 w-full rounded-2xl border border-gray-200 px-4 text-sm font-medium text-gray-700 outline-none transition focus:border-[#5a2dff] focus:ring-2 focus:ring-[#5a2dff]/10"
-                    placeholder="Nhập email"
+                    placeholder={t('checkout.buyerInfo.emailPlaceholder')}
                     required
                   />
                 </label>
                 <label className="space-y-2 text-sm font-semibold text-gray-600">
-                  Số điện thoại *
+                  {t('checkout.buyerInfo.phone')}
                   <input
                     value={form.phone}
                     onChange={handleChange("phone")}
                     className="h-11 w-full rounded-2xl border border-gray-200 px-4 text-sm font-medium text-gray-700 outline-none transition focus:border-[#5a2dff] focus:ring-2 focus:ring-[#5a2dff]/10"
-                    placeholder="0123456789"
+                    placeholder={t('checkout.buyerInfo.phonePlaceholder')}
                     required
                   />
                 </label>
                 <label className="space-y-2 text-sm font-semibold text-gray-600">
-                  Tỉnh/Thành phố *
+                  {t('checkout.buyerInfo.city')}
                   <input
                     value={form.city}
                     onChange={handleChange("city")}
                     className="h-11 w-full rounded-2xl border border-gray-200 px-4 text-sm font-medium text-gray-700 outline-none transition focus:border-[#5a2dff] focus:ring-2 focus:ring-[#5a2dff]/10"
-                    placeholder="Nhập tỉnh/thành phố"
+                    placeholder={t('checkout.buyerInfo.cityPlaceholder')}
                     required
                   />
                 </label>
@@ -234,7 +236,7 @@ const CheckoutPage: React.FC = () => {
 
             {/* Phương thức thanh toán */}
             <div className="rounded-3xl border border-gray-100 p-6 shadow-sm bg-white">
-              <h3 className="text-lg font-semibold text-gray-900">Phương thức thanh toán</h3>
+              <h3 className="text-lg font-semibold text-gray-900">{t('checkout.paymentMethod.title')}</h3>
               <div className="mt-5 space-y-3">
                 {paymentMethods.map(({ value, label, description, Icon }) => {
                   const active = paymentMethod === value;
@@ -270,51 +272,51 @@ const CheckoutPage: React.FC = () => {
               {/* Chi tiết thẻ - Chỉ hiện khi chọn Card */}
               {isCardMethod && (
                   <div className={`mt-6 grid gap-4 rounded-2xl bg-[#f8f8ff] p-5 animate-in fade-in slide-in-from-top-2`}>
-                    <h4 className="text-sm font-semibold text-gray-900">Chi tiết thẻ</h4>
+                    <h4 className="text-sm font-semibold text-gray-900">{t('checkout.cardDetails.title')}</h4>
                     <div className="grid gap-4 sm:grid-cols-2">
                        <label className="space-y-1 text-xs font-semibold uppercase tracking-wide text-gray-500">
-                         Số thẻ *
+                         {t('checkout.cardDetails.cardNumber')}
                          <input
                            value={form.cardNumber}
                            onChange={handleChange("cardNumber")}
                            className="h-11 w-full rounded-2xl border border-gray-200 px-4 text-sm font-medium text-gray-700 outline-none transition focus:border-[#5a2dff] focus:ring-2 focus:ring-[#5a2dff]/10 bg-white"
-                           placeholder="1234 5678 9012 3456"
+                           placeholder={t('checkout.cardDetails.cardNumberPlaceholder')}
                            required={isCardMethod}
                          />
                        </label>
                        <label className="space-y-1 text-xs font-semibold uppercase tracking-wide text-gray-500">
-                         Tên trên thẻ *
+                         {t('checkout.cardDetails.cardName')}
                          <input
                            value={form.cardName}
                            onChange={handleChange("cardName")}
                            className="h-11 w-full rounded-2xl border border-gray-200 px-4 text-sm font-medium text-gray-700 outline-none transition focus:border-[#5a2dff] focus:ring-2 focus:ring-[#5a2dff]/10 bg-white"
-                           placeholder="NGUYEN VAN A"
+                           placeholder={t('checkout.cardDetails.cardNamePlaceholder')}
                            required={isCardMethod}
                          />
                        </label>
                        <label className="space-y-1 text-xs font-semibold uppercase tracking-wide text-gray-500">
-                         Ngày hết hạn *
+                         {t('checkout.cardDetails.expiry')}
                          <input
                            value={form.expiry}
                            onChange={handleChange("expiry")}
                            className="h-11 w-full rounded-2xl border border-gray-200 px-4 text-sm font-medium text-gray-700 outline-none transition focus:border-[#5a2dff] focus:ring-2 focus:ring-[#5a2dff]/10 bg-white"
-                           placeholder="MM/YY"
+                           placeholder={t('checkout.cardDetails.expiryPlaceholder')}
                            required={isCardMethod}
                          />
                        </label>
                        <label className="space-y-1 text-xs font-semibold uppercase tracking-wide text-gray-500">
-                         CVV *
+                         {t('checkout.cardDetails.cvv')}
                          <input
                            value={form.cvv}
                            onChange={handleChange("cvv")}
                            className="h-11 w-full rounded-2xl border border-gray-200 px-4 text-sm font-medium text-gray-700 outline-none transition focus:border-[#5a2dff] focus:ring-2 focus:ring-[#5a2dff]/10 bg-white"
-                           placeholder="123"
+                           placeholder={t('checkout.cardDetails.cvvPlaceholder')}
                            required={isCardMethod}
                          />
                        </label>
                     </div>
                     <p className="text-xs text-gray-500 flex items-center gap-1">
-                      <LockClosedIcon className="h-3 w-3"/> Thông tin thanh toán của bạn được mã hóa SSL 256-bit.
+                      <LockClosedIcon className="h-3 w-3"/> {t('checkout.cardDetails.securityInfo')}
                     </p>
                   </div>
               )}
@@ -324,7 +326,7 @@ const CheckoutPage: React.FC = () => {
           {/* Sidebar tóm tắt đơn hàng */}
           <aside className="space-y-6 rounded-3xl border border-gray-100 p-6 shadow-sm bg-white lg:sticky lg:top-28 h-fit">
             <div className="space-y-4">
-              <h3 className="font-semibold text-gray-900">Tóm tắt đơn hàng</h3>
+              <h3 className="font-semibold text-gray-900">{t('checkout.orderSummary.title')}</h3>
               <div className="max-h-60 overflow-y-auto space-y-4 pr-2">
                   {selectedItems.map((item) => (
                     <div key={item.id} className="flex items-start gap-3">
@@ -343,23 +345,23 @@ const CheckoutPage: React.FC = () => {
             <div className="space-y-3 text-sm border-t border-gray-100 pt-4">
               <div className="space-y-2 text-gray-500">
                 <div className="flex justify-between">
-                  <span>Tạm tính</span>
+                  <span>{t('checkout.orderSummary.subtotal')}</span>
                   <span className="font-semibold text-gray-900">{currencyFormatter.format(subtotal)}</span>
                 </div>
                 {discount > 0 && (
                   <div className="flex justify-between text-emerald-500">
-                    <span>Giảm giá</span>
+                    <span>{t('checkout.orderSummary.discount')}</span>
                     <span>- {currencyFormatter.format(discount)}</span>
                   </div>
                 )}
                 <div className="flex justify-between">
-                  <span>Thuế (8%)</span>
+                  <span>{t('checkout.orderSummary.tax')}</span>
                   <span>{currencyFormatter.format(vat)}</span>
                 </div>
               </div>
 
               <div className="flex justify-between text-lg font-bold text-gray-900 pt-2 border-t border-gray-100">
-                <span>Tổng cộng</span>
+                <span>{t('checkout.orderSummary.total')}</span>
                 <span className="text-[#5a2dff]">{currencyFormatter.format(total)}</span>
               </div>
             </div>
@@ -372,9 +374,9 @@ const CheckoutPage: React.FC = () => {
                 className="mt-1 h-4 w-4 rounded border-gray-300 text-[#5a2dff] focus:ring-[#5a2dff]"
               />
               <span>
-                Tôi đồng ý với{" "}
+                {t('checkout.terms.agree')}{" "}
                 <button type="button" className="font-semibold text-[#5a2dff] hover:underline">
-                  Điều khoản sử dụng
+                  {t('checkout.terms.terms')}
                 </button>
                 .
               </span>
@@ -387,7 +389,7 @@ const CheckoutPage: React.FC = () => {
                 agreed && !isPaymentProcessing ? "bg-[#5a2dff] hover:bg-[#3c1cd6] hover:-translate-y-0.5" : "cursor-not-allowed bg-[#b9a8ff]"
               }`}
             >
-              {isPaymentProcessing ? "Đang xử lý..." : `Hoàn tất thanh toán ${currencyFormatter.format(total)}`}
+              {isPaymentProcessing ? t('checkout.orderSummary.processing') : `${t('checkout.completePayment')} ${currencyFormatter.format(total)}`}
             </button>
             
             <div className="flex items-center gap-3 rounded-2xl bg-[#f6f7ff] px-4 py-3 text-xs text-gray-500">
@@ -395,8 +397,8 @@ const CheckoutPage: React.FC = () => {
                 <LockClosedIcon className="h-4 w-4" />
               </span>
               <div>
-                <p className="font-semibold text-gray-900">Bảo mật thanh toán</p>
-                <p>Đảm bảo hoàn tiền trong 30 ngày nếu bạn không hài lòng.</p>
+                <p className="font-semibold text-gray-900">{t('checkout.securityGuarantee.title')}</p>
+                <p>{t('checkout.securityGuarantee.description')}</p>
               </div>
             </div>
           </aside>

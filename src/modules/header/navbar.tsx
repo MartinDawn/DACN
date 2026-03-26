@@ -1,4 +1,4 @@
-// src/components/Navbar.tsx 
+// src/components/Navbar.tsx
 
 import React, { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
@@ -10,15 +10,21 @@ import {
   UserIcon,
   KeyIcon,
   ArrowLeftOnRectangleIcon,
+  GlobeAltIcon,
 } from "@heroicons/react/24/outline";
 import { useCart } from "../user/hooks/useCart";
-
 import { useAuth } from "../auth/hooks/useAuth";
 import { useMyNotifications } from "./hooks/useNotifications";
+import { useTranslation } from 'react-i18next';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 const Navbar: React.FC = () => {
+  const { t } = useTranslation();
+  const { currentLanguage, changeLanguage } = useLanguage();
   const [isProfileOpen, setProfileOpen] = useState(false);
+  const [isLanguageOpen, setLanguageOpen] = useState(false);
   const profileMenuRef = useRef<HTMLDivElement>(null);
+  const languageMenuRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const [isLogoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
 
@@ -27,6 +33,12 @@ const Navbar: React.FC = () => {
   const { unreadCount } = useMyNotifications();
 
   const [searchTerm, setSearchTerm] = useState("");
+
+  // Language options
+  const languages = [
+    { code: 'vi' as const, name: 'Tiếng Việt', flag: '🇻🇳' },
+    { code: 'en' as const, name: 'English', flag: '🇺🇸' },
+  ];
 
   const handleSearchSubmit = (event: React.KeyboardEvent<HTMLInputElement>) => {
     if (event.key === 'Enter' && searchTerm.trim()) {
@@ -38,6 +50,9 @@ const Navbar: React.FC = () => {
     const handleClickOutside = (event: MouseEvent) => {
       if (profileMenuRef.current && !profileMenuRef.current.contains(event.target as Node)) {
         setProfileOpen(false);
+      }
+      if (languageMenuRef.current && !languageMenuRef.current.contains(event.target as Node)) {
+        setLanguageOpen(false);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
@@ -59,6 +74,16 @@ const Navbar: React.FC = () => {
     setLogoutConfirmOpen(false);
     navigate("/homepage"); // Điều hướng về trang chủ
   };
+
+  // Language functions
+  const handleLanguageMenuToggle = () => {
+    setLanguageOpen((prev) => !prev);
+  };
+
+  const handleLanguageSelect = (langCode: 'vi' | 'en') => {
+    changeLanguage(langCode);
+    setLanguageOpen(false);
+  };
   
   // Lấy chữ cái đầu của user
   const userInitials = user?.fullName ? user.fullName[0].toUpperCase() : (user?.email ? user.email[0].toUpperCase() : 'A');
@@ -75,11 +100,11 @@ const Navbar: React.FC = () => {
         </Link>
         <div className="hidden items-center gap-5 text-sm font-semibold text-gray-600 xl:flex">
           <button className="flex items-center gap-1 transition hover:text-[#5a2dff]">
-            Danh mục
+            {t('common.filter')}
             <ChevronDownIcon className="h-4 w-4" />
           </button>
           <Link to="/courses" className="transition hover:text-[#5a2dff]">
-            Duyệt khóa học
+            {t('navigation.courses')}
           </Link>
         </div>
         <div className="flex flex-1 justify-center">
@@ -87,7 +112,7 @@ const Navbar: React.FC = () => {
             <MagnifyingGlassIcon className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
             <input
               type="search"
-              placeholder="Tìm kiếm khóa học..."
+              placeholder={t('course.searchPlaceholder')}
               className="h-11 w-full rounded-full border border-gray-200 bg-gray-50 pl-12 pr-4 text-sm font-medium text-gray-600 outline-none transition focus:border-[#5a2dff] focus:bg-white"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -97,14 +122,52 @@ const Navbar: React.FC = () => {
         </div>
         <div className="hidden items-center gap-5 text-sm font-semibold text-gray-600 lg:flex">
           <Link to={user?.role?.includes('Instructor') ? '/instructor/dashboard' : '/register-teacher'} className="transition hover:text-[#5a2dff]">
-            Giảng dạy
+            {t('instructor.dashboard')}
           </Link>
           <Link to="/user/mycourses" className="transition hover:text-[#5a2dff]">
-            Khóa học của tôi
+            {t('navigation.myCourses')}
           </Link>
         </div>
-        
+
         <div className="flex items-center gap-3">
+          {/* Language Switcher */}
+          <div className="relative" ref={languageMenuRef}>
+            <button
+              onClick={handleLanguageMenuToggle}
+              className="flex items-center gap-2 rounded-full border border-gray-200 px-3 py-2 text-gray-500 transition hover:text-[#5a2dff]"
+              title={t('common.selectLanguage')}
+            >
+              <GlobeAltIcon className="h-5 w-5" />
+              <span className="hidden sm:block text-sm font-medium">
+                {languages.find(lang => lang.code === currentLanguage)?.flag}
+              </span>
+              <ChevronDownIcon className="h-4 w-4" />
+            </button>
+            {isLanguageOpen && (
+              <div className="absolute right-0 mt-3 w-48 rounded-2xl border border-gray-100 bg-white p-2 shadow-xl">
+                <div className="space-y-1">
+                  {languages.map((language) => (
+                    <button
+                      key={language.code}
+                      onClick={() => handleLanguageSelect(language.code)}
+                      className={`flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm transition ${
+                        currentLanguage === language.code
+                          ? 'bg-[#f6f0ff] text-[#5a2dff] font-semibold'
+                          : 'text-gray-600 hover:bg-[#efeaff] hover:text-[#5a2dff]'
+                      }`}
+                    >
+                      <span className="text-lg">{language.flag}</span>
+                      <span>{language.name}</span>
+                      {currentLanguage === language.code && (
+                        <div className="ml-auto h-2 w-2 rounded-full bg-[#5a2dff]"></div>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
           {/* Cart (Đã đúng) */}
           <Link
             to="/user/cart"
@@ -166,7 +229,7 @@ const Navbar: React.FC = () => {
                     </span>
                   )}
                   <div className="text-sm overflow-hidden">
-                    <p className="font-semibold text-gray-900 truncate">{user?.fullName || "Người dùng"}</p>
+                    <p className="font-semibold text-gray-900 truncate">{user?.fullName || t('user.profile')}</p>
                     <p className="text-xs text-gray-500 truncate">{user?.email || "..."}</p>
                   </div>
                 </div>
@@ -176,14 +239,14 @@ const Navbar: React.FC = () => {
                     className="flex items-center gap-2 rounded-xl px-3 py-2 transition hover:bg-[#efeaff] hover:text-[#5a2dff]"
                   >
                     <UserIcon className="h-4 w-4" />
-                    Thông tin cá nhân
+                    {t('user.personalInfo')}
                   </Link>
                   <Link
                     to="/user/security"
                     className="flex items-center gap-2 rounded-xl px-3 py-2 transition hover:bg-[#efeaff] hover:text-[#5a2dff]"
                   >
                     <KeyIcon className="h-4 w-4" />
-                    Đổi mật khẩu
+                    {t('user.changePassword')}
                   </Link>
                   <button
                     type="button"
@@ -191,7 +254,7 @@ const Navbar: React.FC = () => {
                     className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left transition hover:bg-[#ffeceb] hover:text-[#ff4b3a]"
                   >
                     <ArrowLeftOnRectangleIcon className="h-4 w-4" />
-                    Đăng xuất
+                    {t('navigation.logout')}
                   </button>
                 </div>
               </div>
@@ -204,21 +267,21 @@ const Navbar: React.FC = () => {
       {isLogoutConfirmOpen && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40">
           <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl">
-            <h3 className="text-lg font-semibold text-gray-900">Bạn có muốn đăng xuất không?</h3>
+            <h3 className="text-lg font-semibold text-gray-900">{t('navigation.logout')}?</h3>
             <div className="mt-6 flex justify-end gap-3 text-sm font-semibold">
               <button
                 type="button"
                 onClick={() => setLogoutConfirmOpen(false)}
                 className="rounded-full border border-gray-200 px-4 py-2 text-gray-600 transition hover:bg-gray-100"
               >
-                Không
+                {t('common.cancel')}
               </button>
               <button
                 type="button"
                 onClick={handleConfirmLogout}
                 className="rounded-full bg-[#5a2dff] px-4 py-2 text-white transition hover:bg-[#4920d9]"
               >
-                Có
+                {t('common.confirm')}
               </button>
             </div>
           </div>

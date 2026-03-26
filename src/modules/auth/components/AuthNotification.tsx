@@ -1,5 +1,6 @@
 import React from 'react';
 import { HiCheckCircle, HiXCircle } from 'react-icons/hi2';
+import { useTranslation } from 'react-i18next';
 
 interface NotificationProps {
   message: string;
@@ -9,6 +10,8 @@ interface NotificationProps {
 }
 
 export const AuthNotification: React.FC<NotificationProps> = ({ message, type, onClose, show }) => {
+  const { t } = useTranslation();
+
   if (!show) return null;
 
   return (
@@ -35,7 +38,7 @@ export const AuthNotification: React.FC<NotificationProps> = ({ message, type, o
               type === 'success' ? 'hover:bg-green-500' : 'hover:bg-red-500'
             }`}
           >
-            <span className="sr-only">Đóng</span>
+            <span className="sr-only">{t('common.close')}</span>
             <svg
               className={`h-4 w-4 ${type === 'success' ? 'text-green-600' : 'text-red-600'}`}
               fill="none"
