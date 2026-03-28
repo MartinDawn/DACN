@@ -442,15 +442,15 @@ const InstructorDashboard: React.FC = () => {
                   </label>
                   <div className="mb-4 flex flex-wrap gap-3">
                     {selectedTagIds.map((id) => {
-                      const t = tags.find((x) => x.id === id);
+                      const tagObj = tags.find((x) => x.id === id);
                       return (
                         <span key={id} className="group inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-[#eef2ff] to-indigo-50 px-4 py-2 text-sm font-bold text-[#2a1aef] border border-indigo-200 shadow-sm">
-                          <span>{t?.name ?? id}</span>
+                          <span>{tagObj?.name ?? id}</span>
                           <button
                             type="button"
                             onClick={() => setSelectedTagIds((prev) => prev.filter((x) => x !== id))}
                             className="rounded-full bg-white p-1 text-xs font-bold text-[#5a2dff] opacity-70 hover:opacity-100 hover:bg-red-50 hover:text-red-600 transition-all"
-                            aria-label={t("instructor.teacher.form.removeCategoryAriaLabel", { name: t?.name ?? id })}
+                            aria-label={t("instructor.teacher.form.removeCategoryAriaLabel", { name: tagObj?.name ?? id })}
                           >
                             <X size={12} />
                           </button>
