@@ -87,7 +87,7 @@ export interface CourseCommentsData {
 
 export interface ApiResponse<T> {
   success: boolean;
-  code: string;
+  code?: string;
   message: string;
   data: T;
 }
@@ -339,3 +339,4 @@ export interface GetVideoApiResponse {
   isEnrolled: boolean;
   lectures: LectureResponse[];
 }
+

@@ -314,15 +314,15 @@ const ManageCoursePage: React.FC = () => {
   };
 
   // --- Document Actions ---
-  const openEditDocument = (lectureId: string, doc: any) => {
-    setEditingDocLectureId(lectureId);
-    const docId = doc.id || doc.documentId || doc.Id || doc.DocumentId;
-    setEditingDocumentId(docId);
-    setEditDocFile(null);
-    const currentName = typeof doc === 'string' ? doc : (doc.name ?? doc.fileName ?? "");
-    setEditDocName(currentName);
-    setShowEditDocumentModal(true);
-  };
+//   const openEditDocument = (lectureId: string, doc: any) => {
+//     setEditingDocLectureId(lectureId);
+//     const docId = doc.id || doc.documentId || doc.Id || doc.DocumentId;
+//     setEditingDocumentId(docId);
+//     setEditDocFile(null);
+//     const currentName = typeof doc === 'string' ? doc : (doc.name ?? doc.fileName ?? "");
+//     setEditDocName(currentName);
+//     setShowEditDocumentModal(true);
+//   };
 
   const handleEditDocFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {

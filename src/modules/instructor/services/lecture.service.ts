@@ -1,7 +1,6 @@
 import apiClient from "../../auth/services/apiClient";
 import type { ApiResponse, EnhancedVideoResponse } from "../../admin/models/course";
 import type {
-  Lecture,
   CreateLecturePayload,
   CreateLectureResponse,
   UploadLectureVideoResponse,
@@ -11,6 +10,7 @@ import type {
   DeleteLectureResponse,
   UpdateOrderPayload, 
 } from "../models/lecture";
+
 
 export const lectureService = {
   async getLecturesByCourse(courseId: string, lang = "vi"): Promise<LectureListResponse> {
@@ -89,7 +89,7 @@ export const lectureService = {
         onUploadProgress: onProgress,
       }
     );
-    return response.data;
+    return response.data as UploadLectureVideoResponse;
   },
 
   // Add Document

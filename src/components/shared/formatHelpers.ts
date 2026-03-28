@@ -1,6 +1,6 @@
 // src/components/shared/formatHelpers.ts
 
-import type { TFunction } from 'react-i18next';
+import type { TFunction } from 'i18next';
 
 /**
  * Formats simple question title (without total count)

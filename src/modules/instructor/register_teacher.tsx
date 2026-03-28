@@ -1,9 +1,9 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import UserLayout from "../user/layout/layout";
 import { instructorService } from "./services/instructor.service";
-import { toast } from "react-hot-toast";
+// import { toast } from "react-hot-toast"; //thông báo hiển thị popup trên góc phải màn hình
 import {
 	ArrowLeft,
 	Users,

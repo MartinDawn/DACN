@@ -1,4 +1,3 @@
-import React from 'react';
 import LoginCard from './modules/auth/login';
 import RegisterPage from './modules/auth/register';
 import ForgetPasswordPage from './modules/auth/forgetpw';

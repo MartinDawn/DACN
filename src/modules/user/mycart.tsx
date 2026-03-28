@@ -99,7 +99,7 @@ const MyCart: React.FC = () => {
 
   // ĐÃ BỎ: handleToggleSelect
 
-  const handleAddRecommended = useCallback(async (course: RecommendedCourse) => {
+  const handleAddRecommended = useCallback(async (_course: RecommendedCourse) => {
       // await cartService.addCourseToCart(course.id);
       refreshCart();
   }, [refreshCart]);
