@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import UserLayout from "../user/layout/layout";
-import { useMyNotifications } from "./hooks/useNotifications";
+import { useNotificationContext } from "../../contexts/NotificationContext";
 import type { NotificationCategory, NotificationFilter } from "./models/notification.model";
 
 const tagStyles: Record<NotificationCategory, string> = {
@@ -52,7 +52,7 @@ const NotificationPage: React.FC = () => {
     markAsRead,
     markAllAsRead,
     deleteNotification,
-  } = useMyNotifications();
+  } = useNotificationContext();
 
   const [activeFilter, setActiveFilter] = React.useState<NotificationFilter>("all");
   const [emailSettings, setEmailSettings] = React.useState({

@@ -1,4 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
+import { HubConnection, HubConnectionBuilder, HttpTransportType, LogLevel } from '@microsoft/signalr';
+import { API_CONFIG } from '../../../config/api.config';
 import { notificationService } from '../../header/services/notification.service';
 import type { NotificationApiItem } from '../../header/models/notification.model';
 
@@ -25,6 +27,89 @@ export const useNotifications = () => {
     useEffect(() => {
         fetchNotifications();
     }, [fetchNotifications]);
+
+    useEffect(() => {
+        let connection: HubConnection | null = null;
+
+        const NOTIFICATION_HUB_PATH = '/notificationHub';
+
+        const startSignalR = async (token: string): Promise<HubConnection> => {
+            const hubUrl = `${API_CONFIG.baseURL.replace(/\/$/, '')}${NOTIFICATION_HUB_PATH}`;
+            console.info('SignalR (admin) connecting to', hubUrl);
+
+            const conn = new HubConnectionBuilder()
+                .withUrl(hubUrl, {
+                    accessTokenFactory: () => token,
+                    transport: HttpTransportType.WebSockets,
+                })
+                .withAutomaticReconnect()
+                .configureLogging(LogLevel.Information)
+                .build();
+
+            conn.on('ReceiveNotification', (notification: NotificationApiItem) => {
+                const notifId = notification.id ?? `${notification.type}-${notification.createdAt || Date.now()}`;
+                // console.log('SignalR ReceiveNotification (admin):', notification, 'id:', notifId);
+
+                setNotifications((prev) => {
+                    if (prev.some((n) => n.id === notifId)) {
+                        console.info('SignalR (admin): duplicate notification ignored', notifId);
+                        return prev;
+                    }
+
+                    return [
+                        {
+                            ...notification,
+                            id: notifId,
+                            type: notification.type ?? 'system',
+                            isRead: notification.isRead ?? false,
+                            createdAt: notification.createdAt ?? new Date().toISOString(),
+                        },
+                        ...prev,
+                    ];
+                });
+            });
+
+            conn.onreconnecting((err) => {
+                console.warn('SignalR reconnecting (admin):', err);
+            });
+
+            conn.onreconnected((connectionId) => {
+                console.info('SignalR reconnected (admin) connectionId:', connectionId);
+            });
+
+            conn.onclose((err) => {
+                console.warn('SignalR closed (admin):', err);
+            });
+
+            await conn.start();
+            console.info('SignalR connected (admin) at', hubUrl);
+            return conn;
+        };
+
+        const connectHub = async () => {
+            const token = localStorage.getItem('accessToken');
+            if (!token) {
+                console.warn('SignalR admin: accessToken missing, skip connection');
+                return;
+            }
+
+            try {
+                connection = await startSignalR(token);
+            } catch (error) {
+                console.error('Không thể kết nối SignalR notification hub (admin):', error);
+            }
+        };
+
+        connectHub();
+
+        return () => {
+            if (connection) {
+                connection.stop().catch((error) => {
+                    console.debug('Lỗi khi dừng SignalR notification hub (admin):', error);
+                });
+            }
+        };
+    }, []);
 
     const markAsRead = useCallback(async (id: string) => {
         try {

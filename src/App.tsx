@@ -30,54 +30,57 @@ import AdminNotifications from './modules/admin/noti_ad';
 import AdminCourseProgressPage from './modules/admin/courseProgress';
 import CourseReviewPage from './modules/admin/course-review';
 import AdminLessonContentPage from './modules/admin/adminLessonContent';
+import { NotificationProvider } from './contexts/NotificationContext';
 
 function App() {
   return (
-    <Router>
-      <Routes>
-        {/* auth - guest only */}
-        <Route path="/" element={<GuestRoute><Homepage /></GuestRoute>} />
-        <Route path="/homepage" element={<GuestRoute><Homepage /></GuestRoute>} />
-        <Route path="/login" element={<GuestRoute><LoginCard /></GuestRoute>} />
-        <Route path="/register" element={<GuestRoute><RegisterPage /></GuestRoute>} />
-        <Route path="/forgot-password" element={<GuestRoute><ForgetPasswordPage /></GuestRoute>} />
-        <Route path="/auth/google-callback" element={<GoogleCallbackPage />} />
-        <Route path="/login-success" element={<LoginSuccess />} />
+    <NotificationProvider>
+      <Router>
+        <Routes>
+          {/* auth - guest only */}
+          <Route path="/" element={<GuestRoute><Homepage /></GuestRoute>} />
+          <Route path="/homepage" element={<GuestRoute><Homepage /></GuestRoute>} />
+          <Route path="/login" element={<GuestRoute><LoginCard /></GuestRoute>} />
+          <Route path="/register" element={<GuestRoute><RegisterPage /></GuestRoute>} />
+          <Route path="/forgot-password" element={<GuestRoute><ForgetPasswordPage /></GuestRoute>} />
+          <Route path="/auth/google-callback" element={<GoogleCallbackPage />} />
+          <Route path="/login-success" element={<LoginSuccess />} />
 
-        {/* protected routes */}
-        <Route path="/user/home" element={<UserRoute><UserHome /></UserRoute>} />
-        <Route path="/user/mycourses" element={<UserRoute><MyCourse /></UserRoute>} />
-        <Route path="/user/cart" element={<UserRoute><MyCart /></UserRoute>} />
-        <Route path="/user/checkout" element={<UserRoute><CheckoutPage /></UserRoute>} />
-        <Route path="/payment-success" element={<Navigate to="/user/mycourses" />} />
-        <Route path="/user/notifications" element={<UserRoute><NotificationPage /></UserRoute>} />
-        <Route path="/courses" element={<UserRoute><ViewAllCourse /></UserRoute>} />
-        <Route path="/courses/complete-react-developer-2024" element={<UserRoute><CourseDetail /></UserRoute>} />
-        <Route path="/courses/:courseId" element={<UserRoute><CourseDetail /></UserRoute>} />
-        <Route path="/user/profile" element={<UserRoute><MyInfo /></UserRoute>} />
-        <Route path="/user/security" element={<UserRoute><ChangePasswordPage /></UserRoute>} />
-        <Route path="/user/course-progress" element={<UserRoute><CourseProgressPage /></UserRoute>} />
-        <Route path="/user/course-progress/:courseId" element={<UserRoute><CourseProgressPage /></UserRoute>} />
-        <Route path="/user/course-progress/:courseId/lesson/:lessonId" element={<UserRoute><LessonContentPage /></UserRoute>} />
-        <Route path="/search" element={<UserRoute><SearchPage /></UserRoute>} />
-        <Route path="/register-teacher" element={<ProtectedRoute><RegisterTeacherPage /></ProtectedRoute>} />
-        <Route path="/register-teacher/form" element={<ProtectedRoute><RegisterTeacherFormPage /></ProtectedRoute>} />
-        <Route path="/instructor/register-teacher" element={<ProtectedRoute><RegisterTeacherPage /></ProtectedRoute>} />
-        <Route path="/instructor/register-teacher/form" element={<ProtectedRoute><RegisterTeacherFormPage /></ProtectedRoute>} />
-        <Route path="/instructor" element={<InstructorRoute><TeacherDashboard /></InstructorRoute>} />
-        <Route path="/instructor/dashboard" element={<InstructorRoute><TeacherDashboard /></InstructorRoute>} />
-        <Route path="/instructor/courses/manage/:courseId" element={<InstructorRoute><ManageCoursePage /></InstructorRoute>} />
-        
-        {/* Admin Routes */}
-        <Route path="/admin/dashboard" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
-        <Route path="/admin/courses" element={<AdminRoute><AdminManageCourse /></AdminRoute>} />
-        <Route path="/admin/users" element={<AdminRoute><AdminManageUser /></AdminRoute>} />
-        <Route path="/admin/notifications" element={<AdminRoute><AdminNotifications /></AdminRoute>} />
-        <Route path="/admin/course-review" element={<AdminRoute><CourseReviewPage /></AdminRoute>} />
-        <Route path="/admin/course-progress/:courseId" element={<AdminRoute><AdminCourseProgressPage /></AdminRoute>} />
-        <Route path="/admin/course-progress/:courseId/lesson/:lessonId" element={<AdminRoute><AdminLessonContentPage /></AdminRoute>} />
-      </Routes>
-    </Router>
+          {/* protected routes */}
+          <Route path="/user/home" element={<UserRoute><UserHome /></UserRoute>} />
+          <Route path="/user/mycourses" element={<UserRoute><MyCourse /></UserRoute>} />
+          <Route path="/user/cart" element={<UserRoute><MyCart /></UserRoute>} />
+          <Route path="/user/checkout" element={<UserRoute><CheckoutPage /></UserRoute>} />
+          <Route path="/payment-success" element={<Navigate to="/user/mycourses" />} />
+          <Route path="/user/notifications" element={<ProtectedRoute><NotificationPage /></ProtectedRoute>} />
+          <Route path="/courses" element={<UserRoute><ViewAllCourse /></UserRoute>} />
+          <Route path="/courses/complete-react-developer-2024" element={<UserRoute><CourseDetail /></UserRoute>} />
+          <Route path="/courses/:courseId" element={<UserRoute><CourseDetail /></UserRoute>} />
+          <Route path="/user/profile" element={<UserRoute><MyInfo /></UserRoute>} />
+          <Route path="/user/security" element={<UserRoute><ChangePasswordPage /></UserRoute>} />
+          <Route path="/user/course-progress" element={<UserRoute><CourseProgressPage /></UserRoute>} />
+          <Route path="/user/course-progress/:courseId" element={<UserRoute><CourseProgressPage /></UserRoute>} />
+          <Route path="/user/course-progress/:courseId/lesson/:lessonId" element={<UserRoute><LessonContentPage /></UserRoute>} />
+          <Route path="/search" element={<UserRoute><SearchPage /></UserRoute>} />
+          <Route path="/register-teacher" element={<ProtectedRoute><RegisterTeacherPage /></ProtectedRoute>} />
+          <Route path="/register-teacher/form" element={<ProtectedRoute><RegisterTeacherFormPage /></ProtectedRoute>} />
+          <Route path="/instructor/register-teacher" element={<ProtectedRoute><RegisterTeacherPage /></ProtectedRoute>} />
+          <Route path="/instructor/register-teacher/form" element={<ProtectedRoute><RegisterTeacherFormPage /></ProtectedRoute>} />
+          <Route path="/instructor" element={<InstructorRoute><TeacherDashboard /></InstructorRoute>} />
+          <Route path="/instructor/dashboard" element={<InstructorRoute><TeacherDashboard /></InstructorRoute>} />
+          <Route path="/instructor/courses/manage/:courseId" element={<InstructorRoute><ManageCoursePage /></InstructorRoute>} />
+          
+          {/* Admin Routes */}
+          <Route path="/admin/dashboard" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
+          <Route path="/admin/courses" element={<AdminRoute><AdminManageCourse /></AdminRoute>} />
+          <Route path="/admin/users" element={<AdminRoute><AdminManageUser /></AdminRoute>} />
+          <Route path="/admin/notifications" element={<AdminRoute><AdminNotifications /></AdminRoute>} />
+          <Route path="/admin/course-review" element={<AdminRoute><CourseReviewPage /></AdminRoute>} />
+          <Route path="/admin/course-progress/:courseId" element={<AdminRoute><AdminCourseProgressPage /></AdminRoute>} />
+          <Route path="/admin/course-progress/:courseId/lesson/:lessonId" element={<AdminRoute><AdminLessonContentPage /></AdminRoute>} />
+        </Routes>
+      </Router>
+    </NotificationProvider>
   );
 }
 

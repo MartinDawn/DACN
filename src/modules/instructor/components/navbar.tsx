@@ -9,12 +9,20 @@ import {
   KeyIcon,
   ArrowLeftOnRectangleIcon,
 } from "@heroicons/react/24/outline";
+import { useNotificationContext } from "../../../contexts/NotificationContext";
 
 const Navbar: React.FC = () => {
   const [isProfileOpen, setProfileOpen] = useState(false);
   const profileMenuRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const [isLogoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
+  const { unreadCount } = useNotificationContext();
+
+  useEffect(() => {
+    console.log("Instructor Navbar: unreadCount =", unreadCount);
+    const token = localStorage.getItem("accessToken");
+    console.log("Instructor Navbar: accessToken exists =", !!token);
+  }, [unreadCount]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -89,9 +97,11 @@ const Navbar: React.FC = () => {
             className="relative rounded-full border border-gray-200 p-2 text-gray-500 transition hover:text-[#5a2dff]"
           >
             <BellIcon className="h-5 w-5" />
-            <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-[#ff7e6c] text-xs font-semibold text-white">
-              5
-            </span>
+            {unreadCount > 0 && (
+              <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-[#ff7e6c] text-xs font-semibold text-white">
+                {unreadCount > 99 ? "99+" : unreadCount}
+              </span>
+            )}
           </Link>
           <div className="relative" ref={profileMenuRef}>
             <button
