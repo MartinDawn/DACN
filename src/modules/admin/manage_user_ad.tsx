@@ -30,8 +30,8 @@ export default function AdminManageUser() {
     const [selectedUser, setSelectedUser] = useState<UserResponse | null>(null);
     const [selectedRequest, setSelectedRequest] = useState<InstructorRequest | null>(null);
 
-    const { users, isLoading, refetch, banUser } = useUsers();
-    const { requests, isLoading: isRequestsLoading, refetch: refetchRequests, approveRequest } = useInstructorRequests();
+    const { users, isLoading, banUser } = useUsers();
+    const { requests, isLoading: isRequestsLoading, approveRequest } = useInstructorRequests();
 
     const [currentPage, setCurrentPage] = useState(1);
 

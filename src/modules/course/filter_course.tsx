@@ -3,13 +3,9 @@ import { Link } from "react-router-dom";
 import {
   ArrowLeft,
   Filter,
-  Search,
   SlidersHorizontal,
   Grid3X3,
-  List,
   TrendingUp,
-  Star,
-  Clock,
   DollarSign,
   Users,
   BookOpen,
@@ -112,7 +108,7 @@ const ViewAllCourse: React.FC = () => {
     setPage(1);
   };
 
-  const formattedMaxPrice = `${currencyFormatter.format(maxPrice)}đ`;
+
 
   return (
     <UserLayout>

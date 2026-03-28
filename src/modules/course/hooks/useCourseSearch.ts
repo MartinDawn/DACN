@@ -3,12 +3,12 @@ import { useState, useCallback, useRef } from "react";
 import { toast } from "react-hot-toast";
 import { courseService } from "../services/course.service.ts";
 import { useRefreshOnLanguageChange } from "../../../hooks/useRefreshOnLanguageChange";
-import type { SearchParams, CourseSearchItem, CourseSearchResponse } from "../models/course";
+import type { SearchParams, CourseSearchResponse } from "../models/course";
 
 // Kiểu cho toàn bộ đối tượng API trả về
 type ApiResponse<T> = {
   success: boolean;
-  code: string;
+  code?: string;
   message: string;
   data: T;
 };

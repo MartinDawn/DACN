@@ -34,6 +34,7 @@ import type {
 
 // --- TYPES ---
 
+
 export type LessonType = 'video' | 'quiz' | 'doc';
 
 export interface LessonItem {
@@ -62,6 +63,8 @@ type LessonTimelineEntry = {
 
 // --- CONSTANTS ---
 
+
+// Helper: get lesson type label, pass t as argument
 export const getLessonTypeLabel = (t: (key: string) => string): Record<LessonType, string> => ({
   video: t('lessonTypes.video'),
   quiz: t('lessonTypes.quiz'),
@@ -105,7 +108,9 @@ const LESSON_TYPE_MAP: Record<string | number, LessonType> = {
   2: 'quiz', quiz: 'quiz', Quiz: 'quiz',
 };
 
-const extractItemsFromLecture = (lecture: ApiLecture): LessonItem[] => {
+
+// Now requires t as argument
+const extractItemsFromLecture = (lecture: ApiLecture, t: (key: string) => string): LessonItem[] => {
   const items: LessonItem[] = [];
 
   const getName = (entry: { title?: string; name?: string } | string): string =>
@@ -276,16 +281,7 @@ const VideoPlayer: React.FC<{
     videoRef.current.play();
   };
 
-  const formatTime = (seconds: number) => {
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-    const secs = Math.floor(seconds % 60);
-    
-    if (hours > 0) {
-      return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-    }
-    return `${minutes}:${secs.toString().padStart(2, '0')}`;
-  };
+
 
   if (isLoading) {
     return (
@@ -405,7 +401,7 @@ const VideoPlayer: React.FC<{
               srcLang="vi"
               src={subtitleUrl}
               default
-              crossOrigin="anonymous"
+              // crossOrigin is not a valid prop for <track>
             />
           )}
           {t('lessonContent.browserNotSupport')}
@@ -631,7 +627,6 @@ const QuizContent: React.FC<QuizContentProps> = ({
   submitError,
   attemptResult,
   isResultLoading,
-  resultError,
   attemptHistory,
   isHistoryLoading,
   historyError,
@@ -1207,110 +1202,20 @@ const QuizContent: React.FC<QuizContentProps> = ({
           </p>
           {attemptResult.correctAnswers != null && (
             <p className="text-xs text-slate-500">
-              {formatQuizScore(attemptResult.correctAnswers, attemptResult.totalQuestions ?? questions.length, t)}
+                {(() => {
+                  // Helper to format quiz score, since formatQuizScore is missing
+                  const correct = attemptResult.correctAnswers;
+                  const total = attemptResult.totalQuestions ?? questions.length;
+                  if (typeof correct === 'number' && typeof total === 'number') {
+                    return `${t('lessonContent.score')}: ${correct}/${total}`;
+                  }
+                  return '';
+                })()}
             </p>
           )}
         </div>
 
-        {(submitError || resultError) && (
-          <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm font-semibold text-rose-600">
-            {submitError || resultError}
-          </div>
-        )}
 
-        {/* Per-question review (if result contains answer breakdown or questions have isCorrect info) */}
-        {questions.length > 0 && (
-          <div className="space-y-3">
-            <h4 className="text-sm font-semibold text-slate-700">{t('lessonContent.reviewByQuestion')}</h4>
-            {questions.map((q, idx) => {
-              const userAnswerId = answers[q.id];
-              const apiInfo = resultMap[q.id];
-              const correctId =
-                apiInfo?.correctAnswerId ??
-                q.correctAnswer ??
-                q.options.find((o) => o.isCorrect)?.id;
-              const isCorrect =
-                apiInfo?.isCorrect != null
-                  ? apiInfo.isCorrect
-                  : correctId != null && userAnswerId === correctId;
-
-              // Don't show question text if it's just the fallback "Question N" title
-              const questionTitle = formatQuestionTitle(idx + 1, t);
-              const shouldShowQuestionText = q.question && q.question !== questionTitle;
-
-              return (
-                <div key={q.id} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-                  <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-wide text-amber-500">
-                    <span>{questionTitle}</span>
-                    {(correctId || apiInfo) && (
-                      <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 ${
-                        isCorrect ? 'bg-emerald-100 text-emerald-600' : 'bg-rose-100 text-rose-600'
-                      }`}>
-                        <CheckCircleIcon className="h-3.5 w-3.5" />
-                        {isCorrect ? t('lessonContent.accurate') : t('lessonContent.incorrect')}
-                      </span>
-                    )}
-                  </div>
-                  {shouldShowQuestionText && (
-                    <p className="mt-2 text-sm font-semibold text-slate-900">{q.question}</p>
-                  )}
-                  {q.imageUrl && (
-                    <div className="mt-2 overflow-hidden rounded-xl border border-slate-200">
-                      <img src={q.imageUrl} alt={t('lessonContent.questionImageAlt')} className="w-full object-contain max-h-72" />
-                    </div>
-                  )}
-                  <div className="mt-2 grid gap-1.5">
-                    {q.options.map((opt) => {
-                      const isUser = opt.id === userAnswerId;
-                      const isCorrectOpt = opt.id === correctId;
-                      return (
-                        <div
-                          key={opt.id}
-                          className={`rounded-xl border px-3 py-2 text-sm ${
-                            isCorrectOpt
-                              ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
-                              : isUser && !isCorrectOpt
-                              ? 'border-rose-200 bg-rose-50 text-rose-700'
-                              : 'border-slate-100 bg-slate-50 text-slate-500'
-                          }`}
-                        >
-                          {isCorrectOpt && '✓ '}
-                          {isUser && !isCorrectOpt && '✗ '}
-                          {opt.label}
-                        </div>
-                      );
-                    })}
-                  </div>
-                  {q.explanation && (
-                    <p className="mt-2 rounded-xl bg-amber-50 p-2.5 text-xs text-amber-800">
-                      <strong>{t('lessonContent.explanation')}</strong> {q.explanation}
-                    </p>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        )}
-
-        <div className="flex flex-wrap items-center gap-3 pt-2">
-          <button
-            type="button"
-            onClick={() => {
-              setShowHistory(false);
-              onStart();
-            }}
-            className="rounded-full bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-amber-500"
-          >
-            {t('lessonContent.retake')}
-          </button>
-          <button
-            type="button"
-            onClick={() => { onViewHistory(); setShowHistory(true); }}
-            className="rounded-full border border-slate-200 px-5 py-2.5 text-sm font-semibold text-slate-600 transition hover:border-amber-200 hover:text-amber-600"
-          >
-            {t('lessonContent.viewHistory')}
-          </button>
-        </div>
       </div>
     );
   }
@@ -1455,105 +1360,7 @@ const QuizContent: React.FC<QuizContentProps> = ({
   );
 };
 
-const DocumentViewer: React.FC<{
-  title: string;
-  url: string | null;
-  isLoading: boolean;
-  error: string | null;
-  onDownload: () => void;
-}> = ({ title, url, isLoading, error, onDownload }) => {
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center gap-3 rounded-2xl border border-sky-100 bg-sky-50 py-10">
-        <div className="h-6 w-6 animate-spin rounded-full border-4 border-sky-400 border-t-transparent" />
-        <p className="text-sm font-semibold text-sky-600">{t('lessonContent.downloading')}</p>
-      </div>
-    );
-  }
 
-  if (error) {
-    return (
-      <div className="rounded-2xl border border-rose-200 bg-rose-50 p-6 text-sm font-semibold text-rose-600">
-        {error}
-      </div>
-    );
-  }
-
-  if (!url) {
-    return (
-      <div className="flex flex-col items-center justify-center gap-5 py-12">
-        <span className="flex h-16 w-16 items-center justify-center rounded-full bg-sky-100">
-          <DocumentTextIcon className="h-8 w-8 text-sky-500" />
-        </span>
-        <div className="text-center space-y-1">
-          <p className="text-base font-semibold text-slate-800">{title}</p>
-          <p className="text-sm text-slate-500">{t('lessonContent.downloading')}</p>
-        </div>
-      </div>
-    );
-  }
-
-  const isPdf = /\.pdf(\?|$)/i.test(url);
-  const isImage = /\.(png|jpe?g|gif|webp|svg)(\?|$)/i.test(url);
-
-  return (
-    <div className="space-y-4">
-      {/* PDF embedded viewer */}
-      {isPdf && (
-        <div className="overflow-hidden rounded-2xl border border-sky-100 shadow-md">
-          <iframe
-            src={`${url}#toolbar=1&navpanes=0`}
-            title={title}
-            className="h-[600px] w-full border-0"
-          />
-        </div>
-      )}
-
-      {/* Image preview */}
-      {isImage && (
-        <div className="overflow-hidden rounded-2xl border border-sky-100 shadow-md">
-          <img src={url} alt={title} className="w-full object-contain" />
-        </div>
-      )}
-
-      {/* Non-embedable: show download card */}
-      {!isPdf && !isImage && (
-        <div className="flex items-center gap-4 rounded-2xl border border-sky-100 bg-sky-50 p-5">
-          <span className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-2xl bg-sky-100">
-            <DocumentTextIcon className="h-6 w-6 text-sky-500" />
-          </span>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-slate-900 truncate">{title}</p>
-            <p className="text-xs text-slate-500">{t('lessonContent.document')}</p>
-          </div>
-        </div>
-      )}
-
-      {/* Download button */}
-      <div className="flex items-center gap-3">
-        <a
-          href={url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-2 rounded-full bg-sky-500 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-sky-600"
-        >
-          <ArrowDownTrayIcon className="h-4 w-4" />
-          {t('lessonContent.downloadDocument')}
-        </a>
-        {!isPdf && !isImage && (
-          <button
-            type="button"
-            onClick={onDownload}
-            className="inline-flex items-center gap-2 rounded-full border border-slate-200 px-5 py-2.5 text-sm font-semibold text-slate-600 transition hover:border-sky-300 hover:text-sky-600"
-          >
-            <ArrowDownTrayIcon className="h-4 w-4" />
-            {t('lessonContent.saveToDevice')}
-          </button>
-        )}
-      </div>
-    </div>
-  );
-};
 
 // --- MAIN COMPONENT ---
 
@@ -1580,7 +1387,7 @@ const LessonContentPage: React.FC = () => {
   const {
     videoUrl, isVideoLoading, videoError, getVideoUrl, clearVideo,
     videoData, isVideoDataLoading, videoDataError, getEnhancedVideoData, clearVideoData,
-    documentUrl, isDocumentLoading, documentError, getDocumentUrl, clearDocument,
+    documentUrl, isDocumentLoading, getDocumentUrl, clearDocument,
   } = useLecture();
 
   const {
@@ -1636,8 +1443,9 @@ const LessonContentPage: React.FC = () => {
 
       const transformedSections: CourseSection[] = courseContent.lectures
         .sort((a, b) => a.name.localeCompare(b.name))
+
         .map((lecture) => {
-          const items: LessonItem[] = extractItemsFromLecture(lecture);
+          const items: LessonItem[] = extractItemsFromLecture(lecture, t);
 
           const section: CourseSection = {
             id: lecture.id,
@@ -2099,7 +1907,7 @@ const LessonContentPage: React.FC = () => {
                   {allSections.map((sec, secIndex) => {
                     const isExpanded = expandedSections[sec.id] ?? false;
                     const hasCurrentLesson = sec.items.some((item) => item.id === lessonId);
-                    const completedInSection = sec.items.filter((i) => i.isCompleted).length;
+
 
                     return (
                       <div key={sec.id}>

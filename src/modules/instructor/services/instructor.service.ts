@@ -1,5 +1,6 @@
 import apiClient from "../../auth/services/apiClient";
-import type { ApiResponse, Tag } from "../../course/models/course";
+import type { ApiResponse } from "../../course/models/course";
+import type { Tag } from "../../course/models/course";
 import type { InstructorCourse, CreateCourseResponse, BecomeInstructorResponse, CourseCommentsResponse } from "../models/instructor";
 import type { RequestInstructorPayload, RequestInstructorResponse, InstructorStatusResponse } from "../models/instructor";
 

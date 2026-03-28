@@ -99,10 +99,9 @@ const MyCart: React.FC = () => {
 
   // ĐÃ BỎ: handleToggleSelect
 
-  const handleAddRecommended = useCallback(async (course: RecommendedCourse) => {
-      // await cartService.addCourseToCart(course.id);
-      refreshCart();
-  }, [refreshCart]);
+        const handleAddRecommended = useCallback(async () => {
+          refreshCart();
+        }, [refreshCart]);
 
   // THAY ĐỔI: Tính tổng dựa trên toàn bộ items
   const subtotal = validCartItems.reduce((sum, item) => sum + item.price, 0);
@@ -246,7 +245,7 @@ const MyCart: React.FC = () => {
                         </div>
                         <button
                           type="button"
-                          onClick={() => handleAddRecommended(course)}
+                          onClick={handleAddRecommended}
                           className="w-full rounded-full bg-[#05001a] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#1e0b63]"
                         >
                           {t('cart.recommendations.addToCart')}

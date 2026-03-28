@@ -6,15 +6,12 @@ import type {
     ForgetPasswordRequest,
     User,
     ApiResponse,
-    RegisterResponse,
-    LoginResponse,
     SendOTPRequest,
     VerifyOTPRequest,
-    ResetPasswordRequest,
-    ServiceResponse
+    ResetPasswordRequest
 } from '../models/auth';
 import { authService } from '../services/auth.service';
-import { mapAuthErrorToTranslation, mapStatusCodeToTranslation } from '../utils/auth.utils';
+import { mapAuthErrorToTranslation } from '../utils/auth.utils';
 import axios from 'axios';
 
 // Function to get default route based on user role

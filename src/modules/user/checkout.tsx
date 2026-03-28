@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useMemo, useCallback } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import React, { useState, useEffect, useMemo } from "react";
+import { Link } from "react-router-dom";
 import { useTranslation } from 'react-i18next';
 import {
   ArrowLeftIcon,
   BuildingLibraryIcon,
-  CheckCircleIcon,
+  // CheckCircleIcon,
   CreditCardIcon,
   DevicePhoneMobileIcon,
   LockClosedIcon,
@@ -23,7 +23,7 @@ const currencyFormatter = new Intl.NumberFormat("vi-VN", {
 });
 
 const CheckoutPage: React.FC = () => {
-  const navigate = useNavigate();
+  // const navigate = useNavigate();
   const { t } = useTranslation();
 
   const paymentMethods = [

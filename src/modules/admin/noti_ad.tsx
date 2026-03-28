@@ -9,16 +9,12 @@ import {
   BookOpen,
   Calendar,
   BarChart3,
-  MessageSquare,
-  Gift,
-  Star,
   CheckCircle,
   Trash2,
   ChevronRight,
   Settings,
   Zap,
   GraduationCap,
-  Users
 } from "lucide-react";
 
 type NotifFilter = 'all' | 'unread' | 'read';
@@ -82,7 +78,7 @@ export default function AdminNotifications() {
     achievements: true,
   });
 
-  const TYPE_LABEL = {
+  const TYPE_LABEL: { [key: string]: string } = {
     CourseRequest: t('admin.notificationsPage.types.courseRequest'),
     InstructorRequest: t('admin.notificationsPage.types.instructorRequest'),
     System: t('admin.notificationsPage.types.system'),

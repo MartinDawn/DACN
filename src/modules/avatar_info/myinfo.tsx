@@ -26,7 +26,7 @@ import {
   useUpdateProfile,
   formatBirthDateToInput,
 } from "./hooks/useUserProfile.ts"; 
-import { type UserProfile, type UserProfileStats } from "./models/userProfile.model"; // <-- Cập nhật đường dẫn này
+import { type UserProfileStats } from "./models/userProfile.model"; // <-- Cập nhật đường dẫn này
 
 const defaultSkills = ["React", "Node.js", "Python", "JavaScript", "TypeScript", "MongoDB"];
 
@@ -58,17 +58,7 @@ const socialLinkDefaults: SocialLink[] = [
 ];
 
 // Giá trị khởi tạo tạm thời khi chờ API
-const initialPersonalInfo: PersonalInfo = {
-  fullName: "Đang tải...",
-  jobTitle: "Đang tải...",
-  phone: "Đang tải...",
-  address: "Đang tải...",
-  email: "Đang tải...",
-  company: "Đang tải...",
-  birthday: "Đang tải...",
-  gender: "Đang tải...",
-  experience: "Đang tải...",
-};
+
 
 const initialAbout = "Đang tải...";
 const initialWebsite = "Đang tải..."; 

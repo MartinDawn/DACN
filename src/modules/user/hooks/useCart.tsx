@@ -5,9 +5,9 @@ import React, {
   useContext, 
   useState, 
   useCallback, 
-  useEffect, 
-  ReactNode 
+  useEffect
 } from 'react';
+import type { ReactNode } from 'react';
 import { cartService } from '../services/cart.service.ts';
 import type { Cart } from '../models/cart.ts';
 

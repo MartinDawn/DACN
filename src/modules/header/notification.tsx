@@ -151,7 +151,7 @@ const NotificationPage: React.FC = () => {
         </header>
 
         <div className="flex flex-wrap items-center gap-3 rounded-2xl bg-gray-50 p-2 shadow-inner">
-          {tabs.map((tab, index) => {
+          {tabs.map((tab) => {
             const isActive = activeFilter === tab.value;
             return (
               <button

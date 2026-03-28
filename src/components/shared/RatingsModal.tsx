@@ -21,7 +21,7 @@ const RatingsModal: React.FC<RatingsModalProps> = ({
   courseId,
   courseName
 }) => {
-  const { t, i18n } = useTranslation();
+  const { i18n } = useTranslation();
   const { courseComments, isCommentsLoading, commentsError, getCourseComments } = useCourses();
   const currentLang = i18n.language;
 

@@ -3,8 +3,6 @@ import { Link, useNavigate } from "react-router-dom";
 import {
   BellIcon,
   ChevronDownIcon,
-  MagnifyingGlassIcon,
-  ShoppingCartIcon,
   UserIcon,
   KeyIcon,
   ArrowLeftOnRectangleIcon,

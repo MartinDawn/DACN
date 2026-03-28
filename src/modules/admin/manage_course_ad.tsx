@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AdminLayout from './layout/layout';
 import type { Course } from './models/course.model';
@@ -6,15 +6,14 @@ import { useCourseRequests } from './hooks/useCourseRequests';
 import { CourseService } from './services/course.service';
 import { useTranslation } from 'react-i18next';
 import {
-  CheckCircleIcon,
-  XCircleIcon,
-  EyeIcon,
-  TrashIcon,
-  MagnifyingGlassIcon,
-  BookOpenIcon,
-  ClockIcon,
-  XMarkIcon,
-  ExclamationTriangleIcon
+    CheckCircleIcon,
+    XCircleIcon,
+    EyeIcon,
+    TrashIcon,
+    MagnifyingGlassIcon,
+    BookOpenIcon,
+    ClockIcon,
+    XMarkIcon,
 } from "@heroicons/react/24/outline";
 import { StarIcon } from "@heroicons/react/24/solid";
 
@@ -61,8 +60,6 @@ export default function AdminManageCourse() {
         setCourses,
         loading,
         pagination,
-        currentPage,
-        goToPage,
         refresh
     } = useCourseRequests(activeTab);
 
