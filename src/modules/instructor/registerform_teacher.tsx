@@ -17,7 +17,7 @@ export default function RegisterFormTeacher() {
 		introduction: "",
 		socialLinks: "",
 	});
-	const [lang, setLang] = useState<"vi" | "en">("vi");
+	const [lang] = useState<"vi" | "en">("vi");
 	const [loading, setLoading] = useState(false);
 
 	const { send } = useRequestInstructor();

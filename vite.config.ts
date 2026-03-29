@@ -14,16 +14,19 @@ export default defineConfig({
         secure: false, // Thêm dòng này nếu backend dùng https self-signed hoặc http thường để tránh lỗi SSL
         rewrite: (path) => path.replace(/^\/api/, '/api'), // Giữ nguyên '/api' trong path
         // Fallback khi backend không chạy
-        configure: (proxy, options) => {
-          proxy.on('error', (err, req, res) => {
+        configure: (proxy) => {
+          proxy.on('error', (err, _req, res) => {
             console.warn('Backend proxy error:', err.message);
-            res.writeHead(503, {
-              'Content-Type': 'application/json',
-            });
-            res.end(JSON.stringify({
-              error: 'Backend server is not available',
-              message: 'Please start the backend server at http://localhost:5223'
-            }));
+            // Only call writeHead/end if res has those functions (is a ServerResponse)
+            if (res && typeof (res as any).writeHead === 'function' && typeof (res as any).end === 'function') {
+              (res as any).writeHead(503, {
+                'Content-Type': 'application/json',
+              });
+              (res as any).end(JSON.stringify({
+                error: 'Backend server is not available',
+                message: 'Please start the backend server at http://localhost:5223'
+              }));
+            }
           });
         }
       }

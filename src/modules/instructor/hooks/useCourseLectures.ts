@@ -1,4 +1,4 @@
-import { useState, useCallback, Dispatch, SetStateAction, useEffect, useRef } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { toast } from "react-hot-toast";
 import { lectureService } from "../services/lecture.service";
 import { useRefreshOnLanguageChange } from "../../../hooks/useRefreshOnLanguageChange";
@@ -370,7 +370,7 @@ export const useCourseLectures = (courseId: string) => {
         toast.success("Cập nhật thành công.");
         return response.data ?? updated;
       }
-      toast.error(response?.message ?? "Không thể cập nhật chương.");
+      toast.error("Không thể cập nhật chương.");
     } catch (error) {
       console.error(error);
       toast.error("Lỗi cập nhật.");

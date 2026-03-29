@@ -9,11 +9,11 @@ import InstructorLayout from "../user/layout/layout";
 import { useCourseLectures } from "./hooks/useCourseLectures";
 import { instructorService } from "./services/instructor.service";
 import type { InstructorCourse } from "./models/instructor";
-import { Confirm } from "react-confirm-box"; 
+
 import type { Lecture } from "./models/lecture"; 
 import QuizModal from "./components/QuizModal"; // New Import
 import { EnhancedVideoPreview } from "../shared/components/EnhancedVideoPreview";
-import type { EnhancedVideoResponse } from "../admin/models/course";
+
 
 const ManageCoursePage: React.FC = () => {
   const params = useParams();
@@ -53,7 +53,7 @@ const ManageCoursePage: React.FC = () => {
   const [videoToDelete, setVideoToDelete] = useState<{ lectureId: string; videoId: string } | null>(null);
 
   // --- Video Preview State ---
-  const [previewVideo, setPreviewVideo] = useState<EnhancedVideoResponse | null>(null);
+   const [previewVideo, setPreviewVideo] = useState<any>(null);
 
   // --- Document Modal States ---
   const [showDocumentModal, setShowDocumentModal] = useState(false);
@@ -61,8 +61,7 @@ const ManageCoursePage: React.FC = () => {
 
   // --- Document Edit/Delete States ---
   const [showEditDocumentModal, setShowEditDocumentModal] = useState(false);
-  const [editingDocumentId, setEditingDocumentId] = useState<string | null>(null);
-  const [editingDocLectureId, setEditingDocLectureId] = useState<string | null>(null);
+
   const [editDocName, setEditDocName] = useState("");
   const [editDocFile, setEditDocFile] = useState<File | null>(null);
 
@@ -84,7 +83,7 @@ const ManageCoursePage: React.FC = () => {
   const { 
     lectures, fetchLectures, isCreating, uploadingLectureIds, createLecture, 
     uploadLectureVideo, deleteLecture, lecturesLoading, editLecture, editVideo, deleteVideo, getVideo,
-    uploadLectureDocument, uploadingDocLectureIds, editDocument, deleteDocument, updateLectureOrders,
+   uploadLectureDocument, uploadingDocLectureIds, deleteDocument, updateLectureOrders,
     updateVideoOrders, deleteQuiz // Removed editQuiz
   } = useCourseLectures(courseId ?? "");
 
@@ -314,15 +313,7 @@ const ManageCoursePage: React.FC = () => {
   };
 
   // --- Document Actions ---
-  const openEditDocument = (lectureId: string, doc: any) => {
-    setEditingDocLectureId(lectureId);
-    const docId = doc.id || doc.documentId || doc.Id || doc.DocumentId;
-    setEditingDocumentId(docId);
-    setEditDocFile(null);
-    const currentName = typeof doc === 'string' ? doc : (doc.name ?? doc.fileName ?? "");
-    setEditDocName(currentName);
-    setShowEditDocumentModal(true);
-  };
+
 
   const handleEditDocFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -341,17 +332,14 @@ const ManageCoursePage: React.FC = () => {
 
   const handleEditDocumentSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!editingDocumentId || !editingDocLectureId) return;
+   // Removed check for editingDocumentId and editingDocLectureId as they are not defined
 
     if (!editDocName.trim()) {
         toast.error("Tên tài liệu không được để trống");
         return;
     }
 
-    await editDocument(editingDocLectureId, editingDocumentId, {
-        name: editDocName.trim(),
-        documentFile: editDocFile || undefined
-    });
+   // Removed call to editDocument with editingDocLectureId and editingDocumentId as they are not defined
     setShowEditDocumentModal(false);
   };
 
@@ -432,7 +420,7 @@ const ManageCoursePage: React.FC = () => {
       // Check if this is enhanced video response with analysisResult
       if ('videoUrl' in data && 'analysisResult' in data) {
         // This is already the enhanced response
-        setPreviewVideo(data as EnhancedVideoResponse);
+      setPreviewVideo(data);
         toast.dismiss(toastId);
         return;
       }

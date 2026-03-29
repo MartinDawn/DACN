@@ -1,7 +1,7 @@
 // src/pages/auth/login.tsx
 
 import React, { useState, useEffect } from "react"; // Thêm useEffect
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { FcGoogle } from "react-icons/fc";
 import {
   HiOutlineEnvelope,
@@ -17,7 +17,7 @@ import { mapAuthErrorToTranslation } from './utils/auth.utils';
 
 const LoginPage: React.FC = () => {
   const { t } = useTranslation();
-  const navigate = useNavigate();
+
   const { login, loading, error, getGoogleAuthUrl, getProfile, getDefaultRoute } = useAuth();
   const [formData, setFormData] = useState<LoginRequest>({
     username: "",
@@ -191,7 +191,7 @@ const LoginPage: React.FC = () => {
                 name="username"
                 type="text"
                 placeholder={t('auth.email')}
-                className="w-full bg-transparent text-sm text-gray-900 placeholder-gray-400 outline outline"
+                className="w-full bg-transparent text-sm text-gray-900 placeholder-gray-400 outline"
                 value={formData.username}
                 onChange={(e) => setFormData({ ...formData, username: e.target.value })}
                 required

@@ -1,4 +1,5 @@
-import React, { useState, ReactNode, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import type { ReactNode } from 'react';
 import { NavLink, useLocation, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../auth/hooks/useAuth';
 import { UserIcon, KeyIcon, ArrowLeftOnRectangleIcon, GlobeAltIcon, ChevronDownIcon } from "@heroicons/react/24/outline";
@@ -20,8 +21,7 @@ const SearchIcon = () => (<svg className="w-5 h-5" fill="none" stroke="currentCo
 const BellIcon = () => (<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>);
 const MenuIcon = () => (<svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>);
 const ChevronDown = () => (<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>);
-const MoonIcon = () => (<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" /></svg>);
-const MessageIcon = () => (<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" /></svg>);
+
 
 interface SidebarItemProps {
     icon: any;
@@ -270,7 +270,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                   </li> */}
 
                   {/* Language Switcher */}
-                  <li className="relative" ref={languageMenuRef}>
+                  <li className="relative" ref={null}>
                     <button
                       onClick={handleLanguageMenuToggle}
                       className="flex items-center gap-2 rounded-full border border-gray-200 px-3 py-2 text-gray-500 transition hover:text-[#5a2dff]"
@@ -308,7 +308,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                   </li>
 
                   {/* Notifications */}
-                  <li className="relative" ref={notificationMenuRef}>
+                  <li className="relative" ref={null}>
                     <button
                       onClick={() => setNotificationOpen(!isNotificationOpen)}
                       className="relative rounded-full border border-gray-200 p-2 text-gray-500 transition hover:text-[#5a2dff]"

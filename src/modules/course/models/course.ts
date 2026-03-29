@@ -1,3 +1,8 @@
+// Tag interface for course categorization
+export interface Tag {
+  id: string;
+  name: string;
+}
 export interface RecommendedCourse {
   id: string;
   imageUrl: string;
@@ -87,7 +92,7 @@ export interface CourseCommentsData {
 
 export interface ApiResponse<T> {
   success: boolean;
-  code: string;
+  code?: string;
   message: string;
   data: T;
 }

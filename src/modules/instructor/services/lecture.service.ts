@@ -1,7 +1,6 @@
 import apiClient from "../../auth/services/apiClient";
 import type { ApiResponse, EnhancedVideoResponse } from "../../admin/models/course";
 import type {
-  Lecture,
   CreateLecturePayload,
   CreateLectureResponse,
   UploadLectureVideoResponse,
@@ -9,7 +8,7 @@ import type {
   UpdateLecturePayload,
   UpdateLectureResponse,
   DeleteLectureResponse,
-  UpdateOrderPayload, 
+  UpdateOrderPayload
 } from "../models/lecture";
 
 export const lectureService = {
@@ -58,7 +57,7 @@ export const lectureService = {
     lectureId: string,
     file: File,
     lang = "vi",
-    onProgress?: (progressEvent: ProgressEvent) => void
+    onProgress?: (progressEvent: import("axios").AxiosProgressEvent) => void
   ): Promise<UploadLectureVideoResponse> {
     const formData = new FormData();
     // Key must match Swagger parameter 'videoFile'
@@ -86,7 +85,7 @@ export const lectureService = {
             return data;
           },
         ],
-        onUploadProgress: onProgress,
+        onUploadProgress: onProgress as any,
       }
     );
     return response.data;

@@ -1,6 +1,6 @@
 // src/components/shared/formatHelpers.ts
 
-import type { TFunction } from 'react-i18next';
+// ...existing code...
 
 /**
  * Formats simple question title (without total count)
@@ -8,7 +8,7 @@ import type { TFunction } from 'react-i18next';
  * @param t Translation function
  * @returns Formatted string like "CÂU HỎI 1" or "QUESTION 1"
  */
-export const formatQuestionTitle = (index: number, t: TFunction): string => {
+export const formatQuestionTitle = (index: number, t: (key: string, options?: any) => string): string => {
   const questionWord = t('lessonContent.question').toUpperCase();
 
   return `${questionWord} ${index}`;
@@ -21,7 +21,7 @@ export const formatQuestionTitle = (index: number, t: TFunction): string => {
  * @param t Translation function
  * @returns Formatted string like "5/10 bài học đã hoàn thành" or "5/10 lessons completed"
  */
-export const formatLessonsProgress = (completed: number, total: number, t: TFunction): string => {
+export const formatLessonsProgress = (completed: number, total: number, t: (key: string, options?: any) => string): string => {
   const lessonWord = total === 1 ? t('lessonContent.lesson') : t('lessonContent.lessons');
   const completedWord = t('lessonContent.completed');
 
@@ -35,7 +35,7 @@ export const formatLessonsProgress = (completed: number, total: number, t: TFunc
  * @param t Translation function
  * @returns Formatted string like "CÂU HỎI 1" or "QUESTION 1"
  */
-export const formatQuestionNumber = (index: number, total: number, t: TFunction): string => {
+export const formatQuestionNumber = (index: number, _total: number, t: (key: string, options?: any) => string): string => {
   const questionWord = t('lessonContent.question').toUpperCase();
 
   return `${questionWord} ${index}`;
@@ -47,7 +47,7 @@ export const formatQuestionNumber = (index: number, total: number, t: TFunction)
  * @param t Translation function
  * @returns Formatted string like "5 câu hỏi" or "5 questions"
  */
-export const formatQuestionsCount = (count: number, t: TFunction): string => {
+export const formatQuestionsCount = (count: number, t: (key: string, options?: any) => string): string => {
   const questionWord = count === 1 ? t('lessonContent.question') : t('lessonContent.questions');
 
   return `${count} ${questionWord}`;
@@ -60,7 +60,7 @@ export const formatQuestionsCount = (count: number, t: TFunction): string => {
  * @param t Translation function
  * @returns Formatted string like "Đúng 3 / 5 câu hỏi" or "Correct 3 / 5 questions"
  */
-export const formatQuizScore = (correct: number, total: number, t: TFunction): string => {
+export const formatQuizScore = (correct: number, total: number, t: (key: string, options?: any) => string): string => {
   const correctWord = t('lessonContent.correct');
   const questionWord = total === 1 ? t('lessonContent.question') : t('lessonContent.questions');
 

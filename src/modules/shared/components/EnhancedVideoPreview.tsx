@@ -12,7 +12,7 @@ export const EnhancedVideoPreview: React.FC<EnhancedVideoPreviewProps> = ({
   onClose,
 }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
-  const [currentTime, setCurrentTime] = useState(0);
+  const [currentTime] = useState(0);
   const [expandedSegments, setExpandedSegments] = useState<Record<string, boolean>>({});
 
   const { name, videoUrl, duration, subtitleUrl, analysisResult } = videoData;

@@ -1,5 +1,7 @@
 import apiClient from "../../auth/services/apiClient";
-import type { ApiResponse, GetVideoApiResponse, EnhancedVideoResponse } from '../models/course';
+import type { ApiResponse, GetVideoApiResponse } from '../models/course';
+import type { EnhancedVideoResponse } from "../../admin/models/course";
+
 
 // Type for video URL response - can be string or object with videoUrl
 export type VideoUrlResponse = string | {
@@ -68,12 +70,15 @@ export const lectureService = {
         return null;
       }
 
-      // Duyệt qua tất cả lectures để tìm video
-      for (const lecture of response.data.lectures) {
-        for (const video of lecture.videos) {
-          // Tìm video theo tên hoặc display order
-          if (video.name === videoName && video.videoUrl && video.isTrial) {
-            return video.videoUrl;
+
+      // Chỉ duyệt nếu response.data có lectures (tức là GetVideoApiResponse)
+      if ('lectures' in response.data && Array.isArray(response.data.lectures)) {
+        for (const lecture of response.data.lectures) {
+          for (const video of lecture.videos) {
+            // Tìm video theo tên hoặc display order
+            if (video.name === videoName && video.videoUrl && video.isTrial) {
+              return video.videoUrl;
+            }
           }
         }
       }

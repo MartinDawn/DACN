@@ -14,7 +14,6 @@ import {
   HelpCircle,
   Share,
   Users,
-  X,
 } from "lucide-react";
 import { Star } from "lucide-react";
 import UserLayout from "../user/layout/layout";

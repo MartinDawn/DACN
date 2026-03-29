@@ -105,7 +105,9 @@ const LESSON_TYPE_MAP: Record<string | number, LessonType> = {
   2: 'quiz', quiz: 'quiz', Quiz: 'quiz',
 };
 
-const extractItemsFromLecture = (lecture: ApiLecture): LessonItem[] => {
+
+// Now requires t as argument
+const extractItemsFromLecture = (lecture: ApiLecture, t: (key: string) => string): LessonItem[] => {
   const items: LessonItem[] = [];
 
   const getName = (entry: { title?: string; name?: string } | string): string =>
@@ -254,8 +256,7 @@ const VideoPlayer: React.FC<{
   lessonTitle: string;
   url?: string;
   isLoading?: boolean;
-  error?: string | null;
-}> = ({ lessonTitle, url, isLoading, error }) => {
+}> = ({ lessonTitle, url, isLoading }) => {
   const { t } = useTranslation();
   if (isLoading) {
     return (
@@ -263,17 +264,6 @@ const VideoPlayer: React.FC<{
         <div className="text-center space-y-3">
           <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-indigo-500 border-t-transparent" />
           <p className="text-sm font-semibold text-slate-400">{t('lessonContent.loadingLesson')}</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="flex aspect-video w-full items-center justify-center rounded-2xl bg-black shadow-2xl">
-        <div className="text-center space-y-3">
-          <PlayCircleIcon className="mx-auto h-14 w-14 text-slate-600" />
-          <p className="text-sm font-semibold text-rose-400">{error}</p>
         </div>
       </div>
     );
@@ -1094,7 +1084,14 @@ const QuizContent: React.FC<QuizContentProps> = ({
           </p>
           {attemptResult.correctAnswers != null && (
             <p className="text-xs text-slate-500">
-              {formatQuizScore(attemptResult.correctAnswers, attemptResult.totalQuestions ?? questions.length, t)}
+              {(() => {
+                const correct = attemptResult.correctAnswers;
+                const total = attemptResult.totalQuestions ?? questions.length;
+                if (typeof correct === 'number' && typeof total === 'number') {
+                  return `${t('lessonContent.score')}: ${correct}/${total}`;
+                }
+                return '';
+              })()}
             </p>
           )}
         </div>
@@ -1342,105 +1339,6 @@ const QuizContent: React.FC<QuizContentProps> = ({
   );
 };
 
-const DocumentViewer: React.FC<{
-  title: string;
-  url: string | null;
-  isLoading: boolean;
-  error: string | null;
-  onDownload: () => void;
-}> = ({ title, url, isLoading, error, onDownload }) => {
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center gap-3 rounded-2xl border border-sky-100 bg-sky-50 py-10">
-        <div className="h-6 w-6 animate-spin rounded-full border-4 border-sky-400 border-t-transparent" />
-        <p className="text-sm font-semibold text-sky-600">{t('lessonContent.downloading')}</p>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="rounded-2xl border border-rose-200 bg-rose-50 p-6 text-sm font-semibold text-rose-600">
-        {error}
-      </div>
-    );
-  }
-
-  if (!url) {
-    return (
-      <div className="flex flex-col items-center justify-center gap-5 py-12">
-        <span className="flex h-16 w-16 items-center justify-center rounded-full bg-sky-100">
-          <DocumentTextIcon className="h-8 w-8 text-sky-500" />
-        </span>
-        <div className="text-center space-y-1">
-          <p className="text-base font-semibold text-slate-800">{title}</p>
-          <p className="text-sm text-slate-500">{t('lessonContent.downloading')}</p>
-        </div>
-      </div>
-    );
-  }
-
-  const isPdf = /\.pdf(\?|$)/i.test(url);
-  const isImage = /\.(png|jpe?g|gif|webp|svg)(\?|$)/i.test(url);
-
-  return (
-    <div className="space-y-4">
-      {/* PDF embedded viewer */}
-      {isPdf && (
-        <div className="overflow-hidden rounded-2xl border border-sky-100 shadow-md">
-          <iframe
-            src={`${url}#toolbar=1&navpanes=0`}
-            title={title}
-            className="h-[600px] w-full border-0"
-          />
-        </div>
-      )}
-
-      {/* Image preview */}
-      {isImage && (
-        <div className="overflow-hidden rounded-2xl border border-sky-100 shadow-md">
-          <img src={url} alt={title} className="w-full object-contain" />
-        </div>
-      )}
-
-      {/* Non-embedable: show download card */}
-      {!isPdf && !isImage && (
-        <div className="flex items-center gap-4 rounded-2xl border border-sky-100 bg-sky-50 p-5">
-          <span className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-2xl bg-sky-100">
-            <DocumentTextIcon className="h-6 w-6 text-sky-500" />
-          </span>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-slate-900 truncate">{title}</p>
-            <p className="text-xs text-slate-500">{t('lessonContent.document')}</p>
-          </div>
-        </div>
-      )}
-
-      {/* Download button */}
-      <div className="flex items-center gap-3">
-        <a
-          href={url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-2 rounded-full bg-sky-500 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-sky-600"
-        >
-          <ArrowDownTrayIcon className="h-4 w-4" />
-          {t('lessonContent.downloadDocument')}
-        </a>
-        {!isPdf && !isImage && (
-          <button
-            type="button"
-            onClick={onDownload}
-            className="inline-flex items-center gap-2 rounded-full border border-slate-200 px-5 py-2.5 text-sm font-semibold text-slate-600 transition hover:border-sky-300 hover:text-sky-600"
-          >
-            <ArrowDownTrayIcon className="h-4 w-4" />
-            {t('lessonContent.saveToDevice')}
-          </button>
-        )}
-      </div>
-    </div>
-  );
-};
 
 // --- MAIN COMPONENT ---
 
@@ -1465,8 +1363,8 @@ const LessonContentPage: React.FC = () => {
   } = useCourses();
 
   const {
-    videoUrl, isVideoLoading, videoError, getVideoUrl, clearVideo,
-    documentUrl, isDocumentLoading, documentError, getDocumentUrl, clearDocument,
+    videoUrl, isVideoLoading, getVideoUrl, clearVideo,
+    documentUrl, isDocumentLoading, getDocumentUrl, clearDocument,
   } = useLecture();
 
   const {
@@ -1523,7 +1421,7 @@ const LessonContentPage: React.FC = () => {
       const transformedSections: CourseSection[] = courseContent.lectures
         .sort((a, b) => a.name.localeCompare(b.name))
         .map((lecture) => {
-          const items: LessonItem[] = extractItemsFromLecture(lecture);
+          const items: LessonItem[] = extractItemsFromLecture(lecture, t);
 
           const section: CourseSection = {
             id: lecture.id,
@@ -1744,7 +1642,6 @@ const LessonContentPage: React.FC = () => {
               lessonTitle={lesson.title}
               url={videoUrl ?? (typeof lesson.url === 'string' ? lesson.url : undefined)}
               isLoading={isVideoLoading}
-              error={videoError}
             />
           )}
 
@@ -1977,7 +1874,7 @@ const LessonContentPage: React.FC = () => {
                   {allSections.map((sec, secIndex) => {
                     const isExpanded = expandedSections[sec.id] ?? false;
                     const hasCurrentLesson = sec.items.some((item) => item.id === lessonId);
-                    const completedInSection = sec.items.filter((i) => i.isCompleted).length;
+                    // const completedInSection = sec.items.filter((i) => i.isCompleted).length;
 
                     return (
                       <div key={sec.id}>

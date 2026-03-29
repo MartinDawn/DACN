@@ -1,6 +1,6 @@
 // src/hooks/useCourses.ts
 
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import type {
   RecommendedCourse,
   CourseDetail,
@@ -9,7 +9,6 @@ import type {
   ApiCourseContent,
   AddCommentRequest,
   UpdateCommentRequest,
-  CourseCommentsData,
 } from '../models/course';
 import { courseService } from '../../course/services/course.service';
 import { CourseService } from '../services/course.service';
